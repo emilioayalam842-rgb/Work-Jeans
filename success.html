@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¡Compra exitosa! | Works Jeans</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="hazard" aria-hidden="true"></div>
+  <section class="status-page">
+    <div class="status-card">
+      <img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="status-logo" width="120" height="56">
+      <span class="eyebrow">Pago confirmado</span>
+      <h1 style="margin-top:18px">¡Gracias por tu compra!</h1>
+      <p>Tu pago fue procesado correctamente. Te contactaremos pronto para coordinar la entrega.</p>
+      <p class="status-note" id="orderNote"></p>
+      <a href="/" class="btn btn-primary">Volver a la tienda</a>
+    </div>
+  </section>
+  <script>
+    localStorage.removeItem('worksjeans_cart');
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    if (sessionId) {
+      fetch(`/api/verify-session?session_id=${encodeURIComponent(sessionId)}`)
+        .then((res) => res.json())
+        .then((order) => {
+          if (order.id) document.getElementById('orderNote').textContent = `Pedido registrado: ${order.id}`;
+        })
+        .catch(() => {});
+    }
+  </script>
+</body>
+</html>

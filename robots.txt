@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /workmapadmin.html
+Disallow: /api/
+
+Sitemap: https://www.worksjeans.com.mx/sitemap.xml

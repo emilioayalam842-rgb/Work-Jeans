@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel admin | Works Jeans</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+  <section id="loginScreen" class="admin-login">
+    <form id="loginForm" class="admin-login-card">
+      <img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="admin-login-logo">
+      <h1>Panel admin</h1>
+      <input type="password" id="loginPassword" placeholder="Contraseña" required autofocus>
+      <button type="submit" class="btn btn-primary">Entrar</button>
+      <p class="admin-error" id="loginError"></p>
+    </form>
+  </section>
+
+  <section id="adminScreen" class="admin-panel" hidden>
+    <header class="admin-header">
+      <a href="index.html" class="admin-logo-link">
+        <img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="admin-header-logo">
+        <span>Panel admin</span>
+      </a>
+      <div>
+        <a href="index.html" class="admin-link" target="_blank" rel="noopener">Ver tienda ↗</a>
+        <button id="logoutBtn" class="btn btn-secondary admin-logout">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="dashboard">Dashboard</button>
+        <button class="admin-tab" data-tab="productos">Productos</button>
+        <button class="admin-tab" data-tab="pedidos">Pedidos</button>
+        <button class="admin-tab" data-tab="configuracion">Configuración</button>
+      </div>
+
+      <div id="tabDashboard" class="admin-tab-panel">
+        <h2>Resumen</h2>
+        <div class="admin-stats">
+          <div class="admin-stat-card">
+            <p class="admin-stat-label">Ventas totales</p>
+            <p class="admin-stat-value" id="statTotalSales">$0.00 MXN</p>
+          </div>
+          <div class="admin-stat-card">
+            <p class="admin-stat-label">Ingresos este mes</p>
+            <p class="admin-stat-value" id="statMonthSales">$0.00 MXN</p>
+          </div>
+          <div class="admin-stat-card">
+            <p class="admin-stat-label">Pedidos pendientes</p>
+            <p class="admin-stat-value" id="statPending">0</p>
+          </div>
+          <div class="admin-stat-card">
+            <p class="admin-stat-label">Total de pedidos</p>
+            <p class="admin-stat-value" id="statTotalOrders">0</p>
+          </div>
+        </div>
+
+        <div class="admin-dashboard-grid">
+          <div class="admin-panel-box">
+            <h3>Productos más vendidos</h3>
+            <ol class="admin-rank-list" id="topProductsList"></ol>
+          </div>
+          <div class="admin-panel-box">
+            <h3>⚠️ Stock bajo</h3>
+            <ul class="admin-rank-list" id="lowStockList"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div id="tabProductos" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Productos</h2>
+          <button id="newProductBtn" class="btn btn-primary">+ Nuevo producto</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Stock total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabPedidos" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Pedidos</h2>
+          <button id="newOrderBtn" class="btn btn-primary">+ Agregar pedido de WhatsApp</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Origen</th>
+                <th>Cliente</th>
+                <th>Productos</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabConfiguracion" class="admin-tab-panel" hidden>
+        <h2>Configuración del sitio</h2>
+        <form id="settingsForm" class="admin-panel-box admin-settings-form">
+          <label for="settingStoreName">Nombre de la tienda</label>
+          <input type="text" id="settingStoreName" name="storeName">
+
+          <label for="settingWhatsapp">Número de WhatsApp (con código de país, sin +)</label>
+          <input type="text" id="settingWhatsapp" name="whatsappNumber" placeholder="528112345678">
+
+          <label for="settingPhoneDisplay">Teléfono a mostrar</label>
+          <input type="text" id="settingPhoneDisplay" name="phoneDisplay" placeholder="81 1234 5678">
+
+          <label for="settingAddress">Dirección</label>
+          <input type="text" id="settingAddress" name="address">
+
+          <label for="settingHours">Horario</label>
+          <input type="text" id="settingHours" name="hours">
+
+          <label for="settingRating">Calificación de Google</label>
+          <input type="text" id="settingRating" name="googleRating" placeholder="4.0">
+
+          <label for="settingReviewCount">Número de opiniones</label>
+          <input type="text" id="settingReviewCount" name="googleReviewCount" placeholder="1">
+
+          <button type="submit" class="btn btn-primary">Guardar configuración</button>
+          <p class="admin-error" id="settingsError"></p>
+          <p class="admin-success" id="settingsSuccess"></p>
+        </form>
+
+        <h2 class="admin-section-spacer">Cuenta</h2>
+        <form id="passwordForm" class="admin-panel-box admin-settings-form">
+          <label for="currentPassword">Contraseña actual</label>
+          <input type="password" id="currentPassword" required>
+
+          <label for="newPassword">Nueva contraseña</label>
+          <input type="password" id="newPassword" minlength="6" required>
+
+          <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
+          <p class="admin-error" id="passwordError"></p>
+          <p class="admin-success" id="passwordSuccess"></p>
+        </form>
+      </div>
+    </main>
+  </section>
+
+  <div class="admin-overlay" id="formOverlay" hidden>
+    <form id="productForm" class="admin-form" enctype="multipart/form-data">
+      <h2 id="formTitle">Nuevo producto</h2>
+      <input type="hidden" id="productId" name="id">
+
+      <label for="fieldName">Nombre</label>
+      <input type="text" id="fieldName" name="name" required>
+
+      <label for="fieldCategory">Categoría</label>
+      <input type="text" id="fieldCategory" name="category" placeholder="Camisas / Pantalones" required>
+
+      <label for="fieldPrice">Precio (MXN)</label>
+      <input type="number" id="fieldPrice" name="priceMxn" step="0.01" min="0" required>
+
+      <label>Tallas y stock</label>
+      <div id="sizeRows" class="admin-size-rows"></div>
+      <button type="button" id="addSizeRowBtn" class="btn btn-secondary admin-add-item-btn">+ Agregar talla</button>
+
+      <label for="fieldDescription">Descripción</label>
+      <textarea id="fieldDescription" name="description" rows="3" required></textarea>
+
+      <label for="fieldImage">Foto del producto</label>
+      <input type="file" id="fieldImage" name="image" accept="image/jpeg,image/png,image/webp">
+      <img id="imagePreview" class="admin-image-preview" hidden>
+
+      <div class="admin-form-actions">
+        <button type="button" id="cancelFormBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+      <p class="admin-error" id="formError"></p>
+    </form>
+  </div>
+
+  <div class="admin-overlay" id="orderFormOverlay" hidden>
+    <form id="orderForm" class="admin-form">
+      <h2>Nuevo pedido de WhatsApp</h2>
+
+      <label for="orderCustomerName">Nombre del cliente</label>
+      <input type="text" id="orderCustomerName" placeholder="Opcional">
+
+      <label for="orderCustomerPhone">Teléfono</label>
+      <input type="text" id="orderCustomerPhone" placeholder="Opcional">
+
+      <label>Productos</label>
+      <div id="orderItems" class="admin-order-items"></div>
+      <button type="button" id="addOrderItemBtn" class="btn btn-secondary admin-add-item-btn">+ Agregar producto</button>
+
+      <label for="orderNotes">Notas</label>
+      <textarea id="orderNotes" rows="2" placeholder="Opcional"></textarea>
+
+      <p class="admin-order-total">Total: <span id="orderFormTotal">$0.00 MXN</span></p>
+
+      <div class="admin-form-actions">
+        <button type="button" id="cancelOrderFormBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar pedido</button>
+      </div>
+      <p class="admin-error" id="orderFormError"></p>
+    </form>
+  </div>
+
+  <div class="admin-overlay" id="orderDetailOverlay" hidden>
+    <div class="admin-form" id="orderDetailBox">
+      <h2>Detalle del pedido</h2>
+      <div id="orderDetailContent"></div>
+      <label for="orderDetailNotes">Notas</label>
+      <textarea id="orderDetailNotes" rows="3"></textarea>
+      <div class="admin-form-actions">
+        <button type="button" id="closeOrderDetailBtn" class="btn btn-secondary">Cerrar</button>
+        <button type="button" id="saveOrderNotesBtn" class="btn btn-primary">Guardar notas</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
