@@ -127,6 +127,20 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
+// Dominio canónico: en producción redirige workjeans.mx -> www.workjeans.mx y http -> https.
+// Se activa solo si CANONICAL_HOST está definido (p. ej. www.workjeans.mx); en local no hace nada.
+const CANONICAL_HOST = process.env.CANONICAL_HOST || '';
+app.use((req, res, next) => {
+  if (!CANONICAL_HOST) return next();
+  const host = req.headers.host || '';
+  const isHttps = req.protocol === 'https';
+  if (host === CANONICAL_HOST && isHttps) return next();
+  // Los dominios internos del hosting (p. ej. *.up.railway.app) se dejan pasar para poder probar.
+  const apex = CANONICAL_HOST.replace(/^www\./, '');
+  if (host !== CANONICAL_HOST && host !== apex && !host.endsWith(`.${apex}`)) return next();
+  res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
+});
+
 app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'works-jeans-dev-secret-change-me',

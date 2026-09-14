@@ -3,4 +3,4 @@ Allow: /
 Disallow: /workmapadmin.html
 Disallow: /api/
 
-Sitemap: https://www.worksjeans.com.mx/sitemap.xml
+Sitemap: https://www.workjeans.mx/sitemap.xml

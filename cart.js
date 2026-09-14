@@ -208,7 +208,7 @@ function renderProductCard(product) {
 
 // Datos estructurados (schema.org) generados desde products.json para que nunca queden desactualizados.
 function injectProductSchema(products) {
-  const origin = 'https://www.worksjeans.com.mx/';
+  const origin = 'https://www.workjeans.mx/';
   const data = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
