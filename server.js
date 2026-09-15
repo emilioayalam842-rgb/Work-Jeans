@@ -31,6 +31,23 @@ if (USES_EXTERNAL_DATA) {
   }
 }
 
+// Si el proyecto trae claves nuevas en settings.json (p. ej. googleMapsUrl), se agregan a los
+// ajustes persistidos sin pisar lo que el panel ya haya editado.
+if (USES_EXTERNAL_DATA) {
+  try {
+    const seed = JSON.parse(fs.readFileSync(path.join(__dirname, 'settings.json'), 'utf-8'));
+    const current = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
+    const missing = Object.keys(seed).filter((k) => !(k in current));
+    if (missing.length) {
+      for (const k of missing) current[k] = seed[k];
+      fs.writeFileSync(SETTINGS_PATH, JSON.stringify(current, null, 2) + '\n');
+      console.log(`Ajustes completados con claves nuevas: ${missing.join(', ')}`);
+    }
+  } catch {
+    // Si algo falla, el sitio sigue con los ajustes que ya tenía.
+  }
+}
+
 const LOW_STOCK_THRESHOLD = 5;
 
 function getProducts() {
