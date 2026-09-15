@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260915c">
-  <link rel="stylesheet" href="admin.css?v=20260915c">
+  <link rel="stylesheet" href="styles.css?v=20260915d">
+  <link rel="stylesheet" href="admin.css?v=20260915d">
 </head>
 <body class="admin-body">
 
@@ -90,6 +90,7 @@
         <div class="admin-side-group"><span>Ventas</span>
           <button class="admin-tab" data-tab="tablero" data-perm="pedidos.ver">Tablero</button>
           <button class="admin-tab" data-tab="pedidos" data-perm="pedidos.ver">Pedidos</button>
+          <button class="admin-tab" data-tab="cotizaciones" data-perm="pedidos.ver">Cotizaciones</button>
           <button class="admin-tab" data-tab="devoluciones" data-perm="devoluciones.ver">Devoluciones</button>
           <button class="admin-tab" data-tab="clientes" data-perm="clientes.ver">Clientes</button>
         </div>
@@ -394,6 +395,30 @@
           <table class="admin-table">
             <thead><tr><th>Orden</th><th>Proveedor</th><th>Partidas</th><th>Recibido</th><th>Total</th><th>Llega</th><th>Estado</th></tr></thead>
             <tbody id="purchasesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabCotizaciones" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Cotizaciones de empresas</h2>
+          <select id="leadStatusFilter" class="admin-filter">
+            <option value="abiertas">Abiertas</option>
+            <option value="">Todas</option>
+            <option value="nuevo">Nuevas</option>
+            <option value="contactado">Contactadas</option>
+            <option value="cotizado">Cotizadas</option>
+            <option value="negociacion">En negociación</option>
+            <option value="ganado">Ganadas</option>
+            <option value="perdido">Perdidas</option>
+          </select>
+        </div>
+        <p class="admin-muted">Llegan desde <a href="/empresas" target="_blank" rel="noopener">workjeans.mx/empresas</a>. Cambia el estado conforme avances y anota lo acordado.</p>
+        <p id="leadCounts" class="admin-lead-counts"></p>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Fecha</th><th>Empresa / contacto</th><th>Contacto</th><th>Pedido</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
+            <tbody id="leadsTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -1199,11 +1224,12 @@
     </div>
   </div>
 
-  <script src="admin.js?v=20260915c"></script>
-  <script src="admin-catalogo.js?v=20260915c"></script>
-  <script src="admin-compras.js?v=20260915c"></script>
-  <script src="admin-marketing.js?v=20260915c"></script>
-  <script src="admin-reportes.js?v=20260915c"></script>
-  <script src="admin-seguridad.js?v=20260915c"></script>
+  <script src="admin.js?v=20260915d"></script>
+  <script src="admin-catalogo.js?v=20260915d"></script>
+  <script src="admin-compras.js?v=20260915d"></script>
+  <script src="admin-marketing.js?v=20260915d"></script>
+  <script src="admin-reportes.js?v=20260915d"></script>
+  <script src="admin-seguridad.js?v=20260915d"></script>
+  <script src="admin-leads.js?v=20260915d"></script>
 </body>
 </html>

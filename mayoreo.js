@@ -140,12 +140,54 @@
       return;
     }
     const number = (typeof WHATSAPP_NUMBER !== 'undefined' && WHATSAPP_NUMBER) || '528128613551';
+    window.wjTrack?.('whatsapp_click', { where: 'cotizador' });
     const url = `https://wa.me/${number}?text=${encodeURIComponent(buildMessage())}`;
     const win = window.open(url, '_blank', 'noopener');
     statusEl.textContent = win
       ? 'Se abrió WhatsApp con tu cotización. Si no lo ves, revisa las ventanas emergentes.'
       : 'No se pudo abrir WhatsApp. Escríbenos al 81 2861 3551.';
   });
+
+  // Formulario de cotización (página /empresas): guarda el lead en el servidor.
+  const leadForm = document.getElementById('leadForm');
+  leadForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!leadForm.reportValidity()) return;
+    const btn = document.getElementById('leadSend');
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Enviando…';
+    statusEl.textContent = '';
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          website: leadForm.website.value,
+          name: document.getElementById('leadName').value,
+          company: nameInput.value,
+          email: document.getElementById('leadEmail').value,
+          phone: document.getElementById('leadPhone').value,
+          city: document.getElementById('leadCity').value,
+          state: document.getElementById('leadState').value,
+          headcount: document.getElementById('leadHeadcount').value,
+          customization: logoSelect.value,
+          notes: document.getElementById('leadNotes').value,
+          lines,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { statusEl.textContent = data.error || 'No se pudo enviar. Intenta por WhatsApp.'; return; }
+      statusEl.textContent = 'Recibimos tu cotización. Te respondemos por WhatsApp o correo en horario de tienda. Si quieres, también puedes mandarla por WhatsApp con el botón de al lado.';
+      window.wjTrack?.('b2b_quote_submitted', { pieces: lines.reduce((s, l) => s + l.total, 0) });
+    } catch {
+      statusEl.textContent = 'Sin conexión. Escríbenos por WhatsApp al 81 2861 3551.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  });
+  leadForm?.addEventListener('focusin', () => { if (!leadForm.dataset.started) { leadForm.dataset.started = '1'; window.wjTrack?.('b2b_quote_started'); } }, { once: true });
 
   renderList();
 })();

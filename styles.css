@@ -1902,3 +1902,45 @@ html { overflow-x: clip; }
 .cart-invoice-fields select { width: 100%; padding: 9px 10px; font: inherit; font-size: 0.9rem; border: 1.5px solid var(--line, #cfcfcf); background: #fff; }
 .cart-message a { color: var(--black); font-weight: 600; }
 .admin-zones-table input { width: 100%; min-width: 80px; }
+
+/* Ventajas en 3 columnas (6 elementos) */
+.features--3 { grid-template-columns: repeat(3, 1fr); }
+.features--3 .feature { border-bottom: 1.5px solid var(--black); }
+.features--3 .feature:nth-child(3n) { border-right: 0; }
+.features--3 .feature:nth-child(n+4) { border-bottom: 0; }
+.features--3 .feature:last-child { border-right: 0; }
+@media (max-width: 860px) { .features--3 { grid-template-columns: 1fr 1fr; } .features--3 .feature { border-right: 1.5px solid var(--black); border-bottom: 1.5px solid var(--black); } .features--3 .feature:nth-child(2n) { border-right: 0; } .features--3 .feature:nth-child(n+5) { border-bottom: 0; } }
+@media (max-width: 600px) { .features--3 { grid-template-columns: 1fr; } .features--3 .feature { border-right: 0 !important; border-bottom: 1.5px solid var(--black) !important; } .features--3 .feature:last-child { border-bottom: 0 !important; } }
+/* Pie en columnas */
+.footer-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; text-align: left; max-width: 1040px; margin: 44px auto 0; padding-top: 32px; border-top: 1.5px solid rgba(0,0,0,0.15); }
+.footer-cols h4 { font-family: var(--label); font-size: 0.74rem; letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 12px; }
+.footer-cols ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.footer-cols a { font-size: 0.9rem; color: #333; text-decoration: none; }
+.footer-cols a:hover { color: var(--black); text-decoration: underline; }
+@media (max-width: 860px) { .footer-cols { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .footer-cols { grid-template-columns: 1fr; } }
+.hero-figure-link { display: block; }
+/* Página Empresas */
+.hero--b2b .hero-inner { align-items: center; }
+.b2b-facts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.b2b-facts li { border: 1.5px solid var(--black); padding: 22px 20px; background: #fff; display: flex; flex-direction: column; gap: 4px; }
+.b2b-facts strong { font-family: var(--display); font-size: 2rem; line-height: 1; }
+.b2b-facts span { font-family: var(--label); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.b2b-industries { margin: 28px 0 0; font-size: 0.95rem; line-height: 1.8; }
+.b2b-industries .kicker { display: block; margin-bottom: 4px; }
+.cotizador-subtitle { margin: 26px 0 10px; font-size: 1.1rem; text-transform: uppercase; }
+.lead-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
+.lead-grid .cotizador-field, .cotizador-field textarea { width: 100%; }
+.cotizador-field textarea { padding: 12px; border: 1.5px solid var(--black); font: inherit; resize: vertical; }
+.cotizador-consent { font-size: 0.8rem; color: var(--muted); margin: 14px 0 6px; }
+.cotizador-consent a { color: var(--black); }
+.lead-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+@media (max-width: 700px) { .lead-grid { grid-template-columns: 1fr; } .b2b-facts { grid-template-columns: 1fr 1fr; } }
+.admin-lead-counts .admin-badge { margin: 0 6px 6px 0; }
+.admin-badge.lead-nuevo, .admin-status-select.lead-nuevo { border-color: #c9a400; background: #fff7cc; }
+.admin-badge.lead-contactado, .admin-status-select.lead-contactado { border-color: #1565c0; background: #e5eefb; }
+.admin-badge.lead-cotizado, .admin-status-select.lead-cotizado { border-color: #6a1b9a; background: #f0e6f7; }
+.admin-badge.lead-negociacion, .admin-status-select.lead-negociacion { border-color: #ef6c00; background: #fff0e0; }
+.admin-badge.lead-ganado, .admin-status-select.lead-ganado { border-color: #2e7d32; background: #e6f4e8; }
+.admin-badge.lead-perdido, .admin-status-select.lead-perdido { border-color: #999; background: #eee; }
+.lead-notes { width: 100%; min-width: 160px; font: inherit; font-size: 0.82rem; padding: 6px; border: 1.5px solid rgba(0,0,0,0.2); }

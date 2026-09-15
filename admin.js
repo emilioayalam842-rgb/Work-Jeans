@@ -302,6 +302,7 @@ function showTab(name) {
   if (name === 'proveedores') window.loadPurchases?.().then(() => window.loadSuppliers?.());
   if (name === 'compras') window.loadPurchases?.();
   if (name === 'devoluciones') window.loadReturns?.();
+  if (name === 'cotizaciones') window.loadLeads?.();
   if (name === 'promociones') window.loadPromotions?.();
   if (name === 'reportes') loadOrders().then(renderReports);
   if (name === 'configuracion') loadSettingsForm();

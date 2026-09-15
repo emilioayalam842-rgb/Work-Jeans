@@ -164,6 +164,7 @@ function renderCart() {
   const itemsEl = document.getElementById('cartItems');
   const totalEl = document.getElementById('cartTotal');
   const countEl = document.getElementById('cartCount');
+  if (!itemsEl || !totalEl || !countEl) return;
 
   countEl.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
 

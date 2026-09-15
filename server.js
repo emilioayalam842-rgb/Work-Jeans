@@ -28,6 +28,7 @@ const SUPPLIERS_PATH = path.join(DATA_DIR, 'suppliers.json');
 const PURCHASES_PATH = path.join(DATA_DIR, 'purchases.json');
 const RETURNS_PATH = path.join(DATA_DIR, 'returns.json');
 const PROMOTIONS_PATH = path.join(DATA_DIR, 'promotions.json');
+const LEADS_PATH = path.join(DATA_DIR, 'leads.json');
 
 // Primer arranque con DATA_DIR externo: copiar los datos iniciales del proyecto.
 if (USES_EXTERNAL_DATA) {
@@ -531,6 +532,8 @@ const savePurchases = (l) => writeJsonList(PURCHASES_PATH, l);
 const getReturns = () => readJsonList(RETURNS_PATH);
 const saveReturns = (l) => writeJsonList(RETURNS_PATH, l);
 const getPromotions = () => readJsonList(PROMOTIONS_PATH);
+const getLeads = () => readJsonList(LEADS_PATH);
+const saveLeads = (list) => fs.writeFileSync(LEADS_PATH, JSON.stringify(list, null, 2) + '\n');
 const savePromotions = (l) => writeJsonList(PROMOTIONS_PATH, l);
 
 // --- Promociones: cálculo del carrito con descuentos automáticos y por cupón ---
@@ -804,7 +807,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -1145,7 +1148,7 @@ const CATEGORY_PAGES = {
         </tbody>
       </table></div>
       <h2>Uniformes de trabajo por mayoreo en Monterrey</h2>
-      <p>Surtimos empresas, contratistas y distribuidores con stock inmediato y corridas completas de tallas. Podemos bordar o estampar el logotipo de tu empresa. Arma tu pedido por talla en el <a href="/#cotizador">cotizador de mayoreo</a> y recibe la cotización por WhatsApp. Enviamos a todo México desde nuestra tienda en Monterrey.</p>
+      <p>Surtimos empresas, contratistas y distribuidores con stock inmediato y corridas completas de tallas. Podemos bordar o estampar el logotipo de tu empresa. Arma tu pedido por talla en el <a href="/empresas">cotizador de mayoreo</a> y recibe la cotización por WhatsApp. Enviamos a todo México desde nuestra tienda en Monterrey.</p>
       <p>Lee también: <a href="/articulos/work-jeans-vs-pantalon-de-mezclilla-normal">work jeans vs. pantalón de mezclilla normal</a> y la <a href="/guia-de-tallas">guía de tallas</a>.</p>
     `,
   },
@@ -1163,7 +1166,7 @@ const CATEGORY_PAGES = {
       <h2>Camisas con cintas reflejantes</h2>
       <p>Las versiones reflejantes tienen cintas cosidas en pecho y mangas, en verde o naranja, para entornos de poca luz. Combinan con nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a> reflejantes para un uniforme completo.</p>
       <h2>Personalización con tu logotipo</h2>
-      <p>Bordamos o estampamos en DTF el logotipo de tu empresa. Pide tu cotización de mayoreo con corrida de tallas en el <a href="/#cotizador">cotizador</a> o escríbenos por WhatsApp desde Monterrey; enviamos a todo México.</p>
+      <p>Bordamos o estampamos en DTF el logotipo de tu empresa. Pide tu cotización de mayoreo con corrida de tallas en el <a href="/empresas">cotizador</a> o escríbenos por WhatsApp desde Monterrey; enviamos a todo México.</p>
     `,
   },
 };
@@ -1198,7 +1201,7 @@ function categoryPageFor(slug) {
     title: `${c.name} de Trabajo | Works Jeans Monterrey`,
     description: `${c.name} de trabajo de Works Jeans: ropa de mezclilla resistente hecha en Monterrey, mayoreo con stock inmediato y envíos a todo México.`,
     intro: `${c.name} de trabajo hechos en Monterrey con mezclilla 100% algodón y costuras reforzadas.`,
-    seoText: `<p>Consulta tallas, precios de mayoreo y personalización con tu logotipo. Arma tu pedido en el <a href="/#cotizador">cotizador de mayoreo</a> o escríbenos por WhatsApp.</p>`,
+    seoText: `<p>Consulta tallas, precios de mayoreo y personalización con tu logotipo. Arma tu pedido en el <a href="/empresas">cotizador de mayoreo</a> o escríbenos por WhatsApp.</p>`,
   };
 }
 
@@ -1407,6 +1410,7 @@ app.get('/sitemap.xml', (req, res) => {
     { loc: `${origin}/pantalones-de-trabajo`, priority: '0.9' },
     { loc: `${origin}/camisas-de-trabajo`, priority: '0.9' },
     ...Object.keys(CONTENT.LANDINGS).map((slug) => ({ loc: `${origin}/${slug}`, priority: '0.8' })),
+    { loc: `${origin}/empresas`, priority: '0.9' },
     { loc: `${origin}/articulos`, priority: '0.6' },
     ...Object.keys(CONTENT.ARTICLES).map((slug) => ({ loc: `${origin}/articulos/${slug}`, priority: '0.7' })),
     ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8' })),
@@ -2660,6 +2664,73 @@ app.post('/api/create-checkout-session', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// --- Cotizaciones de empresas (leads): quedan guardadas y avisan por correo ---
+const LEAD_STATUS = ['nuevo', 'contactado', 'cotizado', 'negociacion', 'ganado', 'perdido'];
+const leadAttempts = new Map();
+app.post('/api/leads', async (req, res) => {
+  const b = req.body || {};
+  if (b.website) { res.json({ ok: true }); return; } // trampa para bots
+  const lead = {
+    id: `lead_${Date.now().toString(36)}_${crypto.randomBytes(3).toString('hex')}`,
+    createdAt: new Date().toISOString(),
+    status: 'nuevo',
+    name: cleanText(b.name, 120),
+    company: cleanText(b.company, 120),
+    email: cleanText(b.email, 120).toLowerCase(),
+    phone: cleanText(b.phone, 40),
+    city: cleanText(b.city, 80),
+    state: cleanText(b.state, 60),
+    headcount: Math.max(0, parseInt(b.headcount, 10) || 0) || null,
+    customization: cleanText(b.customization, 80),
+    notes: cleanText(b.notes, 1500),
+    lines: Array.isArray(b.lines) ? b.lines.slice(0, 30).map((l) => ({ id: cleanText(l.id, 80), name: cleanText(l.name, 120), total: Math.max(0, parseInt(l.total, 10) || 0), sizes: Object.fromEntries(Object.entries(l.sizes || {}).slice(0, 40).map(([k, v]) => [cleanText(k, 30), Math.max(0, parseInt(v, 10) || 0)])) })) : [],
+    internalNotes: '',
+    source: 'empresas',
+  };
+  lead.totalPieces = lead.lines.reduce((s, l) => s + l.total, 0);
+  if (!lead.name || !lead.company || !lead.phone || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(lead.email)) {
+    res.status(400).json({ error: 'Completa nombre, empresa, correo y teléfono.' });
+    return;
+  }
+  const now = Date.now();
+  const recent = (leadAttempts.get(clientIp(req)) || []).filter((t) => now - t < 10 * 60 * 1000);
+  if (recent.length >= 5) {
+    res.status(429).json({ error: 'Demasiadas cotizaciones seguidas. Escríbenos por WhatsApp.' });
+    return;
+  }
+  leadAttempts.set(clientIp(req), [...recent, now]);
+  const list = getLeads();
+  list.push(lead);
+  saveLeads(list);
+  const detail = lead.lines.map((l) => `${l.name}: ${Object.entries(l.sizes).map(([s, q]) => `${s}×${q}`).join(', ')} (${l.total} pzas)`).join('<br>');
+  const emailed = await sendEmail({
+    subject: `Cotización de empresa: ${lead.company}`,
+    html: `<h2>Nueva cotización desde www.workjeans.mx/empresas</h2><p><b>${escapeHtml(lead.company)}</b> · ${escapeHtml(lead.name)}<br>${escapeHtml(lead.email)} · ${escapeHtml(lead.phone)}<br>${escapeHtml([lead.city, lead.state].filter(Boolean).join(', '))}</p><p>${detail ? escapeHtml(detail).replace(/&lt;br&gt;/g, '<br>') : 'Sin desglose por talla.'}<br>Total: ${lead.totalPieces} piezas${lead.headcount ? ` · ~${lead.headcount} personas` : ''}${lead.customization ? ` · ${escapeHtml(lead.customization)}` : ''}</p>${lead.notes ? `<p style="white-space:pre-wrap">${escapeHtml(lead.notes)}</p>` : ''}<p>Revisa y da seguimiento en el panel → Ventas → Cotizaciones.</p>`,
+  });
+  res.status(201).json({ ok: true, id: lead.id, emailed });
+});
+
+app.get('/api/admin/leads', requireAdmin, perm('pedidos.ver'), (req, res) => {
+  res.json(getLeads().sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1)));
+});
+
+app.put('/api/admin/leads/:id', requireAdmin, perm('pedidos.editar'), (req, res) => {
+  const list = getLeads();
+  const lead = list.find((l) => l.id === req.params.id);
+  if (!lead) { res.status(404).json({ error: 'Cotización no encontrada.' }); return; }
+  if (req.body.status !== undefined && LEAD_STATUS.includes(req.body.status)) { lead.status = req.body.status; lead.statusAt = new Date().toISOString(); }
+  if (req.body.internalNotes !== undefined) lead.internalNotes = cleanText(req.body.internalNotes, 2000);
+  saveLeads(list);
+  res.json(lead);
+});
+
+app.delete('/api/admin/leads/:id', requireAdmin, perm('pedidos.eliminar'), (req, res) => {
+  const list = getLeads();
+  if (!list.some((l) => l.id === req.params.id)) { res.status(404).json({ error: 'Cotización no encontrada.' }); return; }
+  saveLeads(list.filter((l) => l.id !== req.params.id));
+  res.json({ ok: true });
 });
 
 // --- Formulario de contacto: llega por correo (si hay Resend) y siempre queda registrado ---

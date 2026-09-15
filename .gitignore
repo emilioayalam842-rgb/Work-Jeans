@@ -11,3 +11,5 @@ promotions.json
 users.json
 audit.json
 session-secret.txt
+leads.json
+analytics.json
