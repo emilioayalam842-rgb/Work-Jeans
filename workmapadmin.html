@@ -83,6 +83,9 @@
           <button class="admin-tab" data-tab="proveedores">Proveedores</button>
           <button class="admin-tab" data-tab="compras">Órdenes de compra</button>
         </div>
+        <div class="admin-side-group"><span>Marketing</span>
+          <button class="admin-tab" data-tab="promociones">Cupones y promociones</button>
+        </div>
         <div class="admin-side-group"><span>Análisis</span>
           <button class="admin-tab" data-tab="reportes">Reportes</button>
         </div>
@@ -403,6 +406,25 @@
         </div>
       </div>
 
+      <div id="tabPromociones" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Cupones y promociones</h2>
+          <button type="button" id="newPromoBtn" class="btn btn-primary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nueva promoción</button>
+        </div>
+        <p class="admin-help">Con código, el cliente lo escribe en el carrito. Sin código, se aplica sola cuando se cumplen las condiciones (por ejemplo 2x1 en camisas o 15% desde 10 piezas). Los descuentos también se aplican al pagar con tarjeta.</p>
+        <div class="admin-stats admin-stats--compact">
+          <div class="admin-stat-card"><p class="admin-stat-label">Veces usadas</p><p class="admin-stat-value" id="promoUses">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Ventas generadas</p><p class="admin-stat-value" id="promoSales">$0.00</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Descuento otorgado</p><p class="admin-stat-value" id="promoGiven">$0.00</p></div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Promoción</th><th>Código</th><th>Vigencia</th><th>Usos</th><th>Ventas</th><th>Descuento</th><th>Activa</th><th></th></tr></thead>
+            <tbody id="promotionsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div id="tabInventario" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
           <h2>Inventario</h2>
@@ -661,6 +683,11 @@
       <div id="orderItems" class="admin-order-items"></div>
       <button type="button" id="addOrderItemBtn" class="btn btn-secondary admin-add-item-btn admin-btn-icon"><svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Agregar producto</button>
 
+      <div class="admin-field-grid">
+        <div><label for="orderCode">Cupón (opcional)</label><input type="text" id="orderCode" placeholder="Ej. HOLA10" style="text-transform:uppercase"></div>
+        <div><label for="orderDiscount">Descuento manual (MXN, opcional)</label><input type="number" id="orderDiscount" min="0" step="0.01" placeholder="0"></div>
+      </div>
+
       <label for="orderNotes">Notas</label>
       <textarea id="orderNotes" rows="2" placeholder="Opcional"></textarea>
 
@@ -818,6 +845,58 @@
     </form>
   </div>
 
+  <div class="admin-overlay" id="promoOverlay" hidden>
+    <form id="promoForm" class="admin-form">
+      <h2 id="promoFormTitle">Nueva promoción</h2>
+      <input type="hidden" id="promoId">
+      <label for="promoName">Nombre (lo ve el cliente)</label>
+      <input type="text" id="promoName" required placeholder="Ej. 2x1 en camisas, Bienvenida 10%">
+      <div class="admin-field-grid">
+        <div><label for="promoType">Tipo</label>
+          <select id="promoType" class="admin-filter">
+            <option value="percent">Porcentaje de descuento</option>
+            <option value="amount">Monto fijo de descuento</option>
+            <option value="2x1">2x1</option>
+            <option value="qty">Descuento por cantidad</option>
+            <option value="first">Primera compra</option>
+            <option value="free_shipping">Envío gratis</option>
+          </select>
+        </div>
+        <div><label for="promoCode">Código (vacío = automática)</label><input type="text" id="promoCode" placeholder="Ej. HOLA10" style="text-transform:uppercase"></div>
+      </div>
+      <p class="admin-help" id="promoFirstNote" hidden>"Primera compra" aplica el porcentaje a quien use el código; el sistema no verifica que sea su primera compra, revísalo en el pedido.</p>
+      <div class="admin-field-grid">
+        <div id="promoValueWrap"><label for="promoValue" id="promoValueLabel">Porcentaje de descuento</label><input type="number" id="promoValue" min="0" step="0.01" placeholder="10"></div>
+        <div id="promoMinQtyWrap" hidden><label for="promoMinQty">A partir de (piezas)</label><input type="number" id="promoMinQty" min="2" step="1" placeholder="10"></div>
+      </div>
+      <div class="admin-field-grid">
+        <div><label for="promoMinMxn">Compra mínima (MXN, opcional)</label><input type="number" id="promoMinMxn" min="0" step="0.01" placeholder="0"></div>
+        <div><label for="promoMaxUses">Máximo de usos (opcional)</label><input type="number" id="promoMaxUses" min="0" step="1" placeholder="Sin límite"></div>
+      </div>
+      <div class="admin-field-grid">
+        <div><label for="promoScopeKind">Aplica a</label>
+          <select id="promoScopeKind" class="admin-filter">
+            <option value="all">Toda la tienda</option>
+            <option value="category">Una o varias categorías</option>
+            <option value="collection">Una o varias colecciones</option>
+            <option value="products">Productos específicos</option>
+          </select>
+        </div>
+        <div id="promoScopeValuesWrap" hidden><label for="promoScopeValues">Selecciona (Cmd/Ctrl para varios)</label><select id="promoScopeValues" class="admin-filter admin-multi" multiple size="4"></select></div>
+      </div>
+      <div class="admin-field-grid">
+        <div><label for="promoStart">Desde (opcional)</label><input type="date" id="promoStart"></div>
+        <div><label for="promoEnd">Hasta (opcional)</label><input type="date" id="promoEnd"></div>
+      </div>
+      <label class="admin-check"><input type="checkbox" id="promoActive" checked> Activa</label>
+      <div class="admin-form-actions">
+        <button type="button" id="cancelPromoBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+      <p class="admin-error" id="promoError"></p>
+    </form>
+  </div>
+
   <div class="admin-overlay" id="transferOverlay" hidden>
     <form id="transferForm" class="admin-form">
       <h2>Traspaso entre almacenes</h2>
@@ -893,5 +972,6 @@
   <script src="admin.js"></script>
   <script src="admin-catalogo.js"></script>
   <script src="admin-compras.js"></script>
+  <script src="admin-marketing.js"></script>
 </body>
 </html>

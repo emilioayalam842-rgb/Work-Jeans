@@ -25,11 +25,12 @@ const INVENTORY_PATH = path.join(DATA_DIR, 'inventory.json');
 const SUPPLIERS_PATH = path.join(DATA_DIR, 'suppliers.json');
 const PURCHASES_PATH = path.join(DATA_DIR, 'purchases.json');
 const RETURNS_PATH = path.join(DATA_DIR, 'returns.json');
+const PROMOTIONS_PATH = path.join(DATA_DIR, 'promotions.json');
 
 // Primer arranque con DATA_DIR externo: copiar los datos iniciales del proyecto.
 if (USES_EXTERNAL_DATA) {
   fs.mkdirSync(PRODUCTS_IMG_DIR, { recursive: true });
-  for (const name of ['products.json', 'settings.json', 'orders.json', 'inventory.json', 'suppliers.json', 'purchases.json', 'returns.json']) {
+  for (const name of ['products.json', 'settings.json', 'orders.json', 'inventory.json', 'suppliers.json', 'purchases.json', 'returns.json', 'promotions.json']) {
     const target = path.join(DATA_DIR, name);
     if (!fs.existsSync(target)) {
       const seed = path.join(__dirname, name);
@@ -367,6 +368,115 @@ const getPurchases = () => readJsonList(PURCHASES_PATH);
 const savePurchases = (l) => writeJsonList(PURCHASES_PATH, l);
 const getReturns = () => readJsonList(RETURNS_PATH);
 const saveReturns = (l) => writeJsonList(RETURNS_PATH, l);
+const getPromotions = () => readJsonList(PROMOTIONS_PATH);
+const savePromotions = (l) => writeJsonList(PROMOTIONS_PATH, l);
+
+// --- Promociones: cálculo del carrito con descuentos automáticos y por cupón ---
+
+const PROMO_TYPES = ['percent', 'amount', 'free_shipping', '2x1', 'qty', 'first'];
+
+function promoActive(promo, now = new Date()) {
+  if (!promo.active) return false;
+  if (promo.startsAt && new Date(`${promo.startsAt}T00:00:00`) > now) return false;
+  if (promo.endsAt && new Date(`${promo.endsAt}T23:59:59`) < now) return false;
+  if (promo.maxUses && (promo.uses || 0) >= promo.maxUses) return false;
+  return true;
+}
+
+function promoAppliesTo(promo, product) {
+  const scope = promo.scope || { kind: 'all' };
+  if (scope.kind === 'category') return (scope.values || []).includes(product.category);
+  if (scope.kind === 'collection') return (scope.values || []).includes(product.collection);
+  if (scope.kind === 'products') return (scope.values || []).includes(product.id);
+  return true;
+}
+
+// Devuelve { lines, subtotalCents, discounts:[{id,name,cents,code}], discountCents, totalCents, freeShipping, codeError }
+function quoteCart(items, code) {
+  const products = getProducts();
+  const lines = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const product = products.find((p) => p.id === item.id);
+    if (!product) continue;
+    const variant = findVariant(product, item.size);
+    const quantity = Math.max(1, Math.min(200, parseInt(item.quantity, 10) || 1));
+    const unit = productPrice(product, variant);
+    lines.push({ id: product.id, name: product.name, size: variant ? variantLabel(variant) : (item.size || null), quantity, unitCents: unit, subtotalCents: unit * quantity, product });
+  }
+  const subtotalCents = lines.reduce((s, l) => s + l.subtotalCents, 0);
+  const promos = getPromotions().filter((p) => promoActive(p));
+  const discounts = [];
+  let freeShipping = false;
+  let codeError = '';
+  const normalized = String(code || '').trim().toUpperCase();
+
+  const evaluate = (promo) => {
+    const eligible = lines.filter((l) => promoAppliesTo(promo, l.product));
+    const eligibleCents = eligible.reduce((s, l) => s + l.subtotalCents, 0);
+    const eligibleQty = eligible.reduce((s, l) => s + l.quantity, 0);
+    if (eligible.length === 0) return 0;
+    if (promo.minCents && subtotalCents < promo.minCents) return 0;
+    if (promo.minQty && eligibleQty < promo.minQty) return 0;
+    switch (promo.type) {
+      case 'percent':
+      case 'first':
+      case 'qty':
+        return Math.round(eligibleCents * (Math.min(100, promo.value || 0) / 100));
+      case 'amount':
+        return Math.min(eligibleCents, promo.value || 0);
+      case '2x1':
+        return eligible.reduce((s, l) => s + Math.floor(l.quantity / 2) * l.unitCents, 0);
+      case 'free_shipping':
+        freeShipping = true;
+        return 0;
+      default:
+        return 0;
+    }
+  };
+
+  // Automáticas (sin código) primero; luego el cupón si lo hay y es válido.
+  for (const promo of promos.filter((p) => !p.code)) {
+    const cents = evaluate(promo);
+    if (cents > 0 || (promo.type === 'free_shipping' && freeShipping)) discounts.push({ id: promo.id, name: promo.name, cents, code: null });
+  }
+  if (normalized) {
+    const promo = promos.find((p) => p.code === normalized);
+    if (!promo) {
+      const exists = getPromotions().find((p) => p.code === normalized);
+      codeError = exists ? 'Este cupón ya no está vigente.' : 'Cupón no válido.';
+    } else {
+      const cents = evaluate(promo);
+      if (cents > 0 || promo.type === 'free_shipping') discounts.push({ id: promo.id, name: promo.name, cents, code: promo.code });
+      else codeError = promo.minCents ? `Este cupón aplica en compras desde ${formatMxn(promo.minCents)}.` : promo.minQty ? `Este cupón aplica a partir de ${promo.minQty} piezas.` : 'Este cupón no aplica a los productos del carrito.';
+    }
+  }
+  const discountCents = Math.min(subtotalCents, discounts.reduce((s, d) => s + d.cents, 0));
+  return {
+    lines: lines.map(({ product, ...l }) => l),
+    subtotalCents,
+    discounts,
+    discountCents,
+    totalCents: subtotalCents - discountCents,
+    freeShipping,
+    codeError,
+  };
+}
+
+function registerPromoUse(discounts, totalCents) {
+  if (!discounts || !discounts.length) return;
+  const list = getPromotions();
+  let changed = false;
+  for (const d of discounts) {
+    const promo = list.find((p) => p.id === d.id);
+    if (!promo) continue;
+    promo.uses = (promo.uses || 0) + 1;
+    promo.stats = promo.stats || { discountCents: 0, salesCents: 0 };
+    promo.stats.discountCents += d.cents;
+    promo.stats.salesCents += totalCents;
+    changed = true;
+  }
+  if (changed) savePromotions(list);
+}
 
 function nextFolio(list, prefix) {
   const max = list.reduce((m, x) => {
@@ -542,7 +652,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/admin-auth.json', '/server.js', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/admin-auth.json', '/server.js', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -1332,7 +1442,17 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
     decrementStock(products, orderItems, { strict: true, orderId, reason: 'Pedido por WhatsApp' });
     saveProducts(products);
 
-    const totalCents = orderItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+    const subtotalCents = orderItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+    let discount = null;
+    if (req.body.code || req.body.discountMxn) {
+      const quote = req.body.code ? quoteCart(items, req.body.code) : null;
+      const manual = parseMoney(req.body.discountMxn) || 0;
+      const cents = Math.min(subtotalCents, (quote ? quote.discountCents : 0) + manual);
+      if (cents > 0) {
+        discount = { code: quote && !quote.codeError ? String(req.body.code).trim().toUpperCase() : null, cents, promotions: quote ? quote.discounts.map((d) => ({ id: d.id, name: d.name, cents: d.cents })) : [], manualCents: manual };
+      }
+    }
+    const totalCents = subtotalCents - (discount ? discount.cents : 0);
 
     const order = {
       id: orderId,
@@ -1345,13 +1465,16 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
       invoice: invoice && (invoice.rfc || invoice.name || invoice.email)
         ? { requested: true, issued: false, rfc: String(invoice.rfc || '').toUpperCase(), name: String(invoice.name || ''), email: String(invoice.email || '') }
         : null,
+      discount,
       items: orderItems,
+      subtotalCents,
       totalCents,
     };
 
     const orders = getOrders();
     orders.push(order);
     saveOrders(orders);
+    if (discount?.promotions?.length) registerPromoUse(discount.promotions, totalCents);
     res.status(201).json(order);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -1669,6 +1792,13 @@ function recordStripeOrder(session) {
         return null;
       }
     })(),
+    discount: (() => {
+      try {
+        return session.metadata?.promo ? JSON.parse(session.metadata.promo) : null;
+      } catch {
+        return null;
+      }
+    })(),
     stripeSessionId: session.id,
     items: session.line_items.data.map((li, i) => {
       const product = cartMeta[i]?.id ? productsNow.find((p) => p.id === cartMeta[i].id) : null;
@@ -1687,6 +1817,7 @@ function recordStripeOrder(session) {
   };
   orders.push(order);
   saveOrders(orders);
+  if (order.discount?.promotions) registerPromoUse(order.discount.promotions, order.totalCents);
 
   if (cartMeta.length > 0) {
     try {
@@ -1707,6 +1838,83 @@ function publicOrigin(req) {
 
 // --- Storefront ---
 
+// Cotización del carrito (precios reales, promociones automáticas y cupón).
+app.post('/api/cart/quote', (req, res) => {
+  const quote = quoteCart(req.body?.items, req.body?.code);
+  res.json(quote);
+});
+
+// --- Promociones (protegido) ---
+
+function normalizePromo(body, existing = {}) {
+  const promo = { ...existing };
+  if (body.name !== undefined) promo.name = String(body.name || '').trim().slice(0, 80);
+  if (body.code !== undefined) promo.code = String(body.code || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 30) || null;
+  if (body.type !== undefined) promo.type = PROMO_TYPES.includes(body.type) ? body.type : 'percent';
+  if (body.value !== undefined) {
+    promo.value = promo.type === 'amount' ? (parseMoney(body.value) || 0) : Math.max(0, Math.min(100, parseFloat(body.value) || 0));
+  }
+  if (body.minMxn !== undefined) promo.minCents = parseMoney(body.minMxn) || 0;
+  if (body.minQty !== undefined) promo.minQty = Math.max(0, parseInt(body.minQty, 10) || 0);
+  if (body.scope !== undefined) {
+    const kind = ['all', 'category', 'collection', 'products'].includes(body.scope?.kind) ? body.scope.kind : 'all';
+    promo.scope = { kind, values: Array.isArray(body.scope?.values) ? body.scope.values.map(String).slice(0, 50) : [] };
+  }
+  if (body.startsAt !== undefined) promo.startsAt = body.startsAt ? String(body.startsAt).slice(0, 10) : null;
+  if (body.endsAt !== undefined) promo.endsAt = body.endsAt ? String(body.endsAt).slice(0, 10) : null;
+  if (body.maxUses !== undefined) promo.maxUses = Math.max(0, parseInt(body.maxUses, 10) || 0);
+  if (body.active !== undefined) promo.active = Boolean(body.active);
+  return promo;
+}
+
+app.get('/api/admin/promotions', requireAdmin, (req, res) => {
+  res.json(getPromotions().map((p) => ({ ...p, isActive: promoActive(p) })));
+});
+
+app.post('/api/admin/promotions', requireAdmin, (req, res) => {
+  const promo = normalizePromo(req.body, { id: `promo_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`, createdAt: new Date().toISOString(), uses: 0, stats: { discountCents: 0, salesCents: 0 }, active: true, scope: { kind: 'all', values: [] } });
+  if (!promo.name) {
+    res.status(400).json({ error: 'La promoción necesita nombre.' });
+    return;
+  }
+  const list = getPromotions();
+  if (promo.code && list.some((p) => p.code === promo.code)) {
+    res.status(400).json({ error: 'Ya existe una promoción con ese código.' });
+    return;
+  }
+  list.push(promo);
+  savePromotions(list);
+  res.status(201).json(promo);
+});
+
+app.put('/api/admin/promotions/:id', requireAdmin, (req, res) => {
+  const list = getPromotions();
+  const idx = list.findIndex((p) => p.id === req.params.id);
+  if (idx < 0) {
+    res.status(404).json({ error: 'Promoción no encontrada.' });
+    return;
+  }
+  const promo = normalizePromo(req.body, list[idx]);
+  if (promo.code && list.some((p) => p.code === promo.code && p.id !== promo.id)) {
+    res.status(400).json({ error: 'Ya existe una promoción con ese código.' });
+    return;
+  }
+  list[idx] = promo;
+  savePromotions(list);
+  res.json(promo);
+});
+
+app.delete('/api/admin/promotions/:id', requireAdmin, (req, res) => {
+  const list = getPromotions();
+  const next = list.filter((p) => p.id !== req.params.id);
+  if (next.length === list.length) {
+    res.status(404).json({ error: 'Promoción no encontrada.' });
+    return;
+  }
+  savePromotions(next);
+  res.json({ ok: true });
+});
+
 app.post('/api/create-checkout-session', async (req, res) => {
   if (!stripe) {
     res.status(503).json({ error: 'Pagos en línea no configurados todavía. Usa el pedido por WhatsApp.' });
@@ -1723,31 +1931,41 @@ app.post('/api/create-checkout-session', async (req, res) => {
     : null;
 
   try {
-    const products = getProducts();
-    const line_items = items.map((item) => {
-      const product = products.find((p) => p.id === item.id);
-      if (!product) {
-        throw new Error(`Producto inválido: ${item.id}`);
-      }
-      const quantity = Math.max(1, Math.min(20, parseInt(item.quantity, 10) || 1));
-      const variant = findVariant(product, item.size);
-      const name = item.size ? `${product.name} (${variant ? variantLabel(variant) : item.size})` : product.name;
-      return {
-        quantity,
-        price_data: {
-          currency: 'mxn',
-          unit_amount: productPrice(product, variant),
-          product_data: { name },
-        },
-      };
-    });
+    const quote = quoteCart(items, req.body.code);
+    if (quote.lines.length === 0) {
+      throw new Error('El carrito no tiene productos válidos.');
+    }
+    if (quote.codeError && req.body.code) {
+      res.status(400).json({ error: quote.codeError });
+      return;
+    }
+    const line_items = quote.lines.map((l) => ({
+      quantity: l.quantity,
+      price_data: {
+        currency: 'mxn',
+        unit_amount: l.unitCents,
+        product_data: { name: l.size ? `${l.name} (${l.size})` : l.name },
+      },
+    }));
+    const discountsOpt = [];
+    if (quote.discountCents > 0) {
+      const coupon = await stripe.coupons.create({
+        amount_off: quote.discountCents,
+        currency: 'mxn',
+        duration: 'once',
+        name: quote.discounts.map((d) => d.name).join(' + ').slice(0, 40),
+      });
+      discountsOpt.push({ coupon: coupon.id });
+    }
 
-    const cartMeta = items.map((item) => ({ id: item.id, size: item.size, quantity: item.quantity }));
+    const cartMeta = quote.lines.map((l) => ({ id: l.id, size: l.size, quantity: l.quantity }));
+    const promoMeta = quote.discounts.length ? JSON.stringify({ code: req.body.code ? String(req.body.code).trim().toUpperCase() : null, cents: quote.discountCents, promotions: quote.discounts.map((d) => ({ id: d.id, name: d.name, cents: d.cents })), freeShipping: quote.freeShipping }) : '';
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items,
-      metadata: { cart: JSON.stringify(cartMeta), invoice: invoiceMeta ? JSON.stringify(invoiceMeta) : '' },
+      ...(discountsOpt.length ? { discounts: discountsOpt } : {}),
+      metadata: { cart: JSON.stringify(cartMeta), invoice: invoiceMeta ? JSON.stringify(invoiceMeta) : '', promo: promoMeta },
       shipping_address_collection: { allowed_countries: ['MX'] },
       phone_number_collection: { enabled: true },
       locale: 'es',
@@ -2157,6 +2375,7 @@ app.get('/api/admin/backup', requireAdmin, (req, res) => {
     suppliers: getSuppliers(),
     purchases: getPurchases(),
     returns: getReturns(),
+    promotions: getPromotions(),
   };
   res.set('Content-Disposition', `attachment; filename="respaldo-works-jeans-${backup.exportedAt.slice(0, 10)}.json"`);
   res.json(backup);
@@ -2180,6 +2399,7 @@ app.post('/api/admin/restore', requireAdmin, (req, res) => {
   if (Array.isArray(b.suppliers)) saveSuppliers(b.suppliers);
   if (Array.isArray(b.purchases)) savePurchases(b.purchases);
   if (Array.isArray(b.returns)) saveReturns(b.returns);
+  if (Array.isArray(b.promotions)) savePromotions(b.promotions);
   res.json({ ok: true, products: b.products.length, orders: b.orders.length });
 });
 

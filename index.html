@@ -127,6 +127,15 @@
       <p class="cart-empty" id="cartEmpty">Tu carrito está vacío.</p>
     </div>
     <div class="cart-footer">
+      <form class="cart-coupon" id="cartCoupon">
+        <input type="text" id="couponInput" placeholder="¿Tienes un cupón?" autocomplete="off" spellcheck="false">
+        <button type="submit" class="btn btn-secondary" id="couponApply">Aplicar</button>
+      </form>
+      <p class="cart-coupon-msg" id="couponMsg"></p>
+      <div class="cart-summary" id="cartSummary" hidden>
+        <div class="cart-summary-row"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
+        <div id="cartDiscounts"></div>
+      </div>
       <div class="cart-total">
         <span>Total</span>
         <span id="cartTotal">$0.00 MXN</span>

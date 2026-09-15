@@ -984,3 +984,5 @@ input.admin-filter { background-image: none; padding-right: 14px; cursor: text; 
 .admin-stat-value--sm { font-size: 1.1rem; }
 @media (max-width: 860px) { .admin-po-line, .admin-return-line, .admin-exchange-row { grid-template-columns: 1fr 1fr; } }
 #tabDevoluciones .admin-dashboard-grid { grid-template-columns: 1fr; }
+
+.admin-multi { min-height: 96px; padding: 6px; background-image: none; }

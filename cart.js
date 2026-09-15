@@ -1,4 +1,7 @@
 const CART_KEY = 'worksjeans_cart';
+const COUPON_KEY = 'worksjeans_coupon';
+let CART_QUOTE = null; // última cotización del servidor (precios, promociones, cupón)
+let quoteTimer = null;
 let WHATSAPP_NUMBER = '528128613551';
 
 async function loadSettings() {
@@ -188,6 +191,71 @@ function renderCart() {
   }
 
   totalEl.textContent = formatPrice(cartTotalCents());
+  scheduleQuote();
+}
+
+function getCoupon() {
+  try {
+    return (localStorage.getItem(COUPON_KEY) || '').trim().toUpperCase();
+  } catch {
+    return '';
+  }
+}
+
+function setCoupon(code) {
+  try {
+    if (code) localStorage.setItem(COUPON_KEY, code.toUpperCase());
+    else localStorage.removeItem(COUPON_KEY);
+  } catch {
+    // Sin almacenamiento.
+  }
+}
+
+function scheduleQuote() {
+  clearTimeout(quoteTimer);
+  quoteTimer = setTimeout(refreshQuote, 150);
+}
+
+// Pide al servidor la cotización real del carrito: precios por variante, promociones automáticas y cupón.
+async function refreshQuote() {
+  const cart = getCart();
+  const summary = document.getElementById('cartSummary');
+  const msg = document.getElementById('couponMsg');
+  const code = getCoupon();
+  const input = document.getElementById('couponInput');
+  if (input && !input.value && code) input.value = code;
+  if (cart.length === 0) {
+    CART_QUOTE = null;
+    summary.hidden = true;
+    msg.textContent = '';
+    return;
+  }
+  try {
+    const res = await fetch('/api/cart/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: cart.map((i) => ({ id: i.id, size: i.size, quantity: i.quantity })), code }),
+    });
+    const quote = await res.json();
+    CART_QUOTE = quote;
+    const hasDiscount = quote.discounts.length > 0;
+    summary.hidden = !hasDiscount;
+    document.getElementById('cartSubtotal').textContent = formatPrice(quote.subtotalCents);
+    document.getElementById('cartDiscounts').innerHTML = quote.discounts.map((d) => `
+      <div class="cart-summary-row cart-summary-row--discount"><span>${d.name}${d.code ? ` (${d.code})` : ''}</span><span>${d.cents ? `−${formatPrice(d.cents)}` : 'Envío gratis'}</span></div>`).join('');
+    document.getElementById('cartTotal').textContent = formatPrice(quote.totalCents);
+    if (quote.codeError) {
+      msg.textContent = quote.codeError;
+      msg.classList.add('is-error');
+    } else if (code && quote.discounts.some((d) => d.code === code)) {
+      msg.textContent = `Cupón ${code} aplicado.`;
+      msg.classList.remove('is-error');
+    } else {
+      msg.textContent = '';
+    }
+  } catch {
+    // Sin conexión: se muestra el total local.
+  }
 }
 
 function openCart() {
@@ -242,8 +310,14 @@ function restoreInvoiceDraft() {
 function buildWhatsappMessage() {
   const cart = getCart();
   const lines = cart.map((item) => `- ${item.name} (Talla ${item.size}) x${item.quantity} - ${formatPrice(item.priceCents * item.quantity)}`);
-  const total = formatPrice(cartTotalCents());
-  let text = `Hola, quiero hacer un pedido:\n${lines.join('\n')}\n\nTotal: ${total}`;
+  let text = `Hola, quiero hacer un pedido:\n${lines.join('\n')}`;
+  if (CART_QUOTE && CART_QUOTE.discounts.length) {
+    text += `\n\nSubtotal: ${formatPrice(CART_QUOTE.subtotalCents)}`;
+    CART_QUOTE.discounts.forEach((d) => { text += `\n${d.name}${d.code ? ` (cupón ${d.code})` : ''}: ${d.cents ? `-${formatPrice(d.cents)}` : 'envío gratis'}`; });
+    text += `\n\nTotal: ${formatPrice(CART_QUOTE.totalCents)}`;
+  } else {
+    text += `\n\nTotal: ${formatPrice(cartTotalCents())}`;
+  }
   const invoice = getInvoice();
   if (invoice) text += `\n\nNecesito factura:\nRFC: ${invoice.rfc || '(pendiente)'}\nRazón social: ${invoice.name || '(pendiente)'}\nCorreo: ${invoice.email || '(pendiente)'}`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
@@ -267,6 +341,7 @@ async function startStripeCheckout() {
       body: JSON.stringify({
         items: cart.map((item) => ({ id: item.id, quantity: item.quantity, size: item.size })),
         invoice: getInvoice(),
+        code: getCoupon() || null,
       }),
     });
     const data = await res.json();
@@ -598,6 +673,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   restoreInvoiceDraft();
+  document.getElementById('cartCoupon')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = document.getElementById('couponInput').value.trim().toUpperCase();
+    setCoupon(code);
+    refreshQuote();
+  });
   ['invoiceRfc', 'invoiceName', 'invoiceEmail'].forEach((id) => document.getElementById(id)?.addEventListener('input', saveInvoiceDraft));
   document.getElementById('cartInvoice')?.addEventListener('toggle', saveInvoiceDraft);
 

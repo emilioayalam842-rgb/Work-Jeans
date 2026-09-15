@@ -229,6 +229,7 @@ function showTab(name) {
   if (name === 'proveedores') window.loadPurchases?.().then(() => window.loadSuppliers?.());
   if (name === 'compras') window.loadPurchases?.();
   if (name === 'devoluciones') window.loadReturns?.();
+  if (name === 'promociones') window.loadPromotions?.();
   if (name === 'reportes') loadOrders().then(renderReports);
   if (name === 'configuracion') loadSettingsForm();
 }
@@ -899,6 +900,7 @@ function openOrderDetail(id) {
         `).join('')}
       </tbody>
     </table>
+    ${order.discount ? `<p class="admin-muted">Subtotal ${formatPrice(order.subtotalCents || order.totalCents + order.discount.cents)} · Descuento −${formatPrice(order.discount.cents)}${order.discount.code ? ` (cupón ${order.discount.code})` : ''}${order.discount.promotions?.length ? ` · ${order.discount.promotions.map((p) => p.name).join(', ')}` : ''}</p>` : ''}
     <p class="admin-order-total">Total: ${formatPrice(order.totalCents)}</p>
   `;
   orderDetailNotes.value = order.notes || '';
@@ -1478,6 +1480,8 @@ orderForm.addEventListener('submit', async (e) => {
       customerName: document.getElementById('orderCustomerName').value,
       customerPhone: document.getElementById('orderCustomerPhone').value,
       notes: document.getElementById('orderNotes').value,
+      code: document.getElementById('orderCode').value.trim(),
+      discountMxn: document.getElementById('orderDiscount').value,
       items,
     }),
   });

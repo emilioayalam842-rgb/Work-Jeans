@@ -1811,3 +1811,14 @@ body.modal-open { overflow: hidden; }
 .article-card h2 { font-size: 1.3rem; line-height: 1.1; margin: 0; padding: 0; border: 0; }
 .article-card p { margin: 0; color: #555; font-size: 0.92rem; }
 .article-more { margin-top: auto; font-family: var(--label); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 2px solid var(--yellow); align-self: flex-start; }
+
+/* Cupón y resumen del carrito -------------------------------------------- */
+.cart-coupon { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.cart-coupon input { font-family: var(--label); font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: var(--radius); min-width: 0; }
+.cart-coupon input:focus { outline: 2px solid var(--yellow); border-color: var(--black); }
+.cart-coupon .btn { padding: 0 16px; font-size: 0.78rem; }
+.cart-coupon-msg { margin: -4px 0 0; font-size: 0.8rem; color: #2e7d32; min-height: 1.1em; }
+.cart-coupon-msg.is-error { color: #b00020; }
+.cart-summary { display: grid; gap: 4px; font-size: 0.86rem; color: #444; border-top: 1px solid var(--line); padding-top: 8px; }
+.cart-summary-row { display: flex; justify-content: space-between; gap: 12px; }
+.cart-summary-row--discount { color: #2e7d32; font-weight: 600; }
