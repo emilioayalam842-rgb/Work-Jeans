@@ -51,13 +51,15 @@ if (USES_EXTERNAL_DATA) {
   try {
     const seed = JSON.parse(fs.readFileSync(path.join(__dirname, 'settings.json'), 'utf-8'));
     const current = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
+    let migrated_hours = false;
     const missing = Object.keys(seed).filter((k) => !(k in current));
     for (const k of missing) current[k] = seed[k];
     // Valores por defecto antiguos que conviene reemplazar por el nuevo (solo si nadie los editó).
     const OLD_DEFAULTS = { hours: 'Abre a las 9:00 a.m.' };
+    if (current.hours === 'Lunes a sábado · 9:00 a. m. a 6:00 p. m.') { current.hours = 'Lunes a viernes · 9:00 a. m. a 6:00 p. m.'; migrated_hours = true; }
     const migrated = Object.keys(OLD_DEFAULTS).filter((k) => current[k] === OLD_DEFAULTS[k] && seed[k] && seed[k] !== current[k]);
     for (const k of migrated) current[k] = seed[k];
-    if (missing.length || migrated.length) {
+    if (missing.length || migrated.length || migrated_hours) {
       fs.writeFileSync(SETTINGS_PATH, JSON.stringify(current, null, 2) + '\n');
       console.log(`Ajustes actualizados: ${[...missing, ...migrated].join(', ')}`);
     }
@@ -3090,7 +3092,7 @@ app.post('/api/leads', async (req, res) => {
   if (customerEmailsEnabled()) {
     const repeatUrl = `https://www.workjeans.mx/empresas?repetir=${lead.repeatToken}`;
     const linesHtml = lead.lines.length ? `<ul>${lead.lines.map((l) => `<li>${escapeHtml(l.name)}: ${escapeHtml(Object.entries(l.sizes).map(([s, q]) => `${s} × ${q}`).join(', '))} (${l.total} pzas)</li>`).join('')}</ul>` : '';
-    sendEmailTo({ to: lead.email, subject: `Recibimos tu cotización · Works Jeans`, html: emailLayout('Recibimos tu cotización.', `<p>Hola ${escapeHtml(lead.name.split(' ')[0])}. Ya tenemos tu solicitud para <b>${escapeHtml(lead.company)}</b>; te respondemos por WhatsApp o correo en horario de tienda (lunes a sábado, 9:00 a 18:00).</p>${linesHtml}${lead.customization ? `<p>Personalización: ${escapeHtml(lead.customization)}</p>` : ''}<p style="margin-top:22px"><b>Para la próxima vez:</b> con este enlace repites el mismo pedido y solo ajustas cantidades.<br><a href="${repeatUrl}" style="display:inline-block;margin-top:8px;padding:12px 18px;background:#ffd600;color:#0f0f0f;text-decoration:none;font-weight:700;border:1.5px solid #0f0f0f">Repetir este pedido</a></p>`) });
+    sendEmailTo({ to: lead.email, subject: `Recibimos tu cotización · Works Jeans`, html: emailLayout('Recibimos tu cotización.', `<p>Hola ${escapeHtml(lead.name.split(' ')[0])}. Ya tenemos tu solicitud para <b>${escapeHtml(lead.company)}</b>; te respondemos por WhatsApp o correo en horario de tienda (lunes a viernes, 9:00 a 18:00).</p>${linesHtml}${lead.customization ? `<p>Personalización: ${escapeHtml(lead.customization)}</p>` : ''}<p style="margin-top:22px"><b>Para la próxima vez:</b> con este enlace repites el mismo pedido y solo ajustas cantidades.<br><a href="${repeatUrl}" style="display:inline-block;margin-top:8px;padding:12px 18px;background:#ffd600;color:#0f0f0f;text-decoration:none;font-weight:700;border:1.5px solid #0f0f0f">Repetir este pedido</a></p>`) });
   }
   res.status(201).json({ ok: true, id: lead.id, emailed, repeatToken: lead.repeatToken });
 });

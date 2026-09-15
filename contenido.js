@@ -51,7 +51,7 @@ const LANDINGS = {
       <p>Monterrey, San Nicolás, Guadalupe, Apodaca, Escobedo, Santa Catarina, San Pedro, García, Juárez y toda el área metropolitana, además de envíos por paquetería a todo México.</p>
     `,
     faq: [
-      ['¿Tienen tienda física en Monterrey?', 'Sí, en Calle Emiliano Zapata 3737, Col. Venustiano Carranza, Monterrey. Abrimos de lunes a sábado de 9:00 a. m. a 6:00 p. m.'],
+      ['¿Tienen tienda física en Monterrey?', 'Sí, en Calle Emiliano Zapata 3737, Col. Venustiano Carranza, Monterrey. Abrimos de lunes a viernes de 9:00 a. m. a 6:00 p. m.'],
       ['¿Cuál es el mínimo para precio de mayoreo?', 'Depende de la prenda; cada producto muestra su precio de mayoreo y la cantidad mínima. Escríbenos y armamos la cotización.'],
     ],
   },
