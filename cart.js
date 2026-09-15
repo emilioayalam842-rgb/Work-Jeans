@@ -17,11 +17,18 @@ async function loadSettings() {
     setText('storeAddress', settings.address);
     setText('storeHours', settings.hours);
     setText('resenasScore', settings.googleRating);
+    setText('footerAddress', settings.address);
+    setText('footerHours', settings.hours);
 
     const phoneLink = document.getElementById('storePhoneLink');
     if (phoneLink && settings.whatsappNumber) {
       phoneLink.href = `tel:+${settings.whatsappNumber}`;
       phoneLink.textContent = settings.phoneDisplay || settings.whatsappNumber;
+    }
+    const footerPhone = document.getElementById('footerPhoneLink');
+    if (footerPhone && settings.whatsappNumber) {
+      footerPhone.href = `tel:+${settings.whatsappNumber}`;
+      footerPhone.textContent = settings.phoneDisplay || settings.whatsappNumber;
     }
     const callLink = document.getElementById('callLink');
     if (callLink && settings.whatsappNumber) callLink.href = `tel:+${settings.whatsappNumber}`;
@@ -33,6 +40,10 @@ async function loadSettings() {
     if (resenasLink) resenasLink.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
     const mapsEmbed = document.getElementById('mapsEmbed');
     if (mapsEmbed && !mapsEmbed.src) mapsEmbed.src = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
+    const footerMapsLink = document.getElementById('footerMapsLink');
+    if (footerMapsLink) footerMapsLink.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+    const footerMapsEmbed = document.getElementById('footerMapsEmbed');
+    if (footerMapsEmbed && !footerMapsEmbed.src) footerMapsEmbed.src = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
 
     const waLinks = {
       whatsappFloat: 'Hola, me interesa la ropa de trabajo de Works Jeans.',
