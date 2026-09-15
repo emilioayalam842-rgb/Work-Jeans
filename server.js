@@ -536,9 +536,15 @@ function slugify(text) {
 const security = SEC.createSecurity({ dataDir: DATA_DIR, legacyAuthPath: ADMIN_AUTH_PATH });
 security.init();
 
+// IP real del visitante: detrás de Cloudflare viene en CF-Connecting-IP; si no, la que ve Express.
+function clientIp(req) {
+  const cf = req.headers['cf-connecting-ip'];
+  return typeof cf === 'string' && cf ? cf : req.ip;
+}
+
 function auditLog(req, action, details) {
   const u = req.adminUser;
-  security.audit({ action, userId: u?.id || null, user: u?.username || null, ip: req.ip, ...details });
+  security.audit({ action, userId: u?.id || null, user: u?.username || null, ip: clientIp(req), ...details });
 }
 
 // --- Stock helpers ---
@@ -1208,7 +1214,7 @@ app.use('/api/admin', (req, res, next) => {
     if (res.statusCode >= 400 || !req.adminUser) return;
     const url = req.originalUrl.split('?')[0];
     if (/^\/api\/admin\/(login|logout|me\/|users|security)/.test(url)) return; // esas rutas escriben su propia entrada
-    security.audit({ action: `${req.method} ${url}`, userId: req.adminUser.id, user: req.adminUser.username, ip: req.ip, details: security.summarize(req.body) });
+    security.audit({ action: `${req.method} ${url}`, userId: req.adminUser.id, user: req.adminUser.username, ip: clientIp(req), details: security.summarize(req.body) });
   });
   next();
 });
@@ -1226,7 +1232,7 @@ app.post('/api/admin/login', (req, res) => {
     return;
   }
   // Bloqueo por IP y por usuario: 5 intentos fallidos cada 15 minutos.
-  if (security.attempts.blocked(`ip:${req.ip}`) || (username && security.attempts.blocked(`user:${username}`))) {
+  if (security.attempts.blocked(`ip:${clientIp(req)}`) || (username && security.attempts.blocked(`user:${username}`))) {
     res.status(429).json({ error: 'Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.' });
     return;
   }
@@ -1234,13 +1240,13 @@ app.post('/api/admin/login', (req, res) => {
   const user = username ? security.findByUsername(username) : (users.length === 1 ? users[0] : null);
   const ok = user && user.active !== false && SEC.verifyHash(password, user.salt, user.hash);
   if (!ok) {
-    security.attempts.fail(`ip:${req.ip}`);
+    security.attempts.fail(`ip:${clientIp(req)}`);
     if (username) security.attempts.fail(`user:${username}`);
-    security.audit({ action: 'login.fallido', user: username || null, ip: req.ip });
+    security.audit({ action: 'login.fallido', user: username || null, ip: clientIp(req) });
     res.status(401).json({ error: 'Usuario o contraseña incorrectos.' });
     return;
   }
-  security.attempts.clear(`ip:${req.ip}`);
+  security.attempts.clear(`ip:${clientIp(req)}`);
   security.attempts.clear(`user:${user.username}`);
   req.session.regenerate((err) => {
     if (err) {
@@ -1262,7 +1268,7 @@ function finishLogin(req, res, user) {
   req.session.seen = Date.now();
   delete req.session.mfaPending;
   security.updateUser(user.id, { lastLoginAt: new Date().toISOString() });
-  security.audit({ action: 'login', userId: user.id, user: user.username, ip: req.ip });
+  security.audit({ action: 'login', userId: user.id, user: user.username, ip: clientIp(req) });
   res.json({ ok: true, user: security.publicUser(user), mfaSuggested: Boolean(SEC.ROLES[user.role]?.mfa) && !user.mfa?.enabled });
 }
 
@@ -1280,7 +1286,7 @@ app.post('/api/admin/login/mfa', (req, res) => {
   const step = SEC.totpMatchStep(user.mfa.secret, req.body.code, user.mfa.lastStep || 0);
   if (step === null) {
     pending.tries += 1;
-    security.audit({ action: 'login.mfa_fallido', userId: user.id, user: user.username, ip: req.ip });
+    security.audit({ action: 'login.mfa_fallido', userId: user.id, user: user.username, ip: clientIp(req) });
     if (pending.tries >= MFA_MAX_TRIES) {
       req.session.destroy(() => res.status(429).json({ error: 'Demasiados códigos incorrectos. Vuelve a iniciar sesión.' }));
       return;
@@ -1294,7 +1300,7 @@ app.post('/api/admin/login/mfa', (req, res) => {
 
 app.post('/api/admin/logout', (req, res) => {
   const user = loadSessionUser(req);
-  if (user) security.audit({ action: 'logout', userId: user.id, user: user.username, ip: req.ip });
+  if (user) security.audit({ action: 'logout', userId: user.id, user: user.username, ip: clientIp(req) });
   req.session.destroy(() => {
     res.clearCookie('wj.sid');
     res.json({ ok: true });
@@ -2338,12 +2344,12 @@ app.post('/api/contact', async (req, res) => {
     return;
   }
   const now = Date.now();
-  const recent = (contactAttempts.get(req.ip) || []).filter((t) => now - t < 10 * 60 * 1000);
+  const recent = (contactAttempts.get(clientIp(req)) || []).filter((t) => now - t < 10 * 60 * 1000);
   if (recent.length >= 5) {
     res.status(429).json({ error: 'Demasiados mensajes seguidos. Escríbenos por WhatsApp.' });
     return;
   }
-  contactAttempts.set(req.ip, [...recent, now]);
+  contactAttempts.set(clientIp(req), [...recent, now]);
   const sent = await sendEmail({
     subject: `Mensaje del sitio: ${name}`,
     html: `<h2>Nuevo mensaje desde www.workjeans.mx</h2><p><b>Nombre:</b> ${escapeHtml(name)}<br><b>Contacto:</b> ${escapeHtml(contact)}</p><p style="white-space:pre-wrap">${escapeHtml(message)}</p>`,
