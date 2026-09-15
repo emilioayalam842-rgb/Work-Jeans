@@ -226,7 +226,7 @@ function renderProductCard(product) {
       <span class="product-category">${product.category}</span>
       ${tagHtml(product)}
       ${totalStock <= 0 ? '<span class="product-soldout">Agotado</span>' : ''}
-      <img src="${product.image}" alt="${product.name}" class="product-photo" data-main-photo loading="lazy" decoding="async" width="800" height="1000">
+      <img src="${product.image}" alt="${product.name} · ropa de trabajo de mezclilla Works Jeans" class="product-photo" data-main-photo loading="lazy" decoding="async" width="800" height="1000">
       ${gallery}
       <h3>${product.name}</h3>
       <p class="product-sizes">Tallas ${sizeRange}</p>

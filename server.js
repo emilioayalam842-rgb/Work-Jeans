@@ -331,6 +331,46 @@ function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+function productJsonLd(product, origin, url) {
+  const inStock = product.sizes.some((s) => s.stock > 0);
+  const categorySlug = product.category === 'Pantalones' ? 'pantalones-de-trabajo' : 'camisas-de-trabajo';
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Product',
+        '@id': `${url}#producto`,
+        name: product.name,
+        description: product.description,
+        image: (product.images && product.images.length ? product.images : [product.image]).map((i) => `${origin}/${i}`),
+        sku: product.id,
+        brand: { '@type': 'Brand', name: 'Works Jeans' },
+        category: product.category === 'Pantalones' ? 'Pantalones de trabajo' : 'Camisas de trabajo',
+        material: 'Mezclilla 100% algodón',
+        audience: { '@type': 'PeopleAudience', suggestedGender: 'unisex' },
+        offers: {
+          '@type': 'Offer',
+          url,
+          price: (product.priceCents / 100).toFixed(2),
+          priceCurrency: 'MXN',
+          availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          itemCondition: 'https://schema.org/NewCondition',
+          seller: { '@id': `${origin}/#negocio` },
+          shippingDetails: { '@type': 'OfferShippingDetails', shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'MX' } },
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${origin}/` },
+          { '@type': 'ListItem', position: 2, name: product.category === 'Pantalones' ? 'Pantalones de trabajo' : 'Camisas de trabajo', item: `${origin}/${categorySlug}` },
+          { '@type': 'ListItem', position: 3, name: product.name, item: url },
+        ],
+      },
+    ],
+  };
+}
+
 // /producto/<id>: la misma portada, pero con título, descripción e imagen del producto para
 // compartir por WhatsApp y para Google. Al cargar, se abre la ficha del producto.
 app.get('/producto/:id', (req, res) => {
@@ -356,9 +396,112 @@ app.get('/producto/:id', (req, res) => {
     .replace(/<meta name="twitter:title" content="[^"]*">/, `<meta name="twitter:title" content="${escapeHtml(title)}">`)
     .replace(/<meta name="twitter:description" content="[^"]*">/, `<meta name="twitter:description" content="${escapeHtml(product.description)}">`)
     .replace(/<meta name="twitter:image" content="[^"]*">/, `<meta name="twitter:image" content="${image}">`)
-    .replace('</head>', `  <script>window.__openProduct = ${JSON.stringify(product.id)};</script>\n</head>`);
+    .replace('</head>', `  <script type="application/ld+json">${JSON.stringify(productJsonLd(product, origin, url))}</script>\n  <script>window.__openProduct = ${JSON.stringify(product.id)};</script>\n</head>`);
   // Los recursos relativos deben resolverse desde la raíz aunque la URL tenga /producto/.
   html = html.replace('<head>', '<head>\n  <base href="/">');
+  res.set('Cache-Control', 'no-cache');
+  res.send(html);
+});
+
+// --- Páginas de categoría (renderizadas en el servidor para SEO) ---
+
+const CATEGORY_PAGES = {
+  'pantalones-de-trabajo': {
+    category: 'Pantalones',
+    kicker: 'Pantalones de trabajo · Work jeans',
+    h1: 'Pantalones de trabajo',
+    h1Html: 'Pantalones<br>de trabajo.',
+    title: 'Pantalones de Trabajo de Mezclilla (Work Jeans) | Works Jeans Monterrey',
+    description: 'Pantalones de trabajo de mezclilla 100% algodón, corte recto y costuras reforzadas. Con opción de cintas reflejantes. Tallas 28 a 50. Mayoreo con stock inmediato en Monterrey y envíos a todo México.',
+    intro: 'Work jeans hechos en Monterrey para obra, planta y taller: mezclilla pesada 100% algodón, cinco bolsas, costuras reforzadas y cintura ajustada. Tallas de la 28 a la 50.',
+    seoText: `
+      <h2>Pantalones de mezclilla para trabajar, no para lucir</h2>
+      <p>Un pantalón de trabajo tiene que aguantar jornadas completas de agacharse, cargar, arrodillarse y rozar contra superficies ásperas. Por eso nuestros work jeans se fabrican con mezclilla 100% algodón de mayor peso, costuras dobles reforzadas en tiro, entrepierna y bolsas, y acabado preencogido para que la talla que compras sea la talla que se queda después de lavarlos.</p>
+      <h2>Pantalones de trabajo con reflejante</h2>
+      <p>Para vialidades, plantas industriales y turnos de noche ofrecemos el mismo pantalón con cintas reflejantes en verde o naranja de alta visibilidad, cosidas en las piernas. Cumplen la función de la ropa de seguridad sin perder la comodidad y resistencia de la mezclilla.</p>
+      <h2>Uniformes de trabajo por mayoreo en Monterrey</h2>
+      <p>Surtimos empresas, contratistas y distribuidores con stock inmediato y corridas completas de tallas. Podemos bordar o estampar el logotipo de tu empresa. Arma tu pedido por talla en el <a href="/#cotizador">cotizador de mayoreo</a> y recibe la cotización por WhatsApp. Enviamos a todo México desde nuestra tienda en Monterrey.</p>
+    `,
+  },
+  'camisas-de-trabajo': {
+    category: 'Camisas',
+    kicker: 'Camisas de trabajo · Mezclilla',
+    h1: 'Camisas de trabajo',
+    h1Html: 'Camisas<br>de trabajo.',
+    title: 'Camisas de Trabajo de Mezclilla con Reflejante | Works Jeans Monterrey',
+    description: 'Camisas de trabajo de mezclilla 100% algodón con botones reforzados y opción de cintas reflejantes de alta visibilidad. Tallas XCH a 5XG. Mayoreo con stock inmediato en Monterrey y envíos a todo México.',
+    intro: 'Camisas de mezclilla para uso industrial: algodón 100%, bolsillo frontal, botones reforzados y acabado preencogido. De la XCH a la 5XG, con o sin reflejante.',
+    seoText: `
+      <h2>Camisas de mezclilla para uso industrial</h2>
+      <p>La camisa de trabajo de mezclilla protege más que una playera y respira mejor que una tela sintética. Las nuestras llevan botones reforzados que no se desprenden, bolsillo frontal útil y un corte que permite mover los brazos con libertad. Van del XCH al 5XG para que toda tu cuadrilla uniforme igual.</p>
+      <h2>Camisas con cintas reflejantes</h2>
+      <p>Las versiones de alta visibilidad tienen cintas reflejantes en pecho y mangas, en verde o naranja, para entornos de poca luz. Combinan con nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a> reflejantes para un uniforme completo.</p>
+      <h2>Personalización con tu logotipo</h2>
+      <p>Bordamos o estampamos en DTF el logotipo de tu empresa. Pide tu cotización de mayoreo con corrida de tallas en el <a href="/#cotizador">cotizador</a> o escríbenos por WhatsApp desde Monterrey; enviamos a todo México.</p>
+    `,
+  },
+};
+
+function productCardStatic(p, origin) {
+  const first = p.sizes[0]?.size || '';
+  const last = p.sizes[p.sizes.length - 1]?.size || '';
+  const price = (p.priceCents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+  return `
+    <a class="product-card product-card--static" href="/producto/${p.id}">
+      <span class="product-category">${escapeHtml(p.category)}</span>
+      <img src="${p.image}" alt="${escapeHtml(p.name)} · ropa de trabajo de mezclilla Works Jeans" class="product-photo" loading="lazy" decoding="async" width="800" height="1000">
+      <h2>${escapeHtml(p.name)}</h2>
+      <p class="product-sizes">Tallas <b>${escapeHtml(first)}</b>${last && last !== first ? ` / <b>${escapeHtml(last)}</b>` : ''}</p>
+      <p class="price">${price}<small>MXN</small></p>
+      <p class="product-desc">${escapeHtml(p.description)}</p>
+      <span class="btn btn-dark">Ver producto</span>
+    </a>`;
+}
+
+app.get('/:slug(pantalones-de-trabajo|camisas-de-trabajo)', (req, res) => {
+  const page = CATEGORY_PAGES[req.params.slug];
+  const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
+  const products = publicProducts().filter((p) => p.category === page.category);
+  const canonical = `${origin}/${req.params.slug}`;
+  const jsonld = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${canonical}#pagina`,
+        name: page.h1,
+        description: page.description,
+        url: canonical,
+        isPartOf: { '@id': `${origin}/#sitio` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${origin}/` },
+          { '@type': 'ListItem', position: 2, name: page.h1, item: canonical },
+        ],
+      },
+      {
+        '@type': 'ItemList',
+        itemListElement: products.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${origin}/producto/${p.id}` })),
+      },
+    ],
+  };
+  let html = fs.readFileSync(path.join(__dirname, 'categoria.html'), 'utf-8');
+  const fill = {
+    TITLE: escapeHtml(page.title),
+    DESCRIPTION: escapeHtml(page.description),
+    CANONICAL: canonical,
+    IMAGE: products[0] ? `${origin}/${products[0].image}` : `${origin}/assets/img/og-works-jeans.jpg`,
+    JSONLD: JSON.stringify(jsonld),
+    KICKER: escapeHtml(page.kicker),
+    H1: escapeHtml(page.h1),
+    H1_HTML: page.h1Html,
+    INTRO: escapeHtml(page.intro),
+    CARDS: products.map((p) => productCardStatic(p, origin)).join('') || '<p class="products-loading">Pronto tendremos productos en esta categoría.</p>',
+    SEO_TEXT: page.seoText,
+  };
+  for (const [key, value] of Object.entries(fill)) html = html.split(`{{${key}}}`).join(value);
   res.set('Cache-Control', 'no-cache');
   res.send(html);
 });
@@ -368,6 +511,8 @@ app.get('/sitemap.xml', (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
   const urls = [
     { loc: `${origin}/`, priority: '1.0' },
+    { loc: `${origin}/pantalones-de-trabajo`, priority: '0.9' },
+    { loc: `${origin}/camisas-de-trabajo`, priority: '0.9' },
     ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8' })),
     { loc: `${origin}/aviso-de-privacidad.html`, priority: '0.3' },
     { loc: `${origin}/envios-y-devoluciones.html`, priority: '0.3' },

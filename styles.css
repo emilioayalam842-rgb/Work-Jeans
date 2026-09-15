@@ -1092,6 +1092,42 @@ a { color: inherit; }
   color: var(--muted);
 }
 
+/* Preguntas frecuentes --------------------------------------------------- */
+
+.faq { background: var(--gray); }
+.faq-list { border-top: 1.5px solid var(--black); }
+.faq-item { border-bottom: 1.5px solid var(--black); }
+.faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 22px 48px 22px 0;
+  position: relative;
+  font-family: var(--label);
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  color: var(--black);
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: '+';
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--display);
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--black);
+}
+.faq-item[open] summary::after { content: '−'; }
+.faq-item summary:hover { color: #333; }
+.faq-item p { padding: 0 0 22px; max-width: 760px; line-height: 1.7; }
+.faq-item p a { color: var(--black); font-weight: 600; }
+.category-links { margin-top: 12px; font-family: var(--label); font-size: 0.86rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.category-links a { color: var(--black); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--yellow); }
+.category-links a:hover { background: var(--yellow); }
+
 /* Etiquetas, precio anterior y mayoreo ----------------------------------- */
 
 .product-tag {
@@ -1650,3 +1686,21 @@ body.modal-open { overflow: hidden; }
   .cotizador .btn-secondary { width: 100%; }
   .container { padding: 0 20px; }
 }
+
+/* Páginas de categoría --------------------------------------------------- */
+.category { padding: 40px 0 96px; }
+.breadcrumbs { font-family: var(--label); font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 28px; }
+.breadcrumbs a { color: var(--black); text-decoration: none; }
+.breadcrumbs span { margin: 0 6px; }
+.category h1 { font-size: clamp(2.6rem, 6vw, 4.6rem); }
+.products-grid--static { margin-top: 8px; }
+.product-card--static { text-decoration: none; color: inherit; }
+.product-card--static h2 { font-size: clamp(1.25rem, 2vw, 1.5rem); line-height: 1.05; padding: 22px 26px 0; }
+.product-card--static .btn { margin: 16px 26px 26px; text-align: center; }
+.category-text { max-width: 780px; margin-top: 72px; }
+.category-text h2 { font-size: 1.5rem; margin-top: 36px; padding-top: 18px; border-top: 1.5px solid var(--black); }
+.category-text p { margin-top: 14px; line-height: 1.75; }
+.category-text a { color: var(--black); font-weight: 600; }
+.category-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 40px; }
+.nav-links--static { display: flex; }
+@media (max-width: 860px) { .nav-links--static { display: none; } }
