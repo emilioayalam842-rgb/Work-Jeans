@@ -1191,33 +1191,80 @@ async function loadCustomers() {
     return;
   }
   const customers = await res.json();
+  customersCache = customers;
   const body = document.getElementById('customersTableBody');
   if (customers.length === 0) {
-    body.innerHTML = '<tr><td colspan="7">Todavía no hay clientes con pedidos.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7">Todavía no hay clientes. Se agregan solos con cada pedido, o captúralos con "Nuevo cliente".</td></tr>';
     return;
   }
   body.innerHTML = customers.map((c) => `
-    <tr data-key="${esc(c.key)}" data-search="${esc(c.phone || c.email || c.name)}">
-      <td><strong>${esc(c.name) || 'Sin nombre'}</strong></td>
-      <td>${[c.phone, c.email].filter(Boolean).map(esc).join('<br>') || '—'}</td>
+    <tr data-key="${esc(c.key)}" data-id="${esc(c.id || '')}" data-search="${esc(c.phone || c.email || c.name)}">
+      <td><strong>${esc(c.name) || 'Sin nombre'}</strong>${c.company ? `<br><span class="admin-muted admin-small">${esc(c.company)}</span>` : ''}${c.manual && !c.orders ? '<br><span class="admin-muted admin-small">Capturado a mano · sin pedidos aún</span>' : ''}</td>
+      <td>${[c.phone, c.email].filter(Boolean).map(esc).join('<br>') || '—'}${c.notes ? `<br><span class="admin-muted admin-small" title="${esc(c.notes)}">${esc(c.notes).slice(0, 60)}${c.notes.length > 60 ? '…' : ''}</span>` : ''}</td>
       <td>${c.orders}</td>
       <td>${c.pieces}</td>
       <td>${formatPrice(c.totalCents)}</td>
-      <td>${new Date(c.lastAt).toLocaleDateString('es-MX', { dateStyle: 'medium' })}</td>
+      <td>${c.lastAt ? new Date(c.lastAt).toLocaleDateString('es-MX', { dateStyle: 'medium' }) : '—'}</td>
       <td class="admin-table-actions">
-        ${whatsappDigits(c.phone) ? `<a class="admin-inline-btn" href="https://wa.me/${whatsappDigits(c.phone)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-        <button type="button" class="admin-inline-btn" data-action="customer-orders">Ver pedidos</button>
+        ${whatsappDigits(c.phone) ? `<a class="admin-icon-btn" href="https://wa.me/${whatsappDigits(c.phone)}" target="_blank" rel="noopener" title="WhatsApp">${icon('whatsapp')}</a>` : ''}
+        ${c.orders ? `<button type="button" class="admin-icon-btn" data-action="customer-orders" title="Ver pedidos">${icon('eye')}</button>` : ''}
+        ${iconBtn('customer-edit', 'edit', c.manual ? 'Editar' : 'Completar datos')}
+        ${c.manual ? iconBtn('customer-delete', 'trash', 'Eliminar') : ''}
       </td>
     </tr>
   `).join('');
 }
 
-document.getElementById('customersTableBody').addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-action="customer-orders"]');
+let customersCache = [];
+const customerOverlay = document.getElementById('customerOverlay');
+function openCustomerForm(c) {
+  document.getElementById('customerError').textContent = '';
+  document.getElementById('customerForm').reset();
+  document.getElementById('customerFormTitle').textContent = c?.manual ? 'Editar cliente' : c ? 'Completar datos del cliente' : 'Nuevo cliente';
+  document.getElementById('customerId').value = c?.manual ? c.id : '';
+  document.getElementById('customerName').value = c?.name || '';
+  document.getElementById('customerPhone').value = c?.phone || '';
+  document.getElementById('customerEmail').value = c?.email || '';
+  document.getElementById('customerCompany').value = c?.company || '';
+  document.getElementById('customerNotes').value = c?.notes || '';
+  customerOverlay.hidden = false;
+}
+document.getElementById('newCustomerBtn').addEventListener('click', () => openCustomerForm(null));
+document.getElementById('cancelCustomerBtn').addEventListener('click', () => { customerOverlay.hidden = true; });
+document.getElementById('customerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('customerId').value;
+  const body = {
+    name: document.getElementById('customerName').value,
+    phone: document.getElementById('customerPhone').value,
+    email: document.getElementById('customerEmail').value,
+    company: document.getElementById('customerCompany').value,
+    notes: document.getElementById('customerNotes').value,
+  };
+  const res = await fetch(id ? `/api/admin/customers/${id}` : '/api/admin/customers', { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!res.ok) { document.getElementById('customerError').textContent = data.error || 'No se pudo guardar.'; return; }
+  customerOverlay.hidden = true;
+  loadCustomers();
+});
+
+document.getElementById('customersTableBody').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-action]');
   if (!btn) return;
-  ordersSearch = btn.closest('tr').dataset.search || '';
-  document.getElementById('ordersSearch').value = ordersSearch;
-  showTab('pedidos');
+  const tr = btn.closest('tr');
+  const c = customersCache.find((x) => x.key === tr.dataset.key);
+  if (btn.dataset.action === 'customer-orders') {
+    ordersSearch = tr.dataset.search || '';
+    document.getElementById('ordersSearch').value = ordersSearch;
+    showTab('pedidos');
+  }
+  if (btn.dataset.action === 'customer-edit') openCustomerForm(c);
+  if (btn.dataset.action === 'customer-delete') {
+    if (!confirm(`¿Eliminar a ${c.name}? Sus pedidos no se borran.`)) return;
+    const res = await fetch(`/api/admin/customers/${c.id}`, { method: 'DELETE' });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); notifyForbidden(d.error || 'No se pudo eliminar.'); }
+    loadCustomers();
+  }
 });
 
 // --- Respaldo ---

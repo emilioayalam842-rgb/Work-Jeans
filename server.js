@@ -31,6 +31,7 @@ const PROMOTIONS_PATH = path.join(DATA_DIR, 'promotions.json');
 const LEADS_PATH = path.join(DATA_DIR, 'leads.json');
 const ANALYTICS_PATH = path.join(DATA_DIR, 'analytics.json');
 const ARTICLES_PATH = path.join(DATA_DIR, 'articles.json');
+const CUSTOMERS_PATH = path.join(DATA_DIR, 'customers.json');
 
 // Primer arranque con DATA_DIR externo: copiar los datos iniciales del proyecto.
 if (USES_EXTERNAL_DATA) {
@@ -535,6 +536,8 @@ const getReturns = () => readJsonList(RETURNS_PATH);
 const saveReturns = (l) => writeJsonList(RETURNS_PATH, l);
 const getPromotions = () => readJsonList(PROMOTIONS_PATH);
 const getLeads = () => readJsonList(LEADS_PATH);
+const getCustomers = () => readJsonList(CUSTOMERS_PATH);
+const saveCustomers = (list) => fs.writeFileSync(CUSTOMERS_PATH, JSON.stringify(list, null, 2) + '\n');
 const saveLeads = (list) => fs.writeFileSync(LEADS_PATH, JSON.stringify(list, null, 2) + '\n');
 const savePromotions = (l) => writeJsonList(PROMOTIONS_PATH, l);
 
@@ -809,7 +812,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -3311,15 +3314,27 @@ app.get('/api/admin/returns/stats', requireAdmin, perm('devoluciones.ver'), (req
 
 // --- Clientes: se arman a partir de los pedidos (sin tabla aparte) ---
 
+// Clave que identifica a un cliente: teléfono (solo dígitos), si no correo, si no nombre.
+function customerKey({ phone, email, name }) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  return digits || String(email || '').trim().toLowerCase() || String(name || '').trim().toLowerCase();
+}
+
 app.get('/api/admin/customers', requireAdmin, perm('clientes.ver'), (req, res) => {
   const customers = new Map();
+  // Clientes capturados a mano en el panel (aparecen aunque todavía no tengan pedidos).
+  for (const m of getCustomers()) {
+    const key = customerKey(m);
+    if (!key) continue;
+    customers.set(key, { key, id: m.id, manual: true, name: m.name || '', phone: m.phone || '', email: m.email || '', company: m.company || '', notes: m.notes || '', orders: 0, pieces: 0, totalCents: 0, firstAt: null, lastAt: null, createdAt: m.createdAt });
+  }
   for (const o of getOrders()) {
     if (o.status === 'cancelado') continue;
-    const phone = String(o.customerPhone || '').replace(/\D/g, '');
-    const key = phone || (o.customerEmail || '').toLowerCase() || (o.customerName || '').trim().toLowerCase();
+    const key = customerKey({ phone: o.customerPhone, email: o.customerEmail, name: o.customerName });
     if (!key) continue;
-    const c = customers.get(key) || { key, name: '', phone: '', email: '', orders: 0, pieces: 0, totalCents: 0, firstAt: o.createdAt, lastAt: o.createdAt };
-    if (o.customerName && (!c.name || c.name.length < o.customerName.length)) c.name = o.customerName;
+    const c = customers.get(key) || { key, name: '', phone: '', email: '', company: '', notes: '', orders: 0, pieces: 0, totalCents: 0, firstAt: o.createdAt, lastAt: o.createdAt };
+    if (!c.firstAt) { c.firstAt = o.createdAt; c.lastAt = o.createdAt; }
+    if (o.customerName && !c.manual && (!c.name || c.name.length < o.customerName.length)) c.name = o.customerName;
     if (o.customerPhone && !c.phone) c.phone = o.customerPhone;
     if (o.customerEmail && !c.email) c.email = o.customerEmail;
     c.orders += 1;
@@ -3329,7 +3344,57 @@ app.get('/api/admin/customers', requireAdmin, perm('clientes.ver'), (req, res) =
     if (o.createdAt > c.lastAt) c.lastAt = o.createdAt;
     customers.set(key, c);
   }
-  res.json([...customers.values()].sort((a, b) => b.totalCents - a.totalCents));
+  res.json([...customers.values()].sort((a, b) => b.totalCents - a.totalCents || (b.createdAt || '').localeCompare(a.createdAt || '')));
+});
+
+function normalizeCustomer(body, existing = {}) {
+  const c = { ...existing };
+  if (body.name !== undefined) c.name = cleanText(body.name, 120);
+  if (body.phone !== undefined) c.phone = cleanText(body.phone, 40);
+  if (body.email !== undefined) c.email = cleanText(body.email, 120).toLowerCase();
+  if (body.company !== undefined) c.company = cleanText(body.company, 120);
+  if (body.notes !== undefined) c.notes = cleanText(body.notes, 1000);
+  return c;
+}
+
+app.post('/api/admin/customers', requireAdmin, perm('pedidos.editar'), (req, res) => {
+  const c = normalizeCustomer(req.body || {});
+  if (!c.name) { res.status(400).json({ error: 'Escribe el nombre del cliente.' }); return; }
+  if (!c.phone && !c.email) { res.status(400).json({ error: 'Captura teléfono o correo para poder contactarlo.' }); return; }
+  if (c.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email)) { res.status(400).json({ error: 'El correo no es válido.' }); return; }
+  const list = getCustomers();
+  const key = customerKey(c);
+  if (list.some((x) => customerKey(x) === key)) { res.status(409).json({ error: 'Ya existe un cliente con ese teléfono o correo.' }); return; }
+  c.id = `cus_${Date.now().toString(36)}_${crypto.randomBytes(3).toString('hex')}`;
+  c.createdAt = new Date().toISOString();
+  list.push(c);
+  saveCustomers(list);
+  auditLog(req, 'clientes.crear', { target: c.name });
+  res.status(201).json(c);
+});
+
+app.put('/api/admin/customers/:id', requireAdmin, perm('pedidos.editar'), (req, res) => {
+  const list = getCustomers();
+  const idx = list.findIndex((x) => x.id === req.params.id);
+  if (idx < 0) { res.status(404).json({ error: 'Cliente no encontrado.' }); return; }
+  const c = normalizeCustomer(req.body || {}, list[idx]);
+  if (!c.name) { res.status(400).json({ error: 'Escribe el nombre del cliente.' }); return; }
+  if (!c.phone && !c.email) { res.status(400).json({ error: 'Captura teléfono o correo.' }); return; }
+  const key = customerKey(c);
+  if (list.some((x, i) => i !== idx && customerKey(x) === key)) { res.status(409).json({ error: 'Otro cliente ya tiene ese teléfono o correo.' }); return; }
+  list[idx] = c;
+  saveCustomers(list);
+  auditLog(req, 'clientes.editar', { target: c.name });
+  res.json(c);
+});
+
+app.delete('/api/admin/customers/:id', requireAdmin, perm('pedidos.editar'), (req, res) => {
+  const list = getCustomers();
+  const c = list.find((x) => x.id === req.params.id);
+  if (!c) { res.status(404).json({ error: 'Cliente no encontrado.' }); return; }
+  saveCustomers(list.filter((x) => x.id !== req.params.id));
+  auditLog(req, 'clientes.eliminar', { target: c.name });
+  res.json({ ok: true });
 });
 
 // --- Respaldo y restauración de los datos del panel (no incluye las fotos) ---
