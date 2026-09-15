@@ -2,3 +2,4 @@ node_modules/
 .env
 admin-auth.json
 .DS_Store
+inventory.json

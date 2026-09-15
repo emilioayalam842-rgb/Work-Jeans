@@ -19,15 +19,16 @@ const PRODUCTS_IMG_DIR = USES_EXTERNAL_DATA ? path.join(DATA_DIR, 'products-img'
 const ORDERS_PATH = path.join(DATA_DIR, 'orders.json');
 const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
 const ADMIN_AUTH_PATH = path.join(DATA_DIR, 'admin-auth.json');
+const INVENTORY_PATH = path.join(DATA_DIR, 'inventory.json');
 
 // Primer arranque con DATA_DIR externo: copiar los datos iniciales del proyecto.
 if (USES_EXTERNAL_DATA) {
   fs.mkdirSync(PRODUCTS_IMG_DIR, { recursive: true });
-  for (const name of ['products.json', 'settings.json', 'orders.json']) {
+  for (const name of ['products.json', 'settings.json', 'orders.json', 'inventory.json']) {
     const target = path.join(DATA_DIR, name);
     if (!fs.existsSync(target)) {
       const seed = path.join(__dirname, name);
-      fs.writeFileSync(target, fs.existsSync(seed) ? fs.readFileSync(seed) : (name === 'orders.json' ? '[]\n' : '{}\n'));
+      fs.writeFileSync(target, fs.existsSync(seed) ? fs.readFileSync(seed) : (name === 'orders.json' || name === 'inventory.json' ? '[]\n' : '{}\n'));
     }
   }
 }
@@ -79,6 +80,26 @@ function getOrders() {
 function saveOrders(orders) {
   fs.writeFileSync(ORDERS_PATH, JSON.stringify(orders, null, 2) + '\n');
 }
+
+// Historial de movimientos de inventario (últimos 2000).
+function getInventoryLog() {
+  if (!fs.existsSync(INVENTORY_PATH)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(INVENTORY_PATH, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+function logInventory(entries) {
+  if (!entries.length) return;
+  const log = getInventoryLog();
+  const at = new Date().toISOString();
+  for (const e of entries) log.push({ id: `mov_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`, at, ...e });
+  fs.writeFileSync(INVENTORY_PATH, JSON.stringify(log.slice(-2000), null, 2) + '\n');
+}
+
+const ORDER_STATUSES = ['pendiente', 'pagado', 'preparacion', 'enviado', 'entregado', 'cancelado'];
 
 function getSettings() {
   return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
@@ -138,9 +159,10 @@ initAdminAuth();
 
 // --- Stock helpers ---
 
-function decrementStock(products, items, { strict }) {
+function decrementStock(products, items, { strict, orderId = null, reason = 'Pedido' }) {
   const threshold = lowStockThreshold();
   const alerts = [];
+  const movements = [];
   for (const item of items) {
     const product = products.find((p) => p.id === item.id);
     if (!product || !item.size) continue;
@@ -152,11 +174,28 @@ function decrementStock(products, items, { strict }) {
     }
     const before = sizeEntry.stock;
     sizeEntry.stock = Math.max(0, sizeEntry.stock - item.quantity);
+    movements.push({ productId: product.id, productName: product.name, size: sizeEntry.size, delta: sizeEntry.stock - before, stockAfter: sizeEntry.stock, reason, orderId });
     if (before > threshold && sizeEntry.stock <= threshold) {
       alerts.push({ productName: product.name, size: sizeEntry.size, stock: sizeEntry.stock });
     }
   }
+  logInventory(movements);
   if (alerts.length) notifyLowStock(alerts, threshold);
+  return products;
+}
+
+// Devuelve al inventario las piezas de un pedido (al cancelarlo).
+function restoreStock(products, items, { orderId = null, reason = 'Pedido cancelado' }) {
+  const movements = [];
+  for (const item of items) {
+    const product = products.find((p) => p.id === item.id);
+    if (!product || !item.size) continue;
+    const sizeEntry = product.sizes.find((s) => s.size === item.size);
+    if (!sizeEntry) continue;
+    sizeEntry.stock += item.quantity;
+    movements.push({ productId: product.id, productName: product.name, size: sizeEntry.size, delta: item.quantity, stockAfter: sizeEntry.stock, reason, orderId });
+  }
+  logInventory(movements);
   return products;
 }
 
@@ -228,7 +267,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/admin-auth.json', '/server.js', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/admin-auth.json', '/server.js', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -494,7 +533,19 @@ app.put('/api/admin/products/:id', requireAdmin, productUpload, (req, res) => {
     if (category) product.category = category;
     if (priceMxn) product.priceCents = Math.round(parseFloat(priceMxn) * 100);
     if (description) product.description = description;
-    if (sizes) product.sizes = JSON.parse(sizes);
+    if (sizes) {
+      const newSizes = JSON.parse(sizes);
+      const movements = [];
+      for (const ns of newSizes) {
+        const old = product.sizes.find((s) => s.size === ns.size);
+        const before = old ? old.stock : 0;
+        if (ns.stock !== before) {
+          movements.push({ productId: product.id, productName: product.name, size: ns.size, delta: ns.stock - before, stockAfter: ns.stock, reason: 'Edición de producto', orderId: null });
+        }
+      }
+      logInventory(movements);
+      product.sizes = newSizes;
+    }
     // keepImages: lista ordenada de las fotos existentes que se conservan (la primera es la principal).
     // Las fotos nuevas se agregan al final.
     let images = Array.isArray(product.images) && product.images.length ? product.images : [product.image];
@@ -556,13 +607,14 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
       };
     });
 
-    decrementStock(products, orderItems, { strict: true });
+    const orderId = makeOrderId();
+    decrementStock(products, orderItems, { strict: true, orderId, reason: 'Pedido por WhatsApp' });
     saveProducts(products);
 
     const totalCents = orderItems.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
 
     const order = {
-      id: makeOrderId(),
+      id: orderId,
       source: 'whatsapp',
       status: 'pendiente',
       createdAt: new Date().toISOString(),
@@ -582,6 +634,15 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
   }
 });
 
+app.get('/api/admin/orders/:id', requireAdmin, (req, res) => {
+  const order = getOrders().find((o) => o.id === req.params.id);
+  if (!order) {
+    res.status(404).json({ error: 'Pedido no encontrado.' });
+    return;
+  }
+  res.json(order);
+});
+
 app.put('/api/admin/orders/:id', requireAdmin, (req, res) => {
   const orders = getOrders();
   const order = orders.find((o) => o.id === req.params.id);
@@ -589,10 +650,65 @@ app.put('/api/admin/orders/:id', requireAdmin, (req, res) => {
     res.status(404).json({ error: 'Pedido no encontrado.' });
     return;
   }
-  if (req.body.status) order.status = req.body.status;
-  if (req.body.notes !== undefined) order.notes = req.body.notes;
+  const { status, notes, tracking } = req.body;
+  if (status !== undefined) {
+    if (!ORDER_STATUSES.includes(status)) {
+      res.status(400).json({ error: 'Estado no válido.' });
+      return;
+    }
+    const wasCancelled = order.status === 'cancelado';
+    if (status === 'cancelado' && !wasCancelled) {
+      const products = restoreStock(getProducts(), order.items, { orderId: order.id });
+      saveProducts(products);
+      order.cancelledAt = new Date().toISOString();
+    } else if (status !== 'cancelado' && wasCancelled) {
+      const products = decrementStock(getProducts(), order.items, { strict: false, orderId: order.id, reason: 'Pedido reactivado' });
+      saveProducts(products);
+      delete order.cancelledAt;
+    }
+    if (status === 'enviado' && order.status !== 'enviado') order.shippedAt = new Date().toISOString();
+    if (status === 'entregado' && order.status !== 'entregado') order.deliveredAt = new Date().toISOString();
+    order.status = status;
+  }
+  if (notes !== undefined) order.notes = String(notes);
+  if (tracking !== undefined) {
+    order.tracking = tracking && (tracking.carrier || tracking.number)
+      ? { carrier: String(tracking.carrier || '').trim(), number: String(tracking.number || '').trim(), url: String(tracking.url || '').trim() }
+      : null;
+  }
   saveOrders(orders);
   res.json(order);
+});
+
+// --- Inventario (protegido) ---
+
+app.get('/api/admin/inventory', requireAdmin, (req, res) => {
+  const limit = Math.max(1, Math.min(500, parseInt(req.query.limit, 10) || 200));
+  const log = getInventoryLog().slice(-limit).reverse();
+  res.json(log);
+});
+
+app.post('/api/admin/inventory/adjust', requireAdmin, (req, res) => {
+  const { productId, size, delta, reason } = req.body;
+  const change = parseInt(delta, 10);
+  if (!productId || !size || !Number.isFinite(change) || change === 0) {
+    res.status(400).json({ error: 'Indica producto, talla y un cambio distinto de cero.' });
+    return;
+  }
+  const products = getProducts();
+  const product = products.find((p) => p.id === productId);
+  const sizeEntry = product?.sizes.find((s) => s.size === size);
+  if (!sizeEntry) {
+    res.status(404).json({ error: 'Producto o talla no encontrados.' });
+    return;
+  }
+  const before = sizeEntry.stock;
+  sizeEntry.stock = Math.max(0, before + change);
+  saveProducts(products);
+  logInventory([{ productId: product.id, productName: product.name, size, delta: sizeEntry.stock - before, stockAfter: sizeEntry.stock, reason: String(reason || 'Ajuste manual').slice(0, 120), orderId: null }]);
+  const threshold = lowStockThreshold();
+  if (before > threshold && sizeEntry.stock <= threshold) notifyLowStock([{ productName: product.name, size, stock: sizeEntry.stock }], threshold);
+  res.json({ productId: product.id, size, stock: sizeEntry.stock });
 });
 
 app.delete('/api/admin/orders/:id', requireAdmin, (req, res) => {
@@ -679,8 +795,9 @@ function recordStripeOrder(session) {
   }
 
   const addr = session.shipping_details?.address || session.customer_details?.address || null;
+  const orderId = makeOrderId();
   order = {
-    id: makeOrderId(),
+    id: orderId,
     source: 'stripe',
     status: 'pagado',
     createdAt: new Date().toISOString(),
@@ -713,7 +830,7 @@ function recordStripeOrder(session) {
   if (cartMeta.length > 0) {
     try {
       const products = getProducts();
-      decrementStock(products, order.items, { strict: false });
+      decrementStock(products, order.items, { strict: false, orderId, reason: 'Pedido con tarjeta' });
       saveProducts(products);
     } catch {
       // Never block order confirmation on stock bookkeeping issues.

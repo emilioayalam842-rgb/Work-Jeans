@@ -41,6 +41,7 @@
         <button class="admin-tab active" data-tab="dashboard">Dashboard</button>
         <button class="admin-tab" data-tab="productos">Productos</button>
         <button class="admin-tab" data-tab="pedidos">Pedidos</button>
+        <button class="admin-tab" data-tab="inventario">Inventario</button>
         <button class="admin-tab" data-tab="configuracion">Configuración</button>
       </div>
 
@@ -114,6 +115,17 @@
         <div class="admin-toolbar">
           <h2>Pedidos</h2>
           <div class="admin-toolbar-actions">
+            <input type="search" id="ordersSearch" class="admin-filter admin-search" placeholder="Buscar cliente, teléfono o pedido" aria-label="Buscar pedidos">
+            <select id="ordersStatusFilter" class="admin-filter" aria-label="Filtrar por estado">
+              <option value="">Todos los estados</option>
+              <option value="activos">Activos (sin entregar)</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="pagado">Pagado</option>
+              <option value="preparacion">En preparación</option>
+              <option value="enviado">Enviado</option>
+              <option value="entregado">Entregado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
             <select id="ordersMonthFilter" class="admin-filter" aria-label="Filtrar por mes"><option value="">Todos los meses</option></select>
             <button id="exportOrdersBtn" class="btn btn-secondary">Exportar a Excel</button>
             <button id="newOrderBtn" class="btn btn-primary">+ Agregar pedido de WhatsApp</button>
@@ -134,6 +146,28 @@
               </tr>
             </thead>
             <tbody id="ordersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabInventario" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Movimientos de inventario</h2>
+          <p class="admin-help admin-help--inline">Cada entrada y salida de piezas: pedidos, cancelaciones, ediciones y ajustes manuales. Para ajustar stock, usa los botones + y − en la pestaña Productos.</p>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Talla</th>
+                <th>Cambio</th>
+                <th>Quedan</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -256,12 +290,37 @@
     <div class="admin-form" id="orderDetailBox">
       <h2>Detalle del pedido</h2>
       <div id="orderDetailContent"></div>
+
+      <label for="orderDetailStatus">Estado</label>
+      <select id="orderDetailStatus" class="admin-filter">
+        <option value="pendiente">Pendiente</option>
+        <option value="pagado">Pagado</option>
+        <option value="preparacion">En preparación</option>
+        <option value="enviado">Enviado</option>
+        <option value="entregado">Entregado</option>
+        <option value="cancelado">Cancelado (devuelve las piezas al inventario)</option>
+      </select>
+
+      <div class="admin-tracking">
+        <label for="orderTrackingCarrier">Paquetería</label>
+        <input type="text" id="orderTrackingCarrier" list="carriersList" placeholder="Estafeta, DHL, FedEx, Paquetexpress…">
+        <datalist id="carriersList">
+          <option value="Estafeta"></option><option value="DHL"></option><option value="FedEx"></option><option value="Paquetexpress"></option><option value="Redpack"></option><option value="99minutos"></option><option value="Entrega en tienda"></option>
+        </datalist>
+        <label for="orderTrackingNumber">Número de guía</label>
+        <input type="text" id="orderTrackingNumber" placeholder="Opcional">
+      </div>
+
       <label for="orderDetailNotes">Notas</label>
       <textarea id="orderDetailNotes" rows="3"></textarea>
-      <div class="admin-form-actions">
+
+      <div class="admin-form-actions admin-form-actions--wrap">
+        <button type="button" id="orderWhatsappBtn" class="btn btn-secondary">WhatsApp al cliente</button>
+        <button type="button" id="orderPrintBtn" class="btn btn-secondary">Imprimir nota</button>
         <button type="button" id="closeOrderDetailBtn" class="btn btn-secondary">Cerrar</button>
-        <button type="button" id="saveOrderNotesBtn" class="btn btn-primary">Guardar notas</button>
+        <button type="button" id="saveOrderNotesBtn" class="btn btn-primary">Guardar cambios</button>
       </div>
+      <p class="admin-error" id="orderDetailError"></p>
     </div>
   </div>
 

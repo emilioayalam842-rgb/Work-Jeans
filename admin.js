@@ -25,6 +25,28 @@ let settingsCache = {};
 let formImages = []; // fotos existentes del producto que se está editando, en orden
 let ordersMonth = ''; // filtro de mes en Pedidos ('' = todos, 'YYYY-MM')
 
+const STATUS_LABELS = {
+  pendiente: 'Pendiente',
+  pagado: 'Pagado',
+  preparacion: 'En preparación',
+  enviado: 'Enviado',
+  entregado: 'Entregado',
+  cancelado: 'Cancelado',
+};
+let ordersSearch = '';
+let ordersStatus = '';
+
+function statusOptions(current) {
+  return Object.entries(STATUS_LABELS).map(([value, label]) => `<option value="${value}" ${current === value ? 'selected' : ''}>${label}</option>`).join('');
+}
+
+// Convierte un teléfono capturado a formato wa.me (solo dígitos; 10 dígitos = México).
+function whatsappDigits(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.length === 10 ? `52${digits}` : digits;
+}
+
 const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 function monthKey(date) {
@@ -109,6 +131,7 @@ document.querySelectorAll('.admin-tab').forEach((tab) => {
 
     if (tab.dataset.tab === 'dashboard') renderDashboard();
     if (tab.dataset.tab === 'pedidos') loadOrders();
+    if (tab.dataset.tab === 'inventario') loadInventory();
     if (tab.dataset.tab === 'configuracion') loadSettingsForm();
   });
 });
@@ -138,20 +161,64 @@ function renderProductsTable(products) {
 
   productsTableBody.innerHTML = products.map((p) => {
     const stock = totalStock(p);
+    const limit = lowStockLimit();
     return `
       <tr data-id="${p.id}">
         <td><img src="${p.image}" alt="${p.name}" class="admin-table-photo"></td>
         <td>${p.name}</td>
         <td>${p.category}</td>
         <td>${formatPrice(p.priceCents)}</td>
-        <td class="${p.sizes.some((s) => s.stock <= lowStockLimit()) ? 'admin-stock-low' : ''}">${stock} pzas</td>
+        <td class="${p.sizes.some((s) => s.stock <= limit) ? 'admin-stock-low' : ''}">
+          <button type="button" class="admin-stock-toggle" data-action="toggle-stock" title="Ver y ajustar por talla">${stock} pzas ▾</button>
+        </td>
         <td class="admin-table-actions">
           <button class="admin-icon-btn" data-action="edit" title="Editar">✏️</button>
           <button class="admin-icon-btn" data-action="delete" title="Eliminar">🗑️</button>
         </td>
       </tr>
+      <tr class="admin-stock-row" data-id="${p.id}" hidden>
+        <td colspan="6">
+          <div class="admin-stock-grid">
+            ${p.sizes.map((s) => `
+              <div class="admin-stock-size ${s.stock <= limit ? 'is-low' : ''}" data-size="${s.size}">
+                <span class="admin-stock-size-name">${s.size}</span>
+                <div class="admin-stock-controls">
+                  <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="-1" aria-label="Quitar una pieza">−</button>
+                  <b class="admin-stock-count">${s.stock}</b>
+                  <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="1" aria-label="Agregar una pieza">+</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <p class="admin-help">Cada clic mueve una pieza y queda registrado en Inventario. Para cambios grandes edita el producto.</p>
+        </td>
+      </tr>
     `;
   }).join('');
+}
+
+async function adjustStock(productId, size, delta, sizeEl) {
+  const res = await fetch('/api/admin/inventory/adjust', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, size, delta, reason: 'Ajuste manual desde el panel' }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    alert(data.error || 'No se pudo ajustar el stock.');
+    return;
+  }
+  const product = productsCache.find((p) => p.id === productId);
+  const entry = product?.sizes.find((s) => s.size === size);
+  if (entry) entry.stock = data.stock;
+  sizeEl.querySelector('.admin-stock-count').textContent = data.stock;
+  sizeEl.classList.toggle('is-low', data.stock <= lowStockLimit());
+  const mainRow = productsTableBody.querySelector(`tr[data-id="${productId}"]:not(.admin-stock-row)`);
+  if (mainRow && product) {
+    const cell = mainRow.querySelector('.admin-stock-toggle');
+    cell.textContent = `${totalStock(product)} pzas ▾`;
+    cell.closest('td').classList.toggle('admin-stock-low', product.sizes.some((s) => s.stock <= lowStockLimit()));
+  }
 }
 
 function addSizeRow(size = '', stock = 0) {
@@ -237,6 +304,18 @@ document.getElementById('newProductBtn').addEventListener('click', () => openFor
 document.getElementById('cancelFormBtn').addEventListener('click', closeForm);
 
 productsTableBody.addEventListener('click', async (e) => {
+  const toggle = e.target.closest('[data-action="toggle-stock"]');
+  if (toggle) {
+    const row = productsTableBody.querySelector(`tr.admin-stock-row[data-id="${toggle.closest('tr').dataset.id}"]`);
+    row.hidden = !row.hidden;
+    return;
+  }
+  const adjust = e.target.closest('[data-action="adjust"]');
+  if (adjust) {
+    const sizeEl = adjust.closest('.admin-stock-size');
+    adjustStock(adjust.closest('tr').dataset.id, sizeEl.dataset.size, parseInt(adjust.dataset.delta, 10), sizeEl);
+    return;
+  }
   const btn = e.target.closest('.admin-icon-btn');
   if (!btn) return;
   const id = btn.closest('tr').dataset.id;
@@ -308,8 +387,26 @@ async function loadOrders() {
 }
 
 function filteredOrders() {
-  return ordersMonth ? ordersCache.filter((o) => monthKey(o.createdAt) === ordersMonth) : ordersCache;
+  const q = ordersSearch.trim().toLowerCase();
+  return ordersCache.filter((o) => {
+    if (ordersMonth && monthKey(o.createdAt) !== ordersMonth) return false;
+    if (ordersStatus === 'activos' && (o.status === 'entregado' || o.status === 'cancelado')) return false;
+    if (ordersStatus && ordersStatus !== 'activos' && o.status !== ordersStatus) return false;
+    if (!q) return true;
+    const haystack = [o.id, o.customerName, o.customerPhone, o.customerEmail, o.tracking?.number, ...o.items.map((i) => i.name)].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(q);
+  });
 }
+
+document.getElementById('ordersSearch').addEventListener('input', (e) => {
+  ordersSearch = e.target.value;
+  renderOrders(filteredOrders());
+});
+
+document.getElementById('ordersStatusFilter').addEventListener('change', (e) => {
+  ordersStatus = e.target.value;
+  renderOrders(filteredOrders());
+});
 
 function renderMonthFilter() {
   const select = document.getElementById('ordersMonthFilter');
@@ -335,16 +432,18 @@ document.getElementById('exportOrdersBtn').addEventListener('click', () => {
     alert('No hay pedidos para exportar.');
     return;
   }
-  const header = ['Pedido', 'Fecha', 'Origen', 'Estado', 'Cliente', 'Teléfono', 'Correo', 'Dirección de envío', 'Productos', 'Piezas', 'Total MXN', 'Notas'];
+  const header = ['Pedido', 'Fecha', 'Origen', 'Estado', 'Cliente', 'Teléfono', 'Correo', 'Dirección de envío', 'Paquetería', 'Guía', 'Productos', 'Piezas', 'Total MXN', 'Notas'];
   const rows = orders.map((o) => [
     o.id,
     new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }),
     o.source === 'stripe' ? 'Tarjeta' : 'WhatsApp',
-    o.status,
+    STATUS_LABELS[o.status] || o.status,
     o.customerName || '',
     o.customerPhone || '',
     o.customerEmail || '',
     o.shipping ? [o.shipping.line1, o.shipping.line2, o.shipping.city, o.shipping.state, o.shipping.postalCode].filter(Boolean).join(', ') : '',
+    o.tracking?.carrier || '',
+    o.tracking?.number || '',
     o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join('; '),
     o.items.reduce((sum, i) => sum + i.quantity, 0),
     (o.totalCents / 100).toFixed(2),
@@ -364,7 +463,7 @@ document.getElementById('exportOrdersBtn').addEventListener('click', () => {
 
 function renderOrders(orders) {
   if (orders.length === 0) {
-    ordersTableBody.innerHTML = `<tr><td colspan="7">${ordersMonth ? 'No hay pedidos en ese mes.' : 'No hay pedidos todavía.'}</td></tr>`;
+    ordersTableBody.innerHTML = `<tr><td colspan="7">${ordersMonth || ordersSearch || ordersStatus ? 'No hay pedidos con esos filtros.' : 'No hay pedidos todavía.'}</td></tr>`;
     return;
   }
 
@@ -380,11 +479,8 @@ function renderOrders(orders) {
         <td class="admin-order-items-cell admin-clickable" data-action="view">${itemsSummary}</td>
         <td class="admin-clickable" data-action="view">${formatPrice(o.totalCents)}</td>
         <td>
-          <select class="admin-status-select" data-action="status">
-            <option value="pendiente" ${o.status === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-            <option value="pagado" ${o.status === 'pagado' ? 'selected' : ''}>Pagado</option>
-            <option value="entregado" ${o.status === 'entregado' ? 'selected' : ''}>Entregado</option>
-          </select>
+          <select class="admin-status-select status-${o.status}" data-action="status">${statusOptions(o.status)}</select>
+          ${o.tracking?.number ? `<span class="admin-muted admin-tracking-tag">${o.tracking.carrier ? `${o.tracking.carrier} · ` : ''}${o.tracking.number}</span>` : ''}
         </td>
         <td>
           <button class="admin-icon-btn" data-action="delete-order" title="Eliminar">🗑️</button>
@@ -414,11 +510,23 @@ ordersTableBody.addEventListener('click', async (e) => {
 ordersTableBody.addEventListener('change', async (e) => {
   if (e.target.dataset.action !== 'status') return;
   const id = e.target.closest('tr').dataset.id;
-  await fetch(`/api/admin/orders/${id}`, {
+  const order = ordersCache.find((o) => o.id === id);
+  if (e.target.value === 'cancelado' && order && order.status !== 'cancelado' && !confirm('¿Cancelar este pedido? Las piezas regresan al inventario.')) {
+    e.target.value = order.status;
+    return;
+  }
+  const res = await fetch(`/api/admin/orders/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status: e.target.value }),
   });
+  if (res.ok) {
+    const updated = await res.json();
+    const idx = ordersCache.findIndex((o) => o.id === id);
+    if (idx >= 0) ordersCache[idx] = updated;
+    e.target.className = `admin-status-select status-${updated.status}`;
+    if (updated.status === 'cancelado' || order?.status === 'cancelado') loadProducts();
+  }
 });
 
 function openOrderDetail(id) {
@@ -451,8 +559,38 @@ function openOrderDetail(id) {
     <p class="admin-order-total">Total: ${formatPrice(order.totalCents)}</p>
   `;
   orderDetailNotes.value = order.notes || '';
+  document.getElementById('orderDetailStatus').value = order.status;
+  document.getElementById('orderTrackingCarrier').value = order.tracking?.carrier || '';
+  document.getElementById('orderTrackingNumber').value = order.tracking?.number || '';
+  document.getElementById('orderDetailError').textContent = '';
+  document.getElementById('orderWhatsappBtn').disabled = !whatsappDigits(order.customerPhone);
   orderDetailOverlay.hidden = false;
 }
+
+function customerMessage(order) {
+  const name = order.customerName ? `Hola ${order.customerName.split(' ')[0]}` : 'Hola';
+  const carrier = document.getElementById('orderTrackingCarrier').value.trim();
+  const number = document.getElementById('orderTrackingNumber').value.trim();
+  const status = document.getElementById('orderDetailStatus').value;
+  const items = order.items.map((i) => `${i.name}${i.size ? ` talla ${i.size}` : ''} x${i.quantity}`).join(', ');
+  if (status === 'enviado' || number) {
+    return `${name}, te escribimos de Works Jeans. Tu pedido ${order.id} (${items}) ya va en camino${carrier ? ` por ${carrier}` : ''}${number ? `. Número de guía: ${number}` : ''}. Cualquier duda, con gusto te ayudamos.`;
+  }
+  if (status === 'preparacion') return `${name}, te escribimos de Works Jeans. Tu pedido ${order.id} (${items}) ya está en preparación. Te avisamos en cuanto salga.`;
+  if (status === 'entregado') return `${name}, te escribimos de Works Jeans. Confirmamos la entrega de tu pedido ${order.id}. ¡Gracias por tu compra!`;
+  return `${name}, te escribimos de Works Jeans sobre tu pedido ${order.id} (${items}).`;
+}
+
+document.getElementById('orderWhatsappBtn').addEventListener('click', () => {
+  const order = ordersCache.find((o) => o.id === activeOrderId);
+  const digits = whatsappDigits(order?.customerPhone);
+  if (!order || !digits) return;
+  window.open(`https://wa.me/${digits}?text=${encodeURIComponent(customerMessage(order))}`, '_blank', 'noopener');
+});
+
+document.getElementById('orderPrintBtn').addEventListener('click', () => {
+  if (activeOrderId) window.open(`nota.html?id=${encodeURIComponent(activeOrderId)}`, '_blank', 'noopener');
+});
 
 document.getElementById('closeOrderDetailBtn').addEventListener('click', () => {
   orderDetailOverlay.hidden = true;
@@ -461,14 +599,56 @@ document.getElementById('closeOrderDetailBtn').addEventListener('click', () => {
 
 document.getElementById('saveOrderNotesBtn').addEventListener('click', async () => {
   if (!activeOrderId) return;
-  await fetch(`/api/admin/orders/${activeOrderId}`, {
+  const order = ordersCache.find((o) => o.id === activeOrderId);
+  const status = document.getElementById('orderDetailStatus').value;
+  if (status === 'cancelado' && order && order.status !== 'cancelado' && !confirm('¿Cancelar este pedido? Las piezas regresan al inventario.')) return;
+  const res = await fetch(`/api/admin/orders/${activeOrderId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ notes: orderDetailNotes.value }),
+    body: JSON.stringify({
+      status,
+      notes: orderDetailNotes.value,
+      tracking: {
+        carrier: document.getElementById('orderTrackingCarrier').value,
+        number: document.getElementById('orderTrackingNumber').value,
+      },
+    }),
   });
+  if (!res.ok) {
+    const data = await res.json();
+    document.getElementById('orderDetailError').textContent = data.error || 'No se pudo guardar.';
+    return;
+  }
   orderDetailOverlay.hidden = true;
-  loadOrders();
+  await loadOrders();
+  loadProducts();
 });
+
+// --- Inventario ---
+
+async function loadInventory() {
+  const res = await fetch('/api/admin/inventory?limit=300');
+  if (res.status === 401) {
+    showLogin();
+    return;
+  }
+  const log = await res.json();
+  const body = document.getElementById('inventoryTableBody');
+  if (log.length === 0) {
+    body.innerHTML = '<tr><td colspan="6">Todavía no hay movimientos registrados.</td></tr>';
+    return;
+  }
+  body.innerHTML = log.map((m) => `
+    <tr>
+      <td>${new Date(m.at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td>
+      <td>${m.productName}</td>
+      <td>${m.size}</td>
+      <td class="${m.delta < 0 ? 'admin-delta-neg' : 'admin-delta-pos'}">${m.delta > 0 ? '+' : ''}${m.delta}</td>
+      <td>${m.stockAfter}</td>
+      <td>${m.reason}${m.orderId ? ` <span class="admin-muted">· ${m.orderId}</span>` : ''}</td>
+    </tr>
+  `).join('');
+}
 
 // --- Manual WhatsApp order form ---
 
@@ -575,25 +755,26 @@ orderForm.addEventListener('submit', async (e) => {
 // --- Dashboard ---
 
 function renderDashboard() {
-  const totalSales = ordersCache.reduce((sum, o) => sum + o.totalCents, 0);
+  const valid = ordersCache.filter((o) => o.status !== 'cancelado');
+  const totalSales = valid.reduce((sum, o) => sum + o.totalCents, 0);
 
   const now = new Date();
-  const monthSales = ordersCache
+  const monthSales = valid
     .filter((o) => {
       const d = new Date(o.createdAt);
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     })
     .reduce((sum, o) => sum + o.totalCents, 0);
 
-  const pending = ordersCache.filter((o) => o.status === 'pendiente').length;
+  const pending = ordersCache.filter((o) => ['pendiente', 'pagado', 'preparacion', 'enviado'].includes(o.status)).length;
 
   document.getElementById('statTotalSales').textContent = formatPrice(totalSales);
   document.getElementById('statMonthSales').textContent = formatPrice(monthSales);
   document.getElementById('statPending').textContent = pending;
-  document.getElementById('statTotalOrders').textContent = ordersCache.length;
+  document.getElementById('statTotalOrders').textContent = valid.length;
 
   const salesByProduct = {};
-  ordersCache.forEach((o) => {
+  valid.forEach((o) => {
     o.items.forEach((i) => {
       salesByProduct[i.name] = (salesByProduct[i.name] || 0) + i.quantity;
     });
@@ -606,7 +787,7 @@ function renderDashboard() {
 
   // Ventas por mes: últimos 6 meses, incluyendo los que no tuvieron ventas.
   const byMonth = {};
-  ordersCache.forEach((o) => {
+  valid.forEach((o) => {
     const key = monthKey(o.createdAt);
     byMonth[key] = byMonth[key] || { orders: 0, pieces: 0, cents: 0 };
     byMonth[key].orders += 1;

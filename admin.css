@@ -529,3 +529,62 @@
 .admin-monthly { margin-bottom: 24px; }
 .admin-monthly h3 { margin-bottom: 12px; }
 .admin-monthly tr.admin-muted td { color: var(--muted); }
+
+/* Operación diaria: estados, búsqueda, stock rápido, inventario ------- */
+
+.admin-search { min-width: 240px; }
+.admin-help--inline { margin: 0; max-width: 620px; }
+
+.admin-status-select.status-pendiente { border-color: #c9a400; background: #fff7cc; }
+.admin-status-select.status-pagado { border-color: #2e7d32; background: #e6f4e8; }
+.admin-status-select.status-preparacion { border-color: #1565c0; background: #e5eefb; }
+.admin-status-select.status-enviado { border-color: #6a1b9a; background: #f0e6f7; }
+.admin-status-select.status-entregado { border-color: #555; background: #eeeeee; color: #555; }
+.admin-status-select.status-cancelado { border-color: #b00020; background: #fbe6e9; color: #b00020; }
+.admin-tracking-tag { display: block; font-size: 0.72rem; margin-top: 4px; }
+
+.admin-tracking { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+.admin-form-actions--wrap { flex-wrap: wrap; }
+.admin-form-actions--wrap .btn { flex: 1 1 auto; }
+
+.admin-stock-toggle {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.admin-stock-row td { background: var(--gray); padding: 14px 16px 10px; }
+.admin-stock-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-stock-size {
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 78px;
+}
+.admin-stock-size.is-low { border-color: #b00020; }
+.admin-stock-size.is-low .admin-stock-count { color: #b00020; }
+.admin-stock-size-name { font-family: var(--label); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.1em; }
+.admin-stock-controls { display: flex; align-items: center; gap: 6px; }
+.admin-stock-btn {
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--black);
+  background: var(--paper);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.admin-stock-btn:hover { background: var(--yellow); }
+.admin-stock-count { min-width: 26px; text-align: center; font-family: var(--label); font-size: 1rem; }
+
+.admin-delta-neg { color: #b00020; font-weight: 600; }
+.admin-delta-pos { color: #2e7d32; font-weight: 600; }
