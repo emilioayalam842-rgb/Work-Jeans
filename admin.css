@@ -755,3 +755,83 @@
 .admin-bell-item span { font-size: 0.76rem; color: #555; }
 .admin-bell-clear { background: transparent; border: 0; padding: 8px; font: inherit; font-size: 0.8rem; color: var(--muted); cursor: pointer; text-decoration: underline; }
 .admin-bell-empty { margin: 0; padding: 10px; font-size: 0.85rem; color: var(--muted); }
+
+/* Barra de pedidos: búsqueda, chips y botones fantasma -------------------- */
+
+.admin-toolbar-sub { margin: 4px 0 0; font-size: 0.82rem; color: var(--muted); }
+.admin-body .btn-ghost { background: transparent; border: 1.5px solid transparent; color: #333; padding: 0 12px; }
+.admin-body .btn-ghost:hover { background: #e9e9e9; border-color: #e9e9e9; color: var(--black); }
+.is-spinning .admin-svg { animation: admin-spin 0.6s linear; }
+@keyframes admin-spin { to { transform: rotate(360deg); } }
+
+.admin-filters { align-items: stretch; margin-bottom: 12px; }
+.admin-search-box {
+  flex: 1 1 320px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  min-height: 44px;
+  background: var(--paper);
+  border: 1.5px solid #d6d6d6;
+  border-radius: 10px;
+  color: var(--muted);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.admin-search-box:focus-within { border-color: var(--black); box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.35); color: var(--black); }
+.admin-search-box input { flex: 1; border: 0; outline: 0; background: transparent; font: inherit; font-size: 0.95rem; color: var(--black); min-width: 0; }
+.admin-search-box input::placeholder { color: #9a9a9a; }
+.admin-search-box input::-webkit-search-cancel-button { cursor: pointer; }
+
+.admin-filter {
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  min-height: 44px;
+  padding: 0 36px 0 14px;
+  border: 1.5px solid #d6d6d6;
+  border-radius: 10px;
+  background-color: var(--paper);
+  color: var(--black);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23333' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.admin-filter:hover { border-color: #999; }
+.admin-filter:focus { outline: 0; border-color: var(--black); box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.35); }
+input.admin-filter { background-image: none; padding-right: 14px; cursor: text; }
+.admin-form .admin-filter, .admin-tracking input, .admin-settings-form input { border-radius: 10px; }
+
+.admin-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 0 14px;
+  min-height: 34px;
+  border: 1.5px solid #d6d6d6;
+  border-radius: 999px;
+  background: var(--paper);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #444;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.admin-chip span { min-width: 22px; padding: 0 6px; border-radius: 11px; background: #eee; color: #555; font-size: 0.74rem; line-height: 20px; text-align: center; }
+.admin-chip:hover { border-color: var(--black); color: var(--black); }
+.admin-chip.is-active { background: var(--black); border-color: var(--black); color: var(--paper); }
+.admin-chip.is-active span { background: var(--yellow); color: var(--black); }
+.admin-chip.chip-pendiente:not(.is-active) span { background: #fff7cc; color: #8a6d00; }
+.admin-chip.chip-pagado:not(.is-active) span { background: #e6f4e8; color: #2e7d32; }
+.admin-chip.chip-preparacion:not(.is-active) span { background: #e5eefb; color: #1565c0; }
+.admin-chip.chip-enviado:not(.is-active) span { background: #f0e6f7; color: #6a1b9a; }
+.admin-chip.chip-cancelado:not(.is-active) span { background: #fbe6e9; color: #b00020; }
+
+.admin-tab { border-radius: 8px 8px 0 0; }
+.admin-tab:hover { background: #ececec; }

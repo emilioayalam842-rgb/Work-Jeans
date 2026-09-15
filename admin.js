@@ -507,6 +507,7 @@ async function loadOrders() {
   const orders = await res.json();
   ordersCache = orders;
   renderMonthFilter();
+  renderStatusChips();
   renderOrders(filteredOrders());
 }
 
@@ -527,9 +528,77 @@ document.getElementById('ordersSearch').addEventListener('input', (e) => {
   renderOrders(filteredOrders());
 });
 
-document.getElementById('ordersStatusFilter').addEventListener('change', (e) => {
-  ordersStatus = e.target.value;
+const CHIP_FILTERS = [
+  ['', 'Todos'],
+  ['activos', 'Activos'],
+  ['pendiente', 'Pendiente'],
+  ['pagado', 'Pagado'],
+  ['preparacion', 'En preparación'],
+  ['enviado', 'Enviado'],
+  ['entregado', 'Entregado'],
+  ['cancelado', 'Cancelado'],
+];
+
+function chipCount(value) {
+  if (!value) return ordersCache.length;
+  if (value === 'activos') return ordersCache.filter((o) => !['entregado', 'cancelado'].includes(o.status)).length;
+  return ordersCache.filter((o) => o.status === value).length;
+}
+
+function renderStatusChips() {
+  document.getElementById('statusChips').innerHTML = CHIP_FILTERS.map(([value, label]) => `
+    <button type="button" class="admin-chip ${ordersStatus === value ? 'is-active' : ''} ${value ? `chip-${value}` : ''}" data-status="${value}" role="tab" aria-selected="${ordersStatus === value}">
+      ${label} <span>${chipCount(value)}</span>
+    </button>
+  `).join('');
+}
+
+function updateFilterState() {
+  const active = Boolean(ordersSearch.trim() || ordersStatus || ordersMonth);
+  document.getElementById('clearFiltersBtn').hidden = !active;
+  const shown = filteredOrders();
+  const total = shown.reduce((sum, o) => sum + (o.status === 'cancelado' ? 0 : o.totalCents), 0);
+  document.getElementById('ordersSummaryText').textContent = shown.length
+    ? `${shown.length} ${shown.length === 1 ? 'pedido' : 'pedidos'}${active ? ' con estos filtros' : ' en total'} · ${formatPrice(total)}`
+    : '';
+}
+
+document.getElementById('statusChips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.admin-chip');
+  if (!chip) return;
+  ordersStatus = chip.dataset.status;
+  renderStatusChips();
   renderOrders(filteredOrders());
+});
+
+document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+  ordersSearch = '';
+  ordersStatus = '';
+  ordersMonth = '';
+  document.getElementById('ordersSearch').value = '';
+  document.getElementById('ordersMonthFilter').value = '';
+  renderStatusChips();
+  renderOrders(filteredOrders());
+});
+
+document.getElementById('refreshOrdersBtn').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.classList.add('is-spinning');
+  await loadOrders();
+  await loadProducts();
+  setTimeout(() => btn.classList.remove('is-spinning'), 600);
+});
+
+document.getElementById('printOrdersBtn').addEventListener('click', () => {
+  const orders = filteredOrders();
+  if (orders.length === 0) {
+    alert('No hay pedidos para imprimir.');
+    return;
+  }
+  const rows = orders.map((o) => `<tr><td>${new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${o.customerName || '—'}<br><small>${o.customerPhone || ''}</small></td><td>${o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join('<br>')}</td><td style="text-align:right">${formatPrice(o.totalCents)}</td><td>${STATUS_LABELS[o.status] || o.status}</td><td>${o.tracking?.number ? `${o.tracking.carrier || ''} ${o.tracking.number}` : ''}</td></tr>`).join('');
+  const win = window.open('', '_blank');
+  win.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Pedidos · Works Jeans</title><style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:1.2rem;margin:0 0 4px}p{margin:0 0 16px;color:#555;font-size:.85rem}table{width:100%;border-collapse:collapse;font-size:.85rem}th,td{padding:8px 6px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#666}small{color:#666}</style></head><body><h1>Pedidos · Works Jeans</h1><p>${new Date().toLocaleString('es-MX')} · ${orders.length} pedidos</p><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Guía</th></tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>window.print()</script></body></html>`);
+  win.document.close();
 });
 
 function renderMonthFilter() {
@@ -588,6 +657,7 @@ document.getElementById('exportOrdersBtn').addEventListener('click', () => {
 });
 
 function renderOrders(orders) {
+  updateFilterState();
   if (orders.length === 0) {
     ordersTableBody.innerHTML = `<tr><td colspan="7">${ordersMonth || ordersSearch || ordersStatus ? 'No hay pedidos con esos filtros.' : 'No hay pedidos todavía.'}</td></tr>`;
     return;
@@ -610,6 +680,8 @@ function renderOrders(orders) {
         </td>
         <td class="admin-table-actions">
           ${iconBtn('view-order', 'eye', 'Ver detalle')}
+          ${iconBtn('print-order', 'print', 'Imprimir nota')}
+          ${whatsappDigits(o.customerPhone) ? iconBtn('whatsapp-order', 'whatsapp', 'WhatsApp al cliente') : ''}
           ${iconBtn('delete-order', 'trash', 'Eliminar')}
         </td>
       </tr>
@@ -625,6 +697,16 @@ ordersTableBody.addEventListener('click', async (e) => {
 
   if (action === 'view' || action === 'view-order') {
     openOrderDetail(id);
+    return;
+  }
+  if (action === 'print-order') {
+    window.open(`nota.html?id=${encodeURIComponent(id)}`, '_blank', 'noopener');
+    return;
+  }
+  if (action === 'whatsapp-order') {
+    const order = ordersCache.find((o) => o.id === id);
+    const digits = whatsappDigits(order?.customerPhone);
+    if (digits) window.open(`https://wa.me/${digits}`, '_blank', 'noopener');
     return;
   }
 
@@ -653,6 +735,8 @@ ordersTableBody.addEventListener('change', async (e) => {
     const idx = ordersCache.findIndex((o) => o.id === id);
     if (idx >= 0) ordersCache[idx] = updated;
     e.target.className = `admin-status-select status-${updated.status}`;
+    renderStatusChips();
+    updateFilterState();
     if (updated.status === 'cancelado' || order?.status === 'cancelado') loadProducts();
   }
 });
