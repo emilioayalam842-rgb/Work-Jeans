@@ -23,22 +23,61 @@ const contactForm = document.getElementById('contactForm');
 const formStatus = document.getElementById('formStatus');
 
 if (contactForm) {
-  contactForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+  const readForm = () => {
     const data = new FormData(contactForm);
-    const nombre = (data.get('nombre') || '').toString().trim();
-    const contacto = (data.get('contacto') || '').toString().trim();
-    const mensaje = (data.get('mensaje') || '').toString().trim();
+    return {
+      nombre: (data.get('nombre') || '').toString().trim(),
+      contacto: (data.get('contacto') || '').toString().trim(),
+      mensaje: (data.get('mensaje') || '').toString().trim(),
+      website: (data.get('website') || '').toString(),
+    };
+  };
+
+  const openWhatsapp = () => {
+    const { nombre, contacto, mensaje } = readForm();
     const number = (typeof WHATSAPP_NUMBER !== 'undefined' && WHATSAPP_NUMBER) || '528128613551';
-    const text = `Hola, soy ${nombre}.\n${mensaje}\n\nContacto: ${contacto}`;
-    const url = `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
-    const win = window.open(url, '_blank', 'noopener');
+    const text = `Hola, soy ${nombre || '...'}.\n${mensaje}\n\nContacto: ${contacto}`;
+    const win = window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
     if (formStatus) {
       formStatus.textContent = win
         ? 'Se abrió WhatsApp con tu mensaje. Si no lo ves, revisa las ventanas emergentes.'
         : 'No se pudo abrir WhatsApp. Escríbenos al 81 2861 3551.';
     }
-    if (win) contactForm.reset();
+  };
+
+  document.getElementById('contactWhatsappBtn')?.addEventListener('click', () => {
+    if (!contactForm.reportValidity()) return;
+    openWhatsapp();
+  });
+
+  contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submit = document.getElementById('contactSubmit');
+    submit.disabled = true;
+    formStatus.textContent = 'Enviando…';
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(readForm()),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        formStatus.textContent = data.error || 'No se pudo enviar. Prueba por WhatsApp.';
+        return;
+      }
+      if (data.emailed) {
+        formStatus.textContent = 'Mensaje enviado. Te respondemos en horario de tienda.';
+        contactForm.reset();
+      } else {
+        // Sin correo configurado: se abre WhatsApp con el mensaje.
+        openWhatsapp();
+      }
+    } catch {
+      formStatus.textContent = 'Sin conexión. Prueba con el botón de WhatsApp.';
+    } finally {
+      submit.disabled = false;
+    }
   });
 }
 

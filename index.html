@@ -164,7 +164,7 @@
         <figure class="hero-figure">
           <span class="num" aria-hidden="true">01</span>
           <span class="kicker">01 / Camisa</span>
-          <img src="assets/products/camisa-mezclilla.jpg" alt="Camisa de mezclilla para trabajo Works Jeans, vista frontal" width="1000" height="1250" fetchpriority="high" loading="eager">
+          <img src="/img/800/assets/products/camisa-mezclilla.jpg" srcset="/img/480/assets/products/camisa-mezclilla.jpg 480w, /img/800/assets/products/camisa-mezclilla.jpg 800w, /img/1000/assets/products/camisa-mezclilla.jpg 1000w" sizes="(max-width: 1024px) 90vw, 520px" alt="Camisa de mezclilla para trabajo Works Jeans, vista frontal" width="1000" height="1250" fetchpriority="high" loading="eager">
           <figcaption>
             <strong>Camisa de <span>mezclilla</span></strong>
             <span>Tallas XCH / 5XG</span>
@@ -272,7 +272,7 @@
         </div>
         <div class="detalles-grid">
           <div class="detail-card detail-card--photo reveal">
-            <img src="assets/img/etiquetas-works-jeans.jpg" alt="Etiquetas amarillas Works Jeans con talla, de XCH a 5XL" width="1000" height="1097" loading="lazy">
+            <img src="/img/800/assets/img/etiquetas-works-jeans.jpg" srcset="/img/480/assets/img/etiquetas-works-jeans.jpg 480w, /img/800/assets/img/etiquetas-works-jeans.jpg 800w" sizes="(max-width: 860px) 90vw, 560px" alt="Etiquetas amarillas Works Jeans con talla, de XCH a 5XL" width="1000" height="1097" loading="lazy">
           </div>
           <div class="detail-card reveal">
             <span class="num" aria-hidden="true">01</span>
@@ -553,10 +553,14 @@
           </ul>
         </div>
         <form class="contact-form" id="contactForm">
+          <input type="text" name="website" tabindex="-1" autocomplete="off" class="hp-field" aria-hidden="true">
           <label>Nombre <input type="text" name="nombre" autocomplete="name" required></label>
           <label>Teléfono o correo <input type="text" name="contacto" autocomplete="tel" required></label>
           <label>Mensaje <textarea name="mensaje" rows="4" placeholder="Ej. Quiero cotizar 40 camisas reflejantes talla G con bordado." required></textarea></label>
-          <button type="submit" class="btn btn-primary">Enviar por WhatsApp</button>
+          <div class="contact-actions">
+            <button type="submit" class="btn btn-primary" id="contactSubmit">Enviar mensaje</button>
+            <button type="button" class="btn btn-secondary" id="contactWhatsappBtn">Enviar por WhatsApp</button>
+          </div>
           <p class="form-status" id="formStatus"></p>
         </form>
       </div>

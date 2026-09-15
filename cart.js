@@ -273,6 +273,15 @@ function tagHtml(product) {
   return '';
 }
 
+// Rutas de imagen redimensionada (el servidor las genera y cachea).
+function imgSrc(path, width) {
+  return `/img/${width}/${path}`;
+}
+function imgSrcset(path) {
+  return [320, 480, 640, 800].map((w) => `${imgSrc(path, w)} ${w}w`).join(', ');
+}
+const CARD_SIZES = '(max-width: 600px) calc(100vw - 40px), (max-width: 1024px) 45vw, 360px';
+
 function renderProductCard(product) {
   const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
   const sizeOptions = product.sizes
@@ -281,7 +290,7 @@ function renderProductCard(product) {
   // Siempre se muestran las miniaturas (aunque haya una sola) para que todas las tarjetas alineen igual.
   const images = product.images && product.images.length ? product.images : [product.image];
   const gallery = `<div class="product-thumbs">${
-    images.map((img, i) => `<img src="${img}" alt="" class="product-thumb ${i === 0 ? 'active' : ''}" data-src="${img}" loading="lazy" width="46" height="58">`).join('')
+    images.map((img, i) => `<img src="${imgSrc(img, 320)}" alt="" class="product-thumb ${i === 0 ? 'active' : ''}" data-src="${img}" loading="lazy" width="46" height="58">`).join('')
   }</div>`;
   const firstSize = product.sizes[0] ? product.sizes[0].size : '';
   const lastSize = product.sizes.length ? product.sizes[product.sizes.length - 1].size : '';
@@ -292,7 +301,7 @@ function renderProductCard(product) {
       <span class="product-category">${product.category}</span>
       ${tagHtml(product)}
       ${totalStock <= 0 ? '<span class="product-soldout">Agotado</span>' : ''}
-      <img src="${product.image}" alt="${product.name} · ropa de trabajo de mezclilla Works Jeans" class="product-photo" data-main-photo loading="lazy" decoding="async" width="800" height="1000">
+      <img src="${imgSrc(product.image, 640)}" srcset="${imgSrcset(product.image)}" sizes="${CARD_SIZES}" alt="${product.name} · ropa de trabajo de mezclilla Works Jeans" class="product-photo" data-main-photo loading="lazy" decoding="async" width="800" height="1000">
       ${gallery}
       <h3>${product.name}</h3>
       <p class="product-sizes">Tallas ${sizeRange}</p>
@@ -367,10 +376,12 @@ function openProduct(id, { pushState = true } = {}) {
   const modal = document.getElementById('productModal');
   const images = product.images && product.images.length ? product.images : [product.image];
   const photo = document.getElementById('pmPhoto');
-  photo.src = images[0];
+  photo.src = imgSrc(images[0], 800);
+  photo.srcset = `${imgSrc(images[0], 480)} 480w, ${imgSrc(images[0], 800)} 800w, ${imgSrc(images[0], 1000)} 1000w`;
+  photo.sizes = '(max-width: 860px) 100vw, 480px';
   photo.alt = product.name;
   document.getElementById('pmThumbs').innerHTML = images.length > 1
-    ? images.map((img, i) => `<img src="${img}" alt="" class="product-thumb ${i === 0 ? 'active' : ''}" data-src="${img}" width="46" height="58">`).join('')
+    ? images.map((img, i) => `<img src="${imgSrc(img, 320)}" alt="" class="product-thumb ${i === 0 ? 'active' : ''}" data-src="${img}" width="46" height="58">`).join('')
     : '';
   document.getElementById('pmCategory').textContent = product.category;
   document.getElementById('pmName').textContent = product.name;
@@ -432,7 +443,9 @@ function setupProductModal() {
   document.getElementById('pmThumbs').addEventListener('click', (e) => {
     const thumb = e.target.closest('.product-thumb');
     if (!thumb) return;
-    document.getElementById('pmPhoto').src = thumb.dataset.src;
+    const photo = document.getElementById('pmPhoto');
+    photo.src = imgSrc(thumb.dataset.src, 800);
+    photo.srcset = `${imgSrc(thumb.dataset.src, 480)} 480w, ${imgSrc(thumb.dataset.src, 800)} 800w, ${imgSrc(thumb.dataset.src, 1000)} 1000w`;
     modal.querySelectorAll('.product-thumb').forEach((t) => t.classList.remove('active'));
     thumb.classList.add('active');
   });
@@ -509,7 +522,9 @@ async function loadProducts() {
     grid.querySelectorAll('.product-thumb').forEach((thumb) => {
       thumb.addEventListener('click', () => {
         const card = thumb.closest('.product-card');
-        card.querySelector('[data-main-photo]').src = thumb.dataset.src;
+        const main = card.querySelector('[data-main-photo]');
+        main.src = imgSrc(thumb.dataset.src, 640);
+        main.srcset = imgSrcset(thumb.dataset.src);
         card.querySelectorAll('.product-thumb').forEach((t) => t.classList.remove('active'));
         thumb.classList.add('active');
       });

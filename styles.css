@@ -1775,3 +1775,11 @@ body.modal-open { overflow: hidden; }
 .pm-sizechart table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 .pm-sizechart th, .pm-sizechart td { padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--line); }
 .pm-sizechart th { font-family: var(--label); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; background: var(--gray); }
+
+/* Contacto: acciones y campo trampa -------------------------------------- */
+.contact-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.status-links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+.status-links .btn { margin-top: 0; }
+.status-note a { color: var(--black); }
+@media (max-width: 600px) { .contact-actions { grid-template-columns: 1fr; } }

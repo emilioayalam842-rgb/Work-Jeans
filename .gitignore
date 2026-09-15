@@ -3,3 +3,4 @@ node_modules/
 admin-auth.json
 .DS_Store
 inventory.json
+img-cache/

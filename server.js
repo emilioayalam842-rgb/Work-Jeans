@@ -7,6 +7,7 @@ const path = require('path');
 const crypto = require('crypto');
 const Stripe = require('stripe');
 const compression = require('compression');
+const sharp = require('sharp');
 
 // DATA_DIR: carpeta donde viven los datos que cambian desde el panel (productos, pedidos,
 // ajustes, contraseña, fotos subidas). En hosting se apunta a un volumen persistente
@@ -326,6 +327,49 @@ app.use((req, res, next) => {
   res.sendFile(webpPath);
 });
 
+// --- Imágenes redimensionadas: /img/<ancho>/<ruta> → jpg o webp según el navegador, con caché en disco ---
+const IMG_WIDTHS = new Set([320, 480, 640, 800, 1000]);
+const IMG_CACHE_DIR = path.join(DATA_DIR, 'img-cache');
+fs.mkdirSync(IMG_CACHE_DIR, { recursive: true });
+
+function resolveImageSource(rel) {
+  const clean = path.normalize(rel).replace(/^(\.\.[/\\])+/, '');
+  if (!/^assets\/(products|img)\/[^/]+\.(jpe?g|png|webp)$/i.test(clean)) return null;
+  const candidates = [path.join(PRODUCTS_IMG_DIR, path.basename(clean)), path.join(__dirname, clean)];
+  return candidates.find((p) => fs.existsSync(p)) || null;
+}
+
+app.get('/img/:width(\\d+)/*', async (req, res) => {
+  const width = parseInt(req.params.width, 10);
+  if (!IMG_WIDTHS.has(width)) {
+    res.status(400).send('Ancho no permitido');
+    return;
+  }
+  const source = resolveImageSource(decodeURIComponent(req.params[0]));
+  if (!source) {
+    res.status(404).send('Imagen no encontrada');
+    return;
+  }
+  const webp = (req.headers.accept || '').includes('image/webp');
+  const key = `${crypto.createHash('md5').update(`${source}:${fs.statSync(source).mtimeMs}`).digest('hex')}-${width}.${webp ? 'webp' : 'jpg'}`;
+  const cached = path.join(IMG_CACHE_DIR, key);
+  res.set('Cache-Control', 'public, max-age=2592000');
+  res.set('Vary', 'Accept');
+  res.type(webp ? 'image/webp' : 'image/jpeg');
+  if (fs.existsSync(cached)) {
+    res.sendFile(cached);
+    return;
+  }
+  try {
+    const pipeline = sharp(source).rotate().resize({ width, withoutEnlargement: true });
+    const buffer = webp ? await pipeline.webp({ quality: 82 }).toBuffer() : await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer();
+    fs.writeFile(cached, buffer, () => {});
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).send('No se pudo procesar la imagen');
+  }
+});
+
 // products.json y settings.json se sirven desde DATA_DIR (el panel los edita ahí).
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -376,7 +420,7 @@ function productJsonLd(product, origin, url) {
 app.get('/producto/:id', (req, res) => {
   const product = publicProducts().find((p) => p.id === req.params.id);
   if (!product) {
-    res.status(404).send('Producto no encontrado');
+    res.status(404).sendFile(path.join(__dirname, '404.html'));
     return;
   }
   const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
@@ -1212,6 +1256,35 @@ app.post('/api/create-checkout-session', async (req, res) => {
   }
 });
 
+// --- Formulario de contacto: llega por correo (si hay Resend) y siempre queda registrado ---
+const contactAttempts = new Map();
+app.post('/api/contact', async (req, res) => {
+  const { nombre, contacto, mensaje, website } = req.body || {};
+  if (website) {
+    res.json({ ok: true }); // campo trampa para bots
+    return;
+  }
+  const name = String(nombre || '').trim().slice(0, 120);
+  const contact = String(contacto || '').trim().slice(0, 160);
+  const message = String(mensaje || '').trim().slice(0, 2000);
+  if (!name || !contact || !message) {
+    res.status(400).json({ error: 'Completa nombre, contacto y mensaje.' });
+    return;
+  }
+  const now = Date.now();
+  const recent = (contactAttempts.get(req.ip) || []).filter((t) => now - t < 10 * 60 * 1000);
+  if (recent.length >= 5) {
+    res.status(429).json({ error: 'Demasiados mensajes seguidos. Escríbenos por WhatsApp.' });
+    return;
+  }
+  contactAttempts.set(req.ip, [...recent, now]);
+  const sent = await sendEmail({
+    subject: `Mensaje del sitio: ${name}`,
+    html: `<h2>Nuevo mensaje desde www.workjeans.mx</h2><p><b>Nombre:</b> ${escapeHtml(name)}<br><b>Contacto:</b> ${escapeHtml(contact)}</p><p style="white-space:pre-wrap">${escapeHtml(message)}</p>`,
+  });
+  res.json({ ok: true, emailed: sent });
+});
+
 app.get('/api/verify-session', async (req, res) => {
   if (!stripe) {
     res.status(503).json({ error: 'Pagos en línea no configurados.' });
@@ -1307,6 +1380,15 @@ app.get('/api/admin/dashboard', requireAdmin, (req, res) => {
     });
   });
   res.json({ lowStockThreshold: LOW_STOCK_THRESHOLD, lowStock });
+});
+
+// Página 404 con el estilo del sitio (para API responde JSON).
+app.use((req, res) => {
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({ error: 'No encontrado.' });
+    return;
+  }
+  res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
 app.listen(PORT, () => {
