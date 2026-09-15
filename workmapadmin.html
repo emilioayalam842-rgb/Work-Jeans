@@ -20,7 +20,14 @@
       <img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="admin-login-logo" width="150" height="70">
       <span class="admin-login-kicker">Panel de administración</span>
       <h1>Bienvenido.</h1>
-      <p class="admin-login-sub">Escribe tu contraseña para entrar a la tienda.</p>
+      <p class="admin-login-sub" id="loginSub">Escribe tu usuario y contraseña para entrar a la tienda.</p>
+
+      <div id="loginStepPassword">
+      <label for="loginUser" class="admin-login-label">Usuario</label>
+      <div class="admin-login-field" id="loginUserField">
+        <svg class="admin-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        <input type="text" id="loginUser" autocomplete="username" placeholder="usuario" autocapitalize="none" spellcheck="false" autofocus>
+      </div>
 
       <label for="loginPassword" class="admin-login-label">Contraseña</label>
       <div class="admin-login-field" id="loginField">
@@ -31,6 +38,17 @@
           <svg class="admin-svg admin-eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M2 12s3.5-7 10-7c1.6 0 3 .4 4.3 1"/><path d="M22 12s-3.5 7-10 7c-1.6 0-3-.4-4.3-1"/><path d="m3 3 18 18"/></svg>
         </button>
       </div>
+      </div>
+
+      <div id="loginStepMfa" hidden>
+        <label for="loginCode" class="admin-login-label">Código de verificación</label>
+        <div class="admin-login-field" id="loginCodeField">
+          <svg class="admin-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          <input type="text" id="loginCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="6">
+        </div>
+        <p class="admin-login-hint">Abre tu app de autenticación (Google Authenticator, Authy…) y escribe el código de 6 dígitos.</p>
+      </div>
+
       <p class="admin-error admin-login-error" id="loginError" role="alert"></p>
 
       <button type="submit" class="btn btn-primary admin-login-btn" id="loginBtn">
@@ -55,45 +73,52 @@
         </button>
         <div class="admin-bell-menu" id="bellMenu" hidden></div>
         <a href="index.html" class="admin-link" target="_blank" rel="noopener">Ver tienda <svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5"/></svg></a>
+        <button type="button" class="admin-user-chip" id="accountBtn" title="Mi cuenta">
+          <svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          <span id="accountName">—</span><span class="admin-user-role" id="accountRole"></span>
+        </button>
         <button id="logoutBtn" class="btn btn-secondary admin-logout">Cerrar sesión</button>
       </div>
     </header>
 
     <main class="admin-main">
       <nav class="admin-side" aria-label="Secciones del panel">
-        <button class="admin-tab active" data-tab="dashboard">Dashboard</button>
+        <button class="admin-tab active" data-tab="dashboard" data-perm="reportes.ver">Dashboard</button>
         <div class="admin-side-group"><span>Ventas</span>
-          <button class="admin-tab" data-tab="tablero">Tablero</button>
-          <button class="admin-tab" data-tab="pedidos">Pedidos</button>
-          <button class="admin-tab" data-tab="devoluciones">Devoluciones</button>
-          <button class="admin-tab" data-tab="clientes">Clientes</button>
+          <button class="admin-tab" data-tab="tablero" data-perm="pedidos.ver">Tablero</button>
+          <button class="admin-tab" data-tab="pedidos" data-perm="pedidos.ver">Pedidos</button>
+          <button class="admin-tab" data-tab="devoluciones" data-perm="devoluciones.ver">Devoluciones</button>
+          <button class="admin-tab" data-tab="clientes" data-perm="clientes.ver">Clientes</button>
         </div>
         <div class="admin-side-group"><span>Catálogo</span>
-          <button class="admin-tab" data-tab="productos">Productos</button>
-          <button class="admin-tab" data-tab="variantes">Variantes</button>
-          <button class="admin-tab" data-tab="categorias">Categorías</button>
-          <button class="admin-tab" data-tab="colecciones">Colecciones</button>
+          <button class="admin-tab" data-tab="productos" data-perm="productos.ver">Productos</button>
+          <button class="admin-tab" data-tab="variantes" data-perm="productos.ver">Variantes</button>
+          <button class="admin-tab" data-tab="categorias" data-perm="productos.ver">Categorías</button>
+          <button class="admin-tab" data-tab="colecciones" data-perm="productos.ver">Colecciones</button>
         </div>
         <div class="admin-side-group"><span>Inventario</span>
-          <button class="admin-tab" data-tab="existencias">Existencias</button>
-          <button class="admin-tab" data-tab="inventario">Movimientos</button>
-          <button class="admin-tab" data-tab="almacenes">Almacenes</button>
+          <button class="admin-tab" data-tab="existencias" data-perm="inventario.ver">Existencias</button>
+          <button class="admin-tab" data-tab="inventario" data-perm="inventario.ver">Movimientos</button>
+          <button class="admin-tab" data-tab="almacenes" data-perm="inventario.ver">Almacenes</button>
         </div>
         <div class="admin-side-group"><span>Compras</span>
-          <button class="admin-tab" data-tab="proveedores">Proveedores</button>
-          <button class="admin-tab" data-tab="compras">Órdenes de compra</button>
+          <button class="admin-tab" data-tab="proveedores" data-perm="compras.ver">Proveedores</button>
+          <button class="admin-tab" data-tab="compras" data-perm="compras.ver">Órdenes de compra</button>
         </div>
         <div class="admin-side-group"><span>Marketing</span>
-          <button class="admin-tab" data-tab="promociones">Cupones y promociones</button>
+          <button class="admin-tab" data-tab="promociones" data-perm="promociones.ver">Cupones y promociones</button>
         </div>
         <div class="admin-side-group"><span>Análisis</span>
-          <button class="admin-tab" data-tab="reportes">Reportes</button>
+          <button class="admin-tab" data-tab="reportes" data-perm="reportes.ver">Reportes</button>
         </div>
         <div class="admin-side-group"><span>Sistema</span>
-          <button class="admin-tab" data-tab="configuracion">Configuración</button>
+          <button class="admin-tab" data-tab="configuracion" data-perm="configuracion.ver">Configuración</button>
+          <button class="admin-tab" data-tab="usuarios" data-perm="usuarios">Usuarios y roles</button>
+          <button class="admin-tab" data-tab="actividad" data-perm="auditoria">Actividad</button>
         </div>
       </nav>
       <div class="admin-content">
+      <div class="admin-security-banner" id="securityBanner" hidden></div>
 
       <div id="tabDashboard" class="admin-tab-panel">
         <h2>Resumen</h2>
@@ -556,8 +581,8 @@
           <p class="admin-success" id="settingsSuccess"></p>
         </form>
 
-        <h2 class="admin-section-spacer">Respaldo</h2>
-        <div class="admin-panel-box admin-settings-form">
+        <h2 class="admin-section-spacer admin-backup-box">Respaldo</h2>
+        <div class="admin-backup-box admin-panel-box admin-settings-form">
           <p class="admin-help">Descarga un archivo con productos, pedidos, clientes, inventario y configuración. Guárdalo en tu computadora o en la nube de vez en cuando. No incluye las fotos.</p>
           <a class="btn btn-primary admin-btn-icon" href="/api/admin/backup" download><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Descargar respaldo</a>
           <label for="restoreFile" class="admin-section-spacer">Restaurar desde un respaldo</label>
@@ -568,17 +593,43 @@
         </div>
 
         <h2 class="admin-section-spacer">Cuenta</h2>
-        <form id="passwordForm" class="admin-panel-box admin-settings-form">
-          <label for="currentPassword">Contraseña actual</label>
-          <input type="password" id="currentPassword" required>
+        <div class="admin-panel-box">
+          <p class="admin-muted">Contraseña, verificación en dos pasos y sesiones abiertas se manejan desde <strong>Mi cuenta</strong> (arriba a la derecha).</p>
+          <button type="button" class="btn btn-secondary" id="openAccountFromSettings">Abrir mi cuenta</button>
+        </div>
+      </div>
 
-          <label for="newPassword">Nueva contraseña</label>
-          <input type="password" id="newPassword" minlength="6" required>
+      <div id="tabUsuarios" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Usuarios y roles</h2>
+          <button type="button" class="btn btn-primary admin-btn-icon" id="newUserBtn">+ Nuevo usuario</button>
+        </div>
+        <p class="admin-muted">Cada persona entra con su propio usuario y solo ve lo que su rol permite. El servidor valida cada acción, no solo el menú.</p>
+        <div class="admin-panel-box admin-security-box">
+          <label class="admin-check"><input type="checkbox" id="requireMfaAdmins"> <span><strong>Exigir verificación en dos pasos</strong> a super admins y administradores. Hasta activarla no podrán usar el panel.</span></label>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Usuario</th><th>Rol</th><th>2 pasos</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+        <h3 class="admin-section-spacer">Qué puede hacer cada rol</h3>
+        <div class="admin-roles-grid" id="rolesGrid"></div>
+      </div>
 
-          <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
-          <p class="admin-error" id="passwordError"></p>
-          <p class="admin-success" id="passwordSuccess"></p>
-        </form>
+      <div id="tabActividad" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Actividad del panel</h2>
+          <input type="search" id="auditSearch" class="admin-filter" placeholder="Buscar usuario o acción…">
+        </div>
+        <p class="admin-muted">Bitácora de inicios de sesión y de cada cambio hecho en el panel (quién, cuándo y desde qué IP). Nunca guarda contraseñas ni códigos.</p>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th><th>IP</th></tr></thead>
+            <tbody id="auditTableBody"></tbody>
+          </table>
+        </div>
       </div>
       </div>
     </main>
@@ -768,6 +819,90 @@
         <button type="submit" class="btn btn-primary">Guardar entrada</button>
       </div>
       <p class="admin-error" id="entryError"></p>
+    </form>
+  </div>
+
+  <div class="admin-overlay" id="accountOverlay" hidden>
+    <div class="admin-form admin-form--wide admin-account">
+      <h2>Mi cuenta</h2>
+      <p class="admin-muted" id="accountSummary"></p>
+      <p class="admin-alert-inline" id="accountNotice" hidden></p>
+
+      <div class="admin-account-grid">
+        <form id="accountPasswordForm" class="admin-account-card">
+          <h3>Cambiar contraseña</h3>
+          <label for="currentPassword">Contraseña actual</label>
+          <input type="password" id="currentPassword" autocomplete="current-password" required>
+          <label for="newPassword">Nueva contraseña (mínimo 8 caracteres)</label>
+          <input type="password" id="newPassword" autocomplete="new-password" minlength="8" required>
+          <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
+          <p class="admin-error" id="passwordError"></p>
+          <p class="admin-success" id="passwordSuccess"></p>
+        </form>
+
+        <div class="admin-account-card" id="mfaCard">
+          <h3>Verificación en dos pasos</h3>
+          <div id="mfaOff">
+            <p class="admin-muted">Además de tu contraseña se pedirá un código de tu teléfono. Recomendado para administradores.</p>
+            <button type="button" class="btn btn-primary" id="mfaSetupBtn">Activar</button>
+            <div id="mfaSetup" hidden>
+              <p>1. Escanea este código con Google Authenticator, Authy, 1Password o similar.</p>
+              <img id="mfaQr" alt="Código QR para la app de autenticación" width="180" height="180">
+              <p class="admin-small admin-muted">Si no puedes escanear, escribe esta clave: <code id="mfaSecret"></code></p>
+              <p>2. Escribe el código de 6 dígitos que muestra la app.</p>
+              <div class="admin-inline-form">
+                <input type="text" id="mfaEnableCode" inputmode="numeric" maxlength="6" placeholder="123456">
+                <button type="button" class="btn btn-primary" id="mfaEnableBtn">Confirmar</button>
+              </div>
+            </div>
+          </div>
+          <div id="mfaOn" hidden>
+            <p class="admin-success">Activa. Cada inicio de sesión pedirá un código de tu app.</p>
+            <details>
+              <summary>Desactivar</summary>
+              <label for="mfaDisablePassword">Tu contraseña</label>
+              <input type="password" id="mfaDisablePassword" autocomplete="current-password">
+              <label for="mfaDisableCode">Código actual de la app</label>
+              <input type="text" id="mfaDisableCode" inputmode="numeric" maxlength="6">
+              <button type="button" class="btn btn-secondary" id="mfaDisableBtn">Desactivar verificación</button>
+            </details>
+          </div>
+          <p class="admin-error" id="mfaError"></p>
+        </div>
+
+        <div class="admin-account-card">
+          <h3>Sesiones</h3>
+          <p class="admin-muted">Las sesiones caducan a las 12 horas o tras 3 horas sin actividad. Si crees que alguien más entró con tu usuario, ciérralas todas.</p>
+          <button type="button" class="btn btn-secondary" id="logoutAllBtn">Cerrar todas mis sesiones</button>
+        </div>
+      </div>
+      <div class="admin-form-actions">
+        <button type="button" id="closeAccountBtn" class="btn btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-overlay" id="userOverlay" hidden>
+    <form id="userForm" class="admin-form">
+      <h2 id="userFormTitle">Nuevo usuario</h2>
+      <input type="hidden" id="userId">
+      <div class="admin-field-grid">
+        <div><label for="userName">Nombre</label><input type="text" id="userName" required maxlength="80"></div>
+        <div><label for="userUsername">Usuario (para entrar)</label><input type="text" id="userUsername" required pattern="[a-z0-9._-]{3,30}" autocapitalize="none" placeholder="ej. lupita"></div>
+      </div>
+      <label for="userRole">Rol</label>
+      <select id="userRole"></select>
+      <p class="admin-small admin-muted" id="userRoleHelp"></p>
+      <div id="userPasswordWrap">
+        <label for="userPassword">Contraseña temporal (mínimo 8 caracteres)</label>
+        <input type="text" id="userPassword" autocomplete="off" minlength="8">
+        <p class="admin-small admin-muted">Compártela en persona. Al entrar por primera vez tendrá que cambiarla.</p>
+      </div>
+      <div class="admin-form-actions">
+        <button type="button" id="cancelUserBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+      <p class="admin-error" id="userError"></p>
     </form>
   </div>
 
@@ -1004,5 +1139,6 @@
   <script src="admin-compras.js"></script>
   <script src="admin-marketing.js"></script>
   <script src="admin-reportes.js"></script>
+  <script src="admin-seguridad.js"></script>
 </body>
 </html>

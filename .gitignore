@@ -8,3 +8,6 @@ suppliers.json
 purchases.json
 returns.json
 promotions.json
+users.json
+audit.json
+session-secret.txt

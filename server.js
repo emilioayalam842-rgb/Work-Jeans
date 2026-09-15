@@ -9,6 +9,8 @@ const Stripe = require('stripe');
 const compression = require('compression');
 const sharp = require('sharp');
 const CONTENT = require('./contenido');
+const QRCode = require('qrcode');
+const SEC = require('./seguridad');
 
 // DATA_DIR: carpeta donde viven los datos que cambian desde el panel (productos, pedidos,
 // ajustes, contraseña, fotos subidas). En hosting se apunta a un volumen persistente
@@ -183,7 +185,7 @@ function publicProducts() {
 }
 
 function publicSettings() {
-  const { notifyEmail, warehouses, ...rest } = getSettings();
+  const { notifyEmail, warehouses, security, ...rest } = getSettings();
   return rest;
 }
 
@@ -530,40 +532,14 @@ function slugify(text) {
     .replace(/(^-|-$)/g, '');
 }
 
-// --- Admin auth storage (password hash persisted on disk so it can change at runtime) ---
+// --- Usuarios del panel, roles, MFA y bitácora (ver seguridad.js) ---
+const security = SEC.createSecurity({ dataDir: DATA_DIR, legacyAuthPath: ADMIN_AUTH_PATH });
+security.init();
 
-function hashPassword(password, salt) {
-  return crypto.scryptSync(password, salt, 64).toString('hex');
+function auditLog(req, action, details) {
+  const u = req.adminUser;
+  security.audit({ action, userId: u?.id || null, user: u?.username || null, ip: req.ip, ...details });
 }
-
-function initAdminAuth() {
-  if (fs.existsSync(ADMIN_AUTH_PATH)) return;
-  if (!process.env.ADMIN_PASSWORD) return;
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = hashPassword(process.env.ADMIN_PASSWORD, salt);
-  fs.writeFileSync(ADMIN_AUTH_PATH, JSON.stringify({ salt, hash }, null, 2) + '\n');
-}
-
-function getAdminAuth() {
-  if (!fs.existsSync(ADMIN_AUTH_PATH)) return null;
-  return JSON.parse(fs.readFileSync(ADMIN_AUTH_PATH, 'utf-8'));
-}
-
-function verifyAdminPassword(password) {
-  const auth = getAdminAuth();
-  if (!auth) return false;
-  const provided = Buffer.from(hashPassword(String(password || ''), auth.salt), 'hex');
-  const expected = Buffer.from(auth.hash, 'hex');
-  return provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
-}
-
-function setAdminPassword(newPassword) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = hashPassword(newPassword, salt);
-  fs.writeFileSync(ADMIN_AUTH_PATH, JSON.stringify({ salt, hash }, null, 2) + '\n');
-}
-
-initAdminAuth();
 
 // --- Stock helpers ---
 
@@ -663,19 +639,20 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
 app.use(express.json({ limit: '1mb' }));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'works-jeans-dev-secret-change-me',
+  name: 'wj.sid',
+  secret: security.sessionSecret(),
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 8,
+    maxAge: 1000 * 60 * 60 * 12, // caducidad absoluta: 12 h
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production' ? true : 'auto',
   },
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/admin-auth.json', '/server.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -1171,90 +1148,414 @@ const upload = multer({
   },
 });
 
+const IDLE_LIMIT = 3 * 60 * 60 * 1000; // 3 h sin actividad cierra la sesión
+
+// Identifica al usuario de la sesión y valida que siga vigente (activo, sin "cerrar todas las sesiones", sin inactividad larga).
+function loadSessionUser(req) {
+  const sess = req.session;
+  if (!sess?.uid) return null;
+  if (sess.seen && Date.now() - sess.seen > IDLE_LIMIT) return null;
+  const user = security.findUser(sess.uid);
+  if (!user || user.active === false || user.sessionVersion !== sess.sv) return null;
+  sess.seen = Date.now();
+  return user;
+}
+
+function mfaEnforced(user) {
+  return Boolean(getSettings().security?.requireMfaAdmins) && Boolean(SEC.ROLES[user.role]?.mfa) && !user.mfa?.enabled;
+}
+
 function requireAdmin(req, res, next) {
-  if (!req.session.isAdmin) {
+  const user = loadSessionUser(req);
+  if (!user) {
+    if (req.session?.uid) req.session.destroy(() => {});
     res.status(401).json({ error: 'No autorizado.' });
+    return;
+  }
+  req.adminUser = user;
+  const selfService = req.path.startsWith('/api/admin/me/') || req.path === '/api/admin/session' || req.path === '/api/admin/logout';
+  if (!selfService && user.mustChangePassword) {
+    res.status(403).json({ error: 'Debes cambiar tu contraseña antes de continuar.', code: 'password_change_required' });
+    return;
+  }
+  if (!selfService && mfaEnforced(user)) {
+    res.status(403).json({ error: 'Activa la verificación en dos pasos para continuar.', code: 'mfa_required' });
     return;
   }
   next();
 }
 
+// Permiso específico, siempre validado en el servidor.
+function perm(...needed) {
+  return (req, res, next) => {
+    const ok = needed.some((p) => SEC.roleHas(req.adminUser.role, p));
+    if (!ok) {
+      res.status(403).json({ error: 'Tu usuario no tiene permiso para esta acción.', code: 'forbidden' });
+      return;
+    }
+    next();
+  };
+}
+
+function hasPerm(req, p) {
+  return Boolean(req.adminUser) && SEC.roleHas(req.adminUser.role, p);
+}
+
+// Bitácora automática de todo cambio hecho desde el panel (sin contraseñas ni códigos).
+app.use('/api/admin', (req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD') return next();
+  res.on('finish', () => {
+    if (res.statusCode >= 400 || !req.adminUser) return;
+    const url = req.originalUrl.split('?')[0];
+    if (/^\/api\/admin\/(login|logout|me\/|users|security)/.test(url)) return; // esas rutas escriben su propia entrada
+    security.audit({ action: `${req.method} ${url}`, userId: req.adminUser.id, user: req.adminUser.username, ip: req.ip, details: security.summarize(req.body) });
+  });
+  next();
+});
+
 // --- Auth ---
 
-// Máximo 5 intentos fallidos por IP cada 15 minutos.
-const loginAttempts = new Map();
-function loginBlocked(ip) {
-  const entry = loginAttempts.get(ip);
-  if (!entry) return false;
-  if (Date.now() - entry.first > 15 * 60 * 1000) {
-    loginAttempts.delete(ip);
-    return false;
-  }
-  return entry.count >= 5;
-}
-function noteFailedLogin(ip) {
-  const entry = loginAttempts.get(ip);
-  if (!entry || Date.now() - entry.first > 15 * 60 * 1000) loginAttempts.set(ip, { first: Date.now(), count: 1 });
-  else entry.count += 1;
-}
+const MFA_MAX_TRIES = 5;
 
 app.post('/api/admin/login', (req, res) => {
-  if (loginBlocked(req.ip)) {
+  const username = String(req.body.username || '').trim().toLowerCase();
+  const password = String(req.body.password || '');
+  const users = security.getUsers();
+  if (!users.length) {
+    res.status(503).json({ error: 'El panel admin no está configurado (falta ADMIN_PASSWORD la primera vez).' });
+    return;
+  }
+  // Bloqueo por IP y por usuario: 5 intentos fallidos cada 15 minutos.
+  if (security.attempts.blocked(`ip:${req.ip}`) || (username && security.attempts.blocked(`user:${username}`))) {
     res.status(429).json({ error: 'Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.' });
     return;
   }
-  if (!getAdminAuth()) {
-    res.status(503).json({ error: 'El panel admin no está configurado (falta ADMIN_PASSWORD en .env la primera vez).' });
+  // Compatibilidad: si solo existe el usuario inicial y no se manda usuario, se usa ese.
+  const user = username ? security.findByUsername(username) : (users.length === 1 ? users[0] : null);
+  const ok = user && user.active !== false && SEC.verifyHash(password, user.salt, user.hash);
+  if (!ok) {
+    security.attempts.fail(`ip:${req.ip}`);
+    if (username) security.attempts.fail(`user:${username}`);
+    security.audit({ action: 'login.fallido', user: username || null, ip: req.ip });
+    res.status(401).json({ error: 'Usuario o contraseña incorrectos.' });
     return;
   }
+  security.attempts.clear(`ip:${req.ip}`);
+  security.attempts.clear(`user:${user.username}`);
+  req.session.regenerate((err) => {
+    if (err) {
+      res.status(500).json({ error: 'No se pudo iniciar la sesión.' });
+      return;
+    }
+    if (user.mfa?.enabled) {
+      req.session.mfaPending = { uid: user.id, at: Date.now(), tries: 0 };
+      res.json({ ok: true, mfaRequired: true });
+      return;
+    }
+    finishLogin(req, res, user);
+  });
+});
 
-  if (!verifyAdminPassword(req.body.password)) {
-    noteFailedLogin(req.ip);
-    res.status(401).json({ error: 'Contraseña incorrecta.' });
+function finishLogin(req, res, user) {
+  req.session.uid = user.id;
+  req.session.sv = user.sessionVersion;
+  req.session.seen = Date.now();
+  delete req.session.mfaPending;
+  security.updateUser(user.id, { lastLoginAt: new Date().toISOString() });
+  security.audit({ action: 'login', userId: user.id, user: user.username, ip: req.ip });
+  res.json({ ok: true, user: security.publicUser(user), mfaSuggested: Boolean(SEC.ROLES[user.role]?.mfa) && !user.mfa?.enabled });
+}
+
+app.post('/api/admin/login/mfa', (req, res) => {
+  const pending = req.session.mfaPending;
+  if (!pending || Date.now() - pending.at > 5 * 60 * 1000) {
+    res.status(401).json({ error: 'La verificación caducó. Vuelve a iniciar sesión.' });
     return;
   }
-
-  loginAttempts.delete(req.ip);
-  req.session.isAdmin = true;
-  res.json({ ok: true });
+  const user = security.findUser(pending.uid);
+  if (!user || !user.mfa?.enabled) {
+    res.status(401).json({ error: 'Vuelve a iniciar sesión.' });
+    return;
+  }
+  const step = SEC.totpMatchStep(user.mfa.secret, req.body.code, user.mfa.lastStep || 0);
+  if (step === null) {
+    pending.tries += 1;
+    security.audit({ action: 'login.mfa_fallido', userId: user.id, user: user.username, ip: req.ip });
+    if (pending.tries >= MFA_MAX_TRIES) {
+      req.session.destroy(() => res.status(429).json({ error: 'Demasiados códigos incorrectos. Vuelve a iniciar sesión.' }));
+      return;
+    }
+    res.status(401).json({ error: 'Código incorrecto.' });
+    return;
+  }
+  security.updateUser(user.id, (u) => { u.mfa.lastStep = step; });
+  finishLogin(req, res, user);
 });
 
 app.post('/api/admin/logout', (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  const user = loadSessionUser(req);
+  if (user) security.audit({ action: 'logout', userId: user.id, user: user.username, ip: req.ip });
+  req.session.destroy(() => {
+    res.clearCookie('wj.sid');
+    res.json({ ok: true });
+  });
 });
 
 app.get('/api/admin/session', (req, res) => {
-  res.json({ isAdmin: Boolean(req.session.isAdmin) });
+  const user = loadSessionUser(req);
+  if (!user) {
+    res.json({ isAdmin: false });
+    return;
+  }
+  res.json({
+    isAdmin: true,
+    user: security.publicUser(user),
+    mfaRequired: mfaEnforced(user),
+    mfaSuggested: Boolean(SEC.ROLES[user.role]?.mfa) && !user.mfa?.enabled,
+    roles: Object.fromEntries(Object.entries(SEC.ROLES).map(([k, r]) => [k, { label: r.label, description: r.description, perms: SEC.permsForRole(k) }])),
+    permissions: SEC.PERMISSIONS,
+  });
 });
 
-app.post('/api/admin/change-password', requireAdmin, (req, res) => {
+// --- Mi cuenta ---
+
+function changeOwnPassword(req, res) {
   const { currentPassword, newPassword } = req.body;
-  if (!verifyAdminPassword(currentPassword)) {
+  const user = req.adminUser;
+  if (!SEC.verifyHash(currentPassword, user.salt, user.hash)) {
     res.status(401).json({ error: 'La contraseña actual no es correcta.' });
     return;
   }
-  if (!newPassword || newPassword.length < 6) {
-    res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+  const problem = SEC.passwordProblem(newPassword, user.username);
+  if (problem) {
+    res.status(400).json({ error: problem });
     return;
   }
-  setAdminPassword(newPassword);
+  if (SEC.verifyHash(newPassword, user.salt, user.hash)) {
+    res.status(400).json({ error: 'La nueva contraseña debe ser distinta a la actual.' });
+    return;
+  }
+  const salt = crypto.randomBytes(16).toString('hex');
+  const updated = security.updateUser(user.id, (u) => { u.salt = salt; u.hash = SEC.hashPassword(newPassword, salt); u.mustChangePassword = false; u.sessionVersion += 1; });
+  req.session.sv = updated.sessionVersion; // esta sesión sigue; las demás se cierran
+  auditLog(req, 'me.password_cambiada', {});
   res.json({ ok: true });
+}
+app.post('/api/admin/me/password', requireAdmin, changeOwnPassword);
+app.post('/api/admin/change-password', requireAdmin, changeOwnPassword); // alias del panel anterior
+
+app.post('/api/admin/me/logout-all', requireAdmin, (req, res) => {
+  security.updateUser(req.adminUser.id, (u) => { u.sessionVersion += 1; });
+  auditLog(req, 'me.cerrar_sesiones', {});
+  req.session.destroy(() => {
+    res.clearCookie('wj.sid');
+    res.json({ ok: true });
+  });
+});
+
+app.post('/api/admin/me/mfa/setup', requireAdmin, async (req, res) => {
+  const secret = SEC.newTotpSecret();
+  req.session.mfaSetup = { secret, at: Date.now() };
+  const url = SEC.otpauthUrl(req.adminUser.username, secret);
+  const qr = await QRCode.toDataURL(url, { margin: 1, width: 220 });
+  res.json({ secret, qr });
+});
+
+app.post('/api/admin/me/mfa/enable', requireAdmin, (req, res) => {
+  const setup = req.session.mfaSetup;
+  if (!setup || Date.now() - setup.at > 15 * 60 * 1000) {
+    res.status(400).json({ error: 'Vuelve a generar el código QR.' });
+    return;
+  }
+  const step = SEC.totpMatchStep(setup.secret, req.body.code, 0);
+  if (step === null) {
+    res.status(400).json({ error: 'El código no coincide. Revisa la hora de tu teléfono e inténtalo de nuevo.' });
+    return;
+  }
+  security.updateUser(req.adminUser.id, (u) => { u.mfa = { enabled: true, secret: setup.secret, lastStep: step }; });
+  delete req.session.mfaSetup;
+  auditLog(req, 'me.mfa_activada', {});
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/me/mfa/disable', requireAdmin, (req, res) => {
+  const user = req.adminUser;
+  if (!SEC.verifyHash(req.body.password, user.salt, user.hash)) {
+    res.status(401).json({ error: 'La contraseña no es correcta.' });
+    return;
+  }
+  if (user.mfa?.enabled && SEC.totpMatchStep(user.mfa.secret, req.body.code, user.mfa.lastStep || 0) === null) {
+    res.status(401).json({ error: 'El código de verificación no es correcto.' });
+    return;
+  }
+  security.updateUser(user.id, (u) => { u.mfa = { enabled: false, secret: null, lastStep: 0 }; });
+  auditLog(req, 'me.mfa_desactivada', {});
+  res.json({ ok: true });
+});
+
+// --- Usuarios (solo super admin) ---
+
+function activeSuperadmins(users) {
+  return users.filter((u) => u.role === 'superadmin' && u.active !== false);
+}
+
+app.get('/api/admin/users', requireAdmin, perm('usuarios'), (req, res) => {
+  res.json(security.getUsers().map(security.publicUser));
+});
+
+app.post('/api/admin/users', requireAdmin, perm('usuarios'), (req, res) => {
+  const username = String(req.body.username || '').trim().toLowerCase();
+  const name = cleanText(req.body.name, 80);
+  const role = String(req.body.role || '');
+  if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
+    res.status(400).json({ error: 'El usuario debe tener de 3 a 30 caracteres: letras, números, punto, guion o guion bajo.' });
+    return;
+  }
+  if (!SEC.ROLES[role]) {
+    res.status(400).json({ error: 'Rol inválido.' });
+    return;
+  }
+  if (security.findByUsername(username)) {
+    res.status(409).json({ error: 'Ese nombre de usuario ya existe.' });
+    return;
+  }
+  const problem = SEC.passwordProblem(req.body.password, username);
+  if (problem) {
+    res.status(400).json({ error: problem });
+    return;
+  }
+  const user = security.createUser({ username, name, role, password: req.body.password, mustChangePassword: true });
+  auditLog(req, 'usuarios.crear', { target: user.username, details: { role } });
+  res.status(201).json(security.publicUser(user));
+});
+
+app.put('/api/admin/users/:id', requireAdmin, perm('usuarios'), (req, res) => {
+  const users = security.getUsers();
+  const user = users.find((u) => u.id === req.params.id);
+  if (!user) {
+    res.status(404).json({ error: 'Usuario no encontrado.' });
+    return;
+  }
+  const isSelf = user.id === req.adminUser.id;
+  const changes = {};
+  if (req.body.name !== undefined) changes.name = cleanText(req.body.name, 80) || user.name;
+  if (req.body.role !== undefined && req.body.role !== user.role) {
+    if (!SEC.ROLES[req.body.role]) {
+      res.status(400).json({ error: 'Rol inválido.' });
+      return;
+    }
+    if (isSelf) {
+      res.status(400).json({ error: 'No puedes cambiar tu propio rol.' });
+      return;
+    }
+    changes.role = req.body.role;
+  }
+  if (req.body.active !== undefined) {
+    if (isSelf && !req.body.active) {
+      res.status(400).json({ error: 'No puedes desactivar tu propio usuario.' });
+      return;
+    }
+    changes.active = Boolean(req.body.active);
+  }
+  const wouldBeSuper = (changes.role ?? user.role) === 'superadmin' && (changes.active ?? user.active !== false);
+  if (user.role === 'superadmin' && user.active !== false && !wouldBeSuper && activeSuperadmins(users).length <= 1) {
+    res.status(400).json({ error: 'Debe quedar al menos un super admin activo.' });
+    return;
+  }
+  if (changes.role || changes.active === false) changes.sessionVersion = user.sessionVersion + 1; // cambios de acceso cierran sus sesiones
+  const updated = security.updateUser(user.id, changes);
+  auditLog(req, 'usuarios.editar', { target: user.username, details: security.summarize(changes) });
+  res.json(security.publicUser(updated));
+});
+
+app.post('/api/admin/users/:id/reset-password', requireAdmin, perm('usuarios'), (req, res) => {
+  const user = security.findUser(req.params.id);
+  if (!user) {
+    res.status(404).json({ error: 'Usuario no encontrado.' });
+    return;
+  }
+  const problem = SEC.passwordProblem(req.body.password, user.username);
+  if (problem) {
+    res.status(400).json({ error: problem });
+    return;
+  }
+  const salt = crypto.randomBytes(16).toString('hex');
+  security.updateUser(user.id, (u) => { u.salt = salt; u.hash = SEC.hashPassword(req.body.password, salt); u.mustChangePassword = u.id !== req.adminUser.id; u.sessionVersion += 1; });
+  if (user.id === req.adminUser.id) req.session.sv = user.sessionVersion + 1;
+  auditLog(req, 'usuarios.reset_password', { target: user.username });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/users/:id/logout-all', requireAdmin, perm('usuarios'), (req, res) => {
+  const user = security.updateUser(req.params.id, (u) => { u.sessionVersion += 1; });
+  if (!user) {
+    res.status(404).json({ error: 'Usuario no encontrado.' });
+    return;
+  }
+  if (user.id === req.adminUser.id) req.session.sv = user.sessionVersion;
+  auditLog(req, 'usuarios.cerrar_sesiones', { target: user.username });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/users/:id/mfa-reset', requireAdmin, perm('usuarios'), (req, res) => {
+  const user = security.updateUser(req.params.id, (u) => { u.mfa = { enabled: false, secret: null, lastStep: 0 }; u.sessionVersion += 1; });
+  if (!user) {
+    res.status(404).json({ error: 'Usuario no encontrado.' });
+    return;
+  }
+  if (user.id === req.adminUser.id) req.session.sv = user.sessionVersion;
+  auditLog(req, 'usuarios.mfa_reiniciada', { target: user.username });
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/users/:id', requireAdmin, perm('usuarios'), (req, res) => {
+  const users = security.getUsers();
+  const user = users.find((u) => u.id === req.params.id);
+  if (!user) {
+    res.status(404).json({ error: 'Usuario no encontrado.' });
+    return;
+  }
+  if (user.id === req.adminUser.id) {
+    res.status(400).json({ error: 'No puedes eliminar tu propio usuario.' });
+    return;
+  }
+  if (user.role === 'superadmin' && user.active !== false && activeSuperadmins(users).length <= 1) {
+    res.status(400).json({ error: 'Debe quedar al menos un super admin.' });
+    return;
+  }
+  security.saveUsers(users.filter((u) => u.id !== user.id));
+  auditLog(req, 'usuarios.eliminar', { target: user.username });
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/audit', requireAdmin, perm('auditoria'), (req, res) => {
+  const limit = Math.min(500, Math.max(1, parseInt(req.query.limit, 10) || 200));
+  res.json(security.getAudit().slice(-limit).reverse());
+});
+
+app.put('/api/admin/security', requireAdmin, perm('usuarios'), (req, res) => {
+  const settings = getSettings();
+  settings.security = { ...(settings.security || {}), requireMfaAdmins: Boolean(req.body.requireMfaAdmins) };
+  saveSettings(settings);
+  auditLog(req, 'seguridad.configurar', { details: settings.security });
+  res.json(settings.security);
 });
 
 // --- Settings ---
 
 app.get('/api/settings', (req, res) => {
-  res.json(req.session?.isAdmin ? getSettings() : publicSettings());
+  res.json(loadSessionUser(req) ? getSettings() : publicSettings());
 });
 
-app.put('/api/admin/settings', requireAdmin, (req, res) => {
+app.put('/api/admin/settings', requireAdmin, perm('configuracion.editar'), (req, res) => {
   const current = getSettings();
-  const updated = { ...current, ...req.body };
+  const { security: _ignored, ...body } = req.body || {};
+  const updated = { ...current, ...body, security: current.security };
   saveSettings(updated);
   res.json(updated);
 });
 
-app.post('/api/admin/test-email', requireAdmin, async (req, res) => {
+app.post('/api/admin/test-email', requireAdmin, perm('configuracion.editar'), async (req, res) => {
   if (!process.env.RESEND_API_KEY) {
     res.status(503).json({ error: 'Falta RESEND_API_KEY en las variables de Railway.' });
     return;
@@ -1273,8 +1574,13 @@ app.post('/api/admin/test-email', requireAdmin, async (req, res) => {
 
 // --- Product management (protected) ---
 
-app.get('/api/admin/products', requireAdmin, (req, res) => {
-  res.json(getProducts());
+function stripCosts(products) {
+  return products.map(({ costCents, ...p }) => ({ ...p, sizes: (p.sizes || []).map(({ costCents: c, ...v }) => v) }));
+}
+
+app.get('/api/admin/products', requireAdmin, perm('productos.ver'), (req, res) => {
+  const products = getProducts();
+  res.json(hasPerm(req, 'costos.ver') ? products : stripCosts(products));
 });
 
 const productUpload = upload.fields([{ name: 'image', maxCount: 1 }, { name: 'images', maxCount: 8 }]);
@@ -1284,7 +1590,7 @@ function uploadedImages(req) {
   return files.map((f) => `assets/products/${f.filename}`);
 }
 
-app.post('/api/admin/products', requireAdmin, productUpload, (req, res) => {
+app.post('/api/admin/products', requireAdmin, perm('productos.editar'), productUpload, (req, res) => {
   try {
     const { name, category, priceMxn, description, sizes } = req.body;
     if (!name || !category || !priceMxn || !description || !sizes) {
@@ -1325,7 +1631,7 @@ app.post('/api/admin/products', requireAdmin, productUpload, (req, res) => {
   }
 });
 
-app.put('/api/admin/products/:id', requireAdmin, productUpload, (req, res) => {
+app.put('/api/admin/products/:id', requireAdmin, perm('productos.editar'), productUpload, (req, res) => {
   try {
     const products = getProducts();
     const product = products.find((p) => p.id === req.params.id);
@@ -1373,7 +1679,7 @@ app.put('/api/admin/products/:id', requireAdmin, productUpload, (req, res) => {
   }
 });
 
-app.post('/api/admin/products/:id/duplicate', requireAdmin, (req, res) => {
+app.post('/api/admin/products/:id/duplicate', requireAdmin, perm('productos.editar'), (req, res) => {
   const products = getProducts();
   const source = products.find((p) => p.id === req.params.id);
   if (!source) {
@@ -1396,7 +1702,7 @@ app.post('/api/admin/products/:id/duplicate', requireAdmin, (req, res) => {
   res.status(201).json(copy);
 });
 
-app.put('/api/admin/products-order', requireAdmin, (req, res) => {
+app.put('/api/admin/products-order', requireAdmin, perm('productos.editar'), (req, res) => {
   const { ids } = req.body;
   if (!Array.isArray(ids)) {
     res.status(400).json({ error: 'Falta la lista de ids.' });
@@ -1410,7 +1716,7 @@ app.put('/api/admin/products-order', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-app.patch('/api/admin/products/:id', requireAdmin, (req, res) => {
+app.patch('/api/admin/products/:id', requireAdmin, perm('productos.editar'), (req, res) => {
   const products = getProducts();
   const product = products.find((p) => p.id === req.params.id);
   if (!product) {
@@ -1422,7 +1728,7 @@ app.patch('/api/admin/products/:id', requireAdmin, (req, res) => {
   res.json(product);
 });
 
-app.delete('/api/admin/products/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/products/:id', requireAdmin, perm('productos.eliminar'), (req, res) => {
   const products = getProducts();
   const filtered = products.filter((p) => p.id !== req.params.id);
   if (filtered.length === products.length) {
@@ -1435,12 +1741,16 @@ app.delete('/api/admin/products/:id', requireAdmin, (req, res) => {
 
 // --- Order management (protected) ---
 
-app.get('/api/admin/orders', requireAdmin, (req, res) => {
+function stripOrderCosts(orders) {
+  return orders.map((o) => ({ ...o, items: (o.items || []).map(({ costCents, ...i }) => i) }));
+}
+
+app.get('/api/admin/orders', requireAdmin, perm('pedidos.ver'), (req, res) => {
   const orders = getOrders().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  res.json(orders);
+  res.json(hasPerm(req, 'costos.ver') ? orders : stripOrderCosts(orders));
 });
 
-app.post('/api/admin/orders', requireAdmin, (req, res) => {
+app.post('/api/admin/orders', requireAdmin, perm('pedidos.editar'), (req, res) => {
   try {
     const { customerName, customerPhone, notes, items, invoice } = req.body;
     if (!Array.isArray(items) || items.length === 0) {
@@ -1513,7 +1823,7 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
   }
 });
 
-app.get('/api/admin/orders/:id', requireAdmin, (req, res) => {
+app.get('/api/admin/orders/:id', requireAdmin, perm('pedidos.ver'), (req, res) => {
   const order = getOrders().find((o) => o.id === req.params.id);
   if (!order) {
     res.status(404).json({ error: 'Pedido no encontrado.' });
@@ -1522,7 +1832,7 @@ app.get('/api/admin/orders/:id', requireAdmin, (req, res) => {
   res.json(order);
 });
 
-app.put('/api/admin/orders/:id', requireAdmin, (req, res) => {
+app.put('/api/admin/orders/:id', requireAdmin, perm('pedidos.editar'), (req, res) => {
   const orders = getOrders();
   const order = orders.find((o) => o.id === req.params.id);
   if (!order) {
@@ -1567,14 +1877,14 @@ app.put('/api/admin/orders/:id', requireAdmin, (req, res) => {
 
 // --- Inventario (protegido) ---
 
-app.get('/api/admin/inventory', requireAdmin, (req, res) => {
+app.get('/api/admin/inventory', requireAdmin, perm('inventario.ver'), (req, res) => {
   const limit = Math.max(1, Math.min(500, parseInt(req.query.limit, 10) || 200));
   const log = getInventoryLog().slice(-limit).reverse();
   res.json(log);
 });
 
 // Entrada de mercancía: varias tallas de un producto, con proveedor y costo.
-app.post('/api/admin/inventory/entry', requireAdmin, (req, res) => {
+app.post('/api/admin/inventory/entry', requireAdmin, perm('inventario.editar'), (req, res) => {
   const { productId, supplier, costMxn, updateCost, note, sizes } = req.body;
   if (!productId || !Array.isArray(sizes)) {
     res.status(400).json({ error: 'Indica el producto y las cantidades por talla.' });
@@ -1618,7 +1928,7 @@ app.post('/api/admin/inventory/entry', requireAdmin, (req, res) => {
 });
 
 // Traspaso entre almacenes.
-app.post('/api/admin/inventory/transfer', requireAdmin, (req, res) => {
+app.post('/api/admin/inventory/transfer', requireAdmin, perm('inventario.editar'), (req, res) => {
   const { productId, size, from, to, qty } = req.body;
   const n = parseInt(qty, 10);
   const names = warehouseNames();
@@ -1650,7 +1960,7 @@ app.post('/api/admin/inventory/transfer', requireAdmin, (req, res) => {
 });
 
 // Existencias por variante: físico, apartadas (pedidos por salir) y disponible.
-app.get('/api/admin/stock', requireAdmin, (req, res) => {
+app.get('/api/admin/stock', requireAdmin, perm('inventario.ver'), (req, res) => {
   const names = warehouseNames();
   const reserved = {};
   for (const o of getOrders()) {
@@ -1677,7 +1987,7 @@ app.get('/api/admin/stock', requireAdmin, (req, res) => {
 });
 
 // Resumen ligero para detectar pedidos nuevos desde el panel sin recargar.
-app.get('/api/admin/orders-summary', requireAdmin, (req, res) => {
+app.get('/api/admin/orders-summary', requireAdmin, perm('pedidos.ver'), (req, res) => {
   const orders = getOrders();
   const since = req.query.since ? new Date(req.query.since) : null;
   const recent = since ? orders.filter((o) => new Date(o.createdAt) > since) : [];
@@ -1688,7 +1998,7 @@ app.get('/api/admin/orders-summary', requireAdmin, (req, res) => {
   });
 });
 
-app.post('/api/admin/inventory/adjust', requireAdmin, (req, res) => {
+app.post('/api/admin/inventory/adjust', requireAdmin, perm('inventario.editar'), (req, res) => {
   const { productId, size, delta, reason } = req.body;
   const change = parseInt(delta, 10);
   if (!productId || !size || !Number.isFinite(change) || change === 0) {
@@ -1711,7 +2021,7 @@ app.post('/api/admin/inventory/adjust', requireAdmin, (req, res) => {
   res.json({ productId: product.id, size, stock: sizeEntry.stock });
 });
 
-app.delete('/api/admin/orders/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/orders/:id', requireAdmin, perm('pedidos.eliminar'), (req, res) => {
   const orders = getOrders();
   const filtered = orders.filter((o) => o.id !== req.params.id);
   if (filtered.length === orders.length) {
@@ -1899,11 +2209,11 @@ function normalizePromo(body, existing = {}) {
   return promo;
 }
 
-app.get('/api/admin/promotions', requireAdmin, (req, res) => {
+app.get('/api/admin/promotions', requireAdmin, perm('promociones.ver'), (req, res) => {
   res.json(getPromotions().map((p) => ({ ...p, isActive: promoActive(p) })));
 });
 
-app.post('/api/admin/promotions', requireAdmin, (req, res) => {
+app.post('/api/admin/promotions', requireAdmin, perm('promociones.editar'), (req, res) => {
   const promo = normalizePromo(req.body, { id: `promo_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`, createdAt: new Date().toISOString(), uses: 0, stats: { discountCents: 0, salesCents: 0 }, active: true, scope: { kind: 'all', values: [] } });
   if (!promo.name) {
     res.status(400).json({ error: 'La promoción necesita nombre.' });
@@ -1919,7 +2229,7 @@ app.post('/api/admin/promotions', requireAdmin, (req, res) => {
   res.status(201).json(promo);
 });
 
-app.put('/api/admin/promotions/:id', requireAdmin, (req, res) => {
+app.put('/api/admin/promotions/:id', requireAdmin, perm('promociones.editar'), (req, res) => {
   const list = getPromotions();
   const idx = list.findIndex((p) => p.id === req.params.id);
   if (idx < 0) {
@@ -1936,7 +2246,7 @@ app.put('/api/admin/promotions/:id', requireAdmin, (req, res) => {
   res.json(promo);
 });
 
-app.delete('/api/admin/promotions/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/promotions/:id', requireAdmin, perm('promociones.editar'), (req, res) => {
   const list = getPromotions();
   const next = list.filter((p) => p.id !== req.params.id);
   if (next.length === list.length) {
@@ -2071,9 +2381,9 @@ app.get('/api/verify-session', async (req, res) => {
 
 // --- Proveedores ---
 
-app.get('/api/admin/suppliers', requireAdmin, (req, res) => res.json(getSuppliers()));
+app.get('/api/admin/suppliers', requireAdmin, perm('compras.ver'), (req, res) => res.json(getSuppliers()));
 
-app.post('/api/admin/suppliers', requireAdmin, (req, res) => {
+app.post('/api/admin/suppliers', requireAdmin, perm('compras.editar'), (req, res) => {
   const name = String(req.body.name || '').trim().slice(0, 120);
   if (!name) {
     res.status(400).json({ error: 'El proveedor necesita nombre.' });
@@ -2095,7 +2405,7 @@ app.post('/api/admin/suppliers', requireAdmin, (req, res) => {
   res.status(201).json(supplier);
 });
 
-app.put('/api/admin/suppliers/:id', requireAdmin, (req, res) => {
+app.put('/api/admin/suppliers/:id', requireAdmin, perm('compras.editar'), (req, res) => {
   const list = getSuppliers();
   const s = list.find((x) => x.id === req.params.id);
   if (!s) {
@@ -2109,7 +2419,7 @@ app.put('/api/admin/suppliers/:id', requireAdmin, (req, res) => {
   res.json(s);
 });
 
-app.delete('/api/admin/suppliers/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/suppliers/:id', requireAdmin, perm('compras.editar'), (req, res) => {
   const list = getSuppliers();
   const next = list.filter((x) => x.id !== req.params.id);
   if (next.length === list.length) {
@@ -2130,12 +2440,12 @@ function purchaseTotals(po) {
   return { ordered, received, totalCents, paidCents, dueCents: Math.max(0, totalCents - paidCents) };
 }
 
-app.get('/api/admin/purchases', requireAdmin, (req, res) => {
+app.get('/api/admin/purchases', requireAdmin, perm('compras.ver'), (req, res) => {
   const list = getPurchases().map((po) => ({ ...po, totals: purchaseTotals(po) })).sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1));
   res.json(list);
 });
 
-app.post('/api/admin/purchases', requireAdmin, (req, res) => {
+app.post('/api/admin/purchases', requireAdmin, perm('compras.editar'), (req, res) => {
   const { supplierId, supplierName, items, eta, notes, invoice, status } = req.body;
   if (!Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'Agrega al menos una partida a la orden.' });
@@ -2175,7 +2485,7 @@ app.post('/api/admin/purchases', requireAdmin, (req, res) => {
   res.status(201).json({ ...po, totals: purchaseTotals(po) });
 });
 
-app.put('/api/admin/purchases/:id', requireAdmin, (req, res) => {
+app.put('/api/admin/purchases/:id', requireAdmin, perm('compras.editar'), (req, res) => {
   const list = getPurchases();
   const po = list.find((x) => x.id === req.params.id);
   if (!po) {
@@ -2202,7 +2512,7 @@ app.put('/api/admin/purchases/:id', requireAdmin, (req, res) => {
 });
 
 // Recepción de mercancía de una orden: suma al inventario y registra los movimientos.
-app.post('/api/admin/purchases/:id/receive', requireAdmin, (req, res) => {
+app.post('/api/admin/purchases/:id/receive', requireAdmin, perm('compras.editar'), (req, res) => {
   const list = getPurchases();
   const po = list.find((x) => x.id === req.params.id);
   if (!po) {
@@ -2256,11 +2566,11 @@ app.post('/api/admin/purchases/:id/receive', requireAdmin, (req, res) => {
 const RETURN_REASONS = ['quedo-grande', 'quedo-chico', 'defecto', 'cambio-modelo', 'cambio-color', 'otro'];
 const RETURN_REASON_LABELS = { 'quedo-grande': 'Le quedó grande', 'quedo-chico': 'Le quedó chico', defecto: 'Defecto', 'cambio-modelo': 'Cambio de modelo', 'cambio-color': 'Cambio de color', otro: 'Otro' };
 
-app.get('/api/admin/returns', requireAdmin, (req, res) => {
+app.get('/api/admin/returns', requireAdmin, perm('devoluciones.ver'), (req, res) => {
   res.json(getReturns().sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1)));
 });
 
-app.post('/api/admin/returns', requireAdmin, (req, res) => {
+app.post('/api/admin/returns', requireAdmin, perm('devoluciones.editar'), (req, res) => {
   const { orderId, items, type, refundMxn, restock, warehouse, notes, exchangeItems } = req.body;
   const orders = getOrders();
   const order = orders.find((o) => o.id === orderId);
@@ -2336,7 +2646,7 @@ app.post('/api/admin/returns', requireAdmin, (req, res) => {
 });
 
 // Estadísticas de devoluciones: por talla y motivo, con tasa sobre lo vendido.
-app.get('/api/admin/returns/stats', requireAdmin, (req, res) => {
+app.get('/api/admin/returns/stats', requireAdmin, perm('devoluciones.ver'), (req, res) => {
   const soldBySize = {};
   const soldByProduct = {};
   for (const o of getOrders()) {
@@ -2374,7 +2684,7 @@ app.get('/api/admin/returns/stats', requireAdmin, (req, res) => {
 
 // --- Clientes: se arman a partir de los pedidos (sin tabla aparte) ---
 
-app.get('/api/admin/customers', requireAdmin, (req, res) => {
+app.get('/api/admin/customers', requireAdmin, perm('clientes.ver'), (req, res) => {
   const customers = new Map();
   for (const o of getOrders()) {
     if (o.status === 'cancelado') continue;
@@ -2397,7 +2707,7 @@ app.get('/api/admin/customers', requireAdmin, (req, res) => {
 
 // --- Respaldo y restauración de los datos del panel (no incluye las fotos) ---
 
-app.get('/api/admin/backup', requireAdmin, (req, res) => {
+app.get('/api/admin/backup', requireAdmin, perm('respaldo'), (req, res) => {
   const backup = {
     app: 'works-jeans',
     version: 1,
@@ -2415,7 +2725,7 @@ app.get('/api/admin/backup', requireAdmin, (req, res) => {
   res.json(backup);
 });
 
-app.post('/api/admin/restore', requireAdmin, express.json({ limit: '25mb' }), (req, res) => {
+app.post('/api/admin/restore', requireAdmin, perm('respaldo'), express.json({ limit: '25mb' }), (req, res) => {
   const b = req.body;
   if (!b || b.app !== 'works-jeans' || !Array.isArray(b.products) || !Array.isArray(b.orders) || typeof b.settings !== 'object') {
     res.status(400).json({ error: 'El archivo no es un respaldo válido de Works Jeans.' });
@@ -2437,7 +2747,7 @@ app.post('/api/admin/restore', requireAdmin, express.json({ limit: '25mb' }), (r
   res.json({ ok: true, products: b.products.length, orders: b.orders.length });
 });
 
-app.get('/api/admin/dashboard', requireAdmin, (req, res) => {
+app.get('/api/admin/dashboard', requireAdmin, perm('reportes.ver'), (req, res) => {
   const products = getProducts();
   const lowStock = [];
   products.forEach((p) => {
@@ -2464,7 +2774,7 @@ app.listen(PORT, () => {
   if (!stripe) {
     console.log('Aviso: STRIPE_SECRET_KEY no está configurada, el pago con tarjeta estará deshabilitado.');
   }
-  if (!getAdminAuth()) {
-    console.log('Aviso: ADMIN_PASSWORD no está configurada, el panel /admin estará deshabilitado.');
+  if (!security.getUsers().length) {
+    console.log('Aviso: ADMIN_PASSWORD no está configurada, el panel admin estará deshabilitado hasta definirla.');
   }
 });

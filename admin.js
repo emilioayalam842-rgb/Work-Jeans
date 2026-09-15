@@ -114,19 +114,57 @@ function formatPrice(cents) {
 function showAdmin() {
   loginScreen.hidden = true;
   adminScreen.hidden = false;
-  loadSettingsCache().then(loadProducts).then(loadOrders).then(renderDashboard).then(pollNewOrders);
+  const first = [...document.querySelectorAll('.admin-tab')].find((t) => !t.hidden);
+  loadSettingsCache()
+    .then(() => (can('productos.ver') ? loadProducts() : null))
+    .then(() => (can('pedidos.ver') ? loadOrders() : null))
+    .then(() => { if (first) showTab(first.dataset.tab); })
+    .then(() => { if (can('pedidos.ver')) pollNewOrders(); });
 }
 
 function showLogin() {
   loginScreen.hidden = false;
   adminScreen.hidden = true;
+  setLoginStep('password');
+}
+
+let currentUser = null; // { username, name, role, perms[] } de la sesión actual
+function can(perm) {
+  return Boolean(currentUser?.perms?.includes(perm));
+}
+
+function setLoginStep(step) {
+  document.getElementById('loginStepPassword').hidden = step === 'mfa';
+  document.getElementById('loginStepMfa').hidden = step !== 'mfa';
+  document.getElementById('loginSub').textContent = step === 'mfa' ? 'Falta un paso: escribe el código de tu app de autenticación.' : 'Escribe tu usuario y contraseña para entrar a la tienda.';
+  document.querySelector('#loginBtn .admin-login-btn-text').textContent = step === 'mfa' ? 'Verificar' : 'Entrar';
+  if (step === 'mfa') setTimeout(() => document.getElementById('loginCode').focus(), 50);
+}
+
+// Oculta las secciones que el rol no puede usar (el servidor las bloquea de todos modos).
+function applyPermissions() {
+  // Clases perm-* en <body> para ocultar por CSS los controles de edición que el rol no puede usar.
+  document.body.className = document.body.className.replace(/\bperm-[\w.-]+/g, '').trim();
+  (currentUser?.perms || []).forEach((p) => document.body.classList.add(`perm-${p.replace('.', '-')}`));
+  document.querySelectorAll('.admin-tab[data-perm]').forEach((t) => { t.hidden = !can(t.dataset.perm); });
+  document.querySelectorAll('.admin-side-group').forEach((g) => { g.hidden = ![...g.querySelectorAll('.admin-tab')].some((t) => !t.hidden); });
+  document.getElementById('accountName').textContent = currentUser?.name || currentUser?.username || '';
+  document.getElementById('accountRole').textContent = currentUser?.roleLabel || '';
 }
 
 async function checkSession() {
   const res = await fetch('/api/admin/session');
   const data = await res.json();
-  if (data.isAdmin) showAdmin();
-  else showLogin();
+  if (!data.isAdmin) {
+    currentUser = null;
+    showLogin();
+    return;
+  }
+  currentUser = data.user;
+  window.sessionInfo = data;
+  applyPermissions();
+  showAdmin();
+  window.onSessionReady?.(data);
 }
 
 function setLoginError(message) {
@@ -153,13 +191,22 @@ document.getElementById('togglePassword').addEventListener('click', (e) => {
 document.getElementById('loginPassword').addEventListener('input', () => {
   if (loginError.textContent) setLoginError('');
 });
+try { document.getElementById('loginUser').value = localStorage.getItem('wj-admin-user') || ''; } catch { /* sin localStorage */ }
+if (document.getElementById('loginUser').value) document.getElementById('loginPassword').focus();
 
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const input = document.getElementById('loginPassword');
-  const password = input.value;
-  if (!password.trim()) {
+  const mfaStep = !document.getElementById('loginStepMfa').hidden;
+  const input = document.getElementById(mfaStep ? 'loginCode' : 'loginPassword');
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!mfaStep && !password.trim()) {
     setLoginError('Escribe tu contraseña.');
+    input.focus();
+    return;
+  }
+  if (mfaStep && input.value.replace(/\D/g, '').length !== 6) {
+    setLoginError('El código tiene 6 dígitos.');
     input.focus();
     return;
   }
@@ -168,19 +215,25 @@ loginForm.addEventListener('submit', async (e) => {
   btn.disabled = true;
   setLoginError('');
   try {
-    const res = await fetch('/api/admin/login', {
+    const res = await fetch(mfaStep ? '/api/admin/login/mfa' : '/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify(mfaStep ? { code: input.value } : { username, password }),
     });
     const data = await res.json();
     if (!res.ok) {
       setLoginError(data.error || 'No se pudo iniciar sesión.');
+      if (res.status === 429 && mfaStep) setLoginStep('password');
       input.select();
       return;
     }
+    if (data.mfaRequired) {
+      setLoginStep('mfa');
+      return;
+    }
+    try { localStorage.setItem('wj-admin-user', username); } catch { /* sin localStorage */ }
     loginForm.reset();
-    showAdmin();
+    checkSession();
   } catch {
     setLoginError('Sin conexión con el servidor. Inténtalo de nuevo.');
   } finally {
@@ -191,8 +244,23 @@ loginForm.addEventListener('submit', async (e) => {
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await fetch('/api/admin/logout', { method: 'POST' });
+  currentUser = null;
   showLogin();
 });
+
+// Respuestas 403 del servidor: sin permiso, o falta cambiar contraseña / activar dos pasos.
+const nativeFetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  const res = await nativeFetch(...args);
+  if (res.status === 403 && String(args[0]).startsWith('/api/admin')) {
+    try {
+      const data = await res.clone().json();
+      if (data.code === 'password_change_required' || data.code === 'mfa_required') window.forceAccountStep?.(data.code);
+      else if (data.code === 'forbidden') window.notifyForbidden?.(data.error);
+    } catch { /* sin cuerpo JSON */ }
+  }
+  return res;
+};
 
 // --- Tabs ---
 
@@ -237,6 +305,8 @@ function showTab(name) {
   if (name === 'promociones') window.loadPromotions?.();
   if (name === 'reportes') loadOrders().then(renderReports);
   if (name === 'configuracion') loadSettingsForm();
+  if (name === 'usuarios') window.loadUsers?.();
+  if (name === 'actividad') window.loadAudit?.();
 }
 
 document.querySelectorAll('.admin-tab').forEach((tab) => {
@@ -1674,29 +1744,6 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
   renderProductsTable(productsCache);
 });
 
-document.getElementById('passwordForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const passwordError = document.getElementById('passwordError');
-  const passwordSuccess = document.getElementById('passwordSuccess');
-  passwordError.textContent = '';
-  passwordSuccess.textContent = '';
-
-  const res = await fetch('/api/admin/change-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      currentPassword: document.getElementById('currentPassword').value,
-      newPassword: document.getElementById('newPassword').value,
-    }),
-  });
-  const data = await res.json();
-
-  if (!res.ok) {
-    passwordError.textContent = data.error || 'No se pudo cambiar la contraseña.';
-    return;
-  }
-  passwordSuccess.textContent = 'Contraseña actualizada.';
-  document.getElementById('passwordForm').reset();
-});
+// El cambio de contraseña vive en admin-seguridad.js (Mi cuenta).
 
 checkSession();

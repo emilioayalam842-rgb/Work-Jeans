@@ -1010,3 +1010,47 @@ input.admin-filter { background-image: none; padding-right: 14px; cursor: text; 
 .admin-stock-input::-webkit-outer-spin-button, .admin-stock-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .admin-stock-input:focus { outline: 0; border-color: var(--black); box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.4); }
 .admin-stock-input--sm { width: 54px; padding: 4px 6px; font-size: 0.95rem; }
+
+/* --- Seguridad: cuenta, usuarios, bitácora --- */
+.admin-login-hint { font-size: 0.82rem; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
+#loginStepPassword .admin-login-label + .admin-login-field { margin-bottom: 14px; }
+.admin-user-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1.5px solid rgba(0,0,0,0.15); border-radius: 999px; background: #fff; font: inherit; font-size: 0.85rem; cursor: pointer; }
+.admin-user-chip:hover { border-color: var(--black); }
+.admin-user-role { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.admin-security-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 18px; background: #fff7cc; border: 1.5px solid #c9a400; border-radius: 6px; font-size: 0.92rem; }
+.admin-security-banner .btn-small { padding: 6px 12px; font-size: 0.82rem; }
+.admin-link-btn { background: none; border: 0; font: inherit; font-size: 0.85rem; color: var(--muted); text-decoration: underline; cursor: pointer; }
+.admin-alert-inline { padding: 10px 14px; background: #fff7cc; border: 1.5px solid #c9a400; border-radius: 6px; font-size: 0.9rem; }
+.admin-account { max-width: 960px; }
+.admin-account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 8px; }
+.admin-account-card { border: 1.5px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.admin-account-card h3 { margin: 0 0 4px; font-size: 1rem; }
+.admin-account-card label { font-size: 0.8rem; font-weight: 600; margin-top: 4px; }
+.admin-account-card input { width: 100%; }
+.admin-account-card details summary { cursor: pointer; font-size: 0.88rem; color: var(--muted); margin-top: 6px; }
+.admin-account-card code { font-size: 0.85rem; letter-spacing: 0.08em; word-break: break-all; }
+#mfaQr { display: block; margin: 6px 0; border: 1.5px solid rgba(0,0,0,0.12); border-radius: 6px; }
+.admin-inline-form { display: flex; gap: 8px; align-items: center; }
+.admin-inline-form input { flex: 1; letter-spacing: 0.2em; font-size: 1.05rem; }
+.admin-security-box { margin: 14px 0 18px; }
+.admin-check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.92rem; line-height: 1.5; cursor: pointer; }
+.admin-check input { margin-top: 4px; width: auto; }
+.admin-roles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.admin-role-card h4 { margin: 0 0 4px; font-size: 0.95rem; }
+.admin-role-card ul { margin: 8px 0 0; padding-left: 18px; font-size: 0.82rem; line-height: 1.6; }
+.admin-audit-bad td { background: #fdeaea; }
+.admin-nowrap { white-space: nowrap; }
+.admin-toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); padding: 12px 18px; background: #1e1e1e; color: #fff; border-radius: 8px; font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 200; max-width: 90vw; }
+.admin-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* Controles de edición ocultos para roles de solo lectura (el servidor también los rechaza). */
+body:not(.perm-productos-editar) :is(#newProductBtn, #tabProductos .admin-table-actions, #tabProductos .admin-switch, #tabVariantes .admin-table-actions, #tabCategorias form, #tabCategorias .admin-table-actions, #tabColecciones form, #tabColecciones .admin-table-actions, #tabCategorias .admin-icon-btn, #tabColecciones .admin-icon-btn),
+body:not(.perm-pedidos-editar) :is(#newOrderBtn, #saveOrderNotesBtn, #orderDetailNotes),
+body:not(.perm-pedidos-eliminar) :is(#tabPedidos [data-action="delete"], #tabPedidos .admin-icon-btn--danger),
+body:not(.perm-inventario-editar) :is(#stockEntryBtn, #stockTransferBtn, #newEntryBtn, #tabExistencias .admin-table-actions, #tabAlmacenes form, #tabAlmacenes .admin-table-actions),
+body:not(.perm-compras-editar) :is(#newSupplierBtn, #newPoBtn, #tabProveedores .admin-table-actions, #poReceiveBtn, #poPayBtn),
+body:not(.perm-devoluciones-editar) #newReturnBtn,
+body:not(.perm-promociones-editar) :is(#newPromoBtn, #tabPromociones .admin-table-actions, #tabPromociones .admin-switch),
+body:not(.perm-configuracion-editar) :is(#settingsForm button[type="submit"], #testEmailBtn),
+body:not(.perm-respaldo) #tabConfiguracion .admin-backup-box { display: none !important; }
+body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-inventario-editar) #tabExistencias .admin-stock-input { pointer-events: none; border-color: transparent; background: transparent; appearance: none; }
