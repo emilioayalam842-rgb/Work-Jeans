@@ -144,8 +144,11 @@ try {
   let changed = false;
   for (const p of products) {
     if (!p.status) { p.status = p.active === false ? 'borrador' : 'activo'; changed = true; }
+    if (!p.sku) { p.sku = skuPrefix(p.name); changed = true; }
+    const oldBase = slugCode(p.name).slice(0, 6);
     for (const v of p.sizes || []) {
-      if (!v.sku) { v.sku = autoSku(p, v); changed = true; }
+      // Sin SKU, o con el SKU automático anterior (prefijo por nombre, repetido entre modelos): se regenera.
+      if (!v.sku || (oldBase && v.sku.startsWith(`${oldBase}-`) && v.sku !== autoSku(p, v))) { v.sku = autoSku(p, v); changed = true; }
     }
   }
   if (changed) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
@@ -230,8 +233,14 @@ function slugCode(text) {
   return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '').toUpperCase();
 }
 
+function skuPrefix(name) {
+  const words = String(name || '').split(/\s+/).filter((w) => w && !['de', 'del', 'la', 'el', 'y', 'con', 'para'].includes(w.toLowerCase()));
+  const initials = words.map((w) => slugCode(w).charAt(0)).join('');
+  return (initials.length >= 2 ? initials : slugCode(name).slice(0, 4)) || 'WJ';
+}
+
 function autoSku(product, v) {
-  const base = product.sku || slugCode(product.name).slice(0, 6) || 'WJ';
+  const base = product.sku || skuPrefix(product.name);
   return [base, v.color ? slugCode(v.color).slice(0, 3) : '', slugCode(v.size), v.length ? slugCode(v.length) : ''].filter(Boolean).join('-');
 }
 
@@ -1673,7 +1682,7 @@ app.post('/api/admin/inventory/adjust', requireAdmin, (req, res) => {
   const before = sizeEntry.stock;
   applyStockDelta(sizeEntry, change, req.body.warehouse);
   saveProducts(products);
-  logInventory([{ productId: product.id, productName: product.name, size: variantLabel(sizeEntry), sku: sizeEntry.sku, delta: sizeEntry.stock - before, stockAfter: sizeEntry.stock, reason: String(reason || 'Ajuste manual').slice(0, 120), orderId: null, warehouse: req.body.warehouse || warehouseNames()[0] }]);
+  logInventory([{ productId: product.id, productName: product.name, size: variantLabel(sizeEntry), sku: sizeEntry.sku, delta: sizeEntry.stock - before, stockAfter: sizeEntry.stock, reason: String(reason || 'Ajuste manual').slice(0, 120), orderId: null, warehouse: req.body.warehouse || warehouseNames()[0], type: 'ajuste' }]);
   const threshold = lowStockThreshold();
   if (before > threshold && sizeEntry.stock <= threshold) notifyLowStock([{ productName: product.name, size, stock: sizeEntry.stock }], threshold);
   res.json({ productId: product.id, size, stock: sizeEntry.stock });

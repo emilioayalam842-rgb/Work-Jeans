@@ -314,13 +314,13 @@ function renderProductsTable(products) {
                 <span class="admin-stock-size-name">${variantLabel(s)}</span>
                 <div class="admin-stock-controls">
                   <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="-1" aria-label="Quitar una pieza">−</button>
-                  <b class="admin-stock-count">${s.stock}</b>
+                  <input type="number" class="admin-stock-count admin-stock-input admin-stock-input--sm" value="${s.stock}" min="0" step="1" data-current="${s.stock}" title="Escribe la cantidad y presiona Enter">
                   <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="1" aria-label="Agregar una pieza">+</button>
                 </div>
               </div>
             `).join('')}
           </div>
-          <p class="admin-help">Cada clic mueve una pieza y queda registrado en Inventario. Para cambios grandes edita el producto.</p>
+          <p class="admin-help">Escribe la cantidad exacta y presiona Enter, o usa + y −. Todo queda registrado en Movimientos.</p>
         </td>
       </tr>
     `;
@@ -341,7 +341,9 @@ async function adjustStock(productId, size, delta, sizeEl) {
   const product = productsCache.find((p) => p.id === productId);
   const entry = product?.sizes.find((s) => s.size === size);
   if (entry) entry.stock = data.stock;
-  sizeEl.querySelector('.admin-stock-count').textContent = data.stock;
+  const countEl = sizeEl.querySelector('.admin-stock-count');
+  countEl.value = data.stock;
+  countEl.dataset.current = data.stock;
   sizeEl.classList.toggle('is-low', data.stock <= lowStockLimit());
   const mainRow = productsTableBody.querySelector(`tr[data-id="${productId}"]:not(.admin-stock-row)`);
   if (mainRow && product) {
@@ -553,6 +555,19 @@ productsTableBody.addEventListener('click', async (e) => {
     const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
     if (res.ok) loadProducts();
   }
+});
+
+productsTableBody.addEventListener('keydown', (e) => {
+  if (e.target.classList.contains('admin-stock-input') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+});
+productsTableBody.addEventListener('focusout', (e) => {
+  if (!e.target.classList.contains('admin-stock-input')) return;
+  const input = e.target;
+  const current = parseInt(input.dataset.current, 10) || 0;
+  const wanted = Math.max(0, parseInt(input.value, 10) || 0);
+  if (wanted === current) { input.value = current; return; }
+  const sizeEl = input.closest('.admin-stock-size');
+  adjustStock(input.closest('tr').dataset.id, sizeEl.dataset.size, wanted - current, sizeEl);
 });
 
 productsTableBody.addEventListener('change', async (e) => {

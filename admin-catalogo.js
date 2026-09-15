@@ -228,7 +228,9 @@
         ${multi ? r.warehouses.map((w) => `<td>${w.qty}</td>`).join('') : ''}
         <td>${r.stock + (r.reserved || 0)}</td>
         <td>${r.reserved || 0}</td>
-        <td class="${r.stock <= stockMeta.threshold ? 'admin-stock-low' : ''}"><strong>${r.stock}</strong></td>
+        <td class="${r.stock <= stockMeta.threshold ? 'admin-stock-low' : ''}">
+          <input type="number" class="admin-stock-input" value="${r.stock}" min="0" step="1" data-current="${r.stock}" title="Escribe la cantidad y presiona Enter">
+        </td>
         <td>${formatPrice(r.stock * (r.costCents || 0))}</td>
         <td class="admin-table-actions">
           <div class="admin-stock-controls">
@@ -261,6 +263,39 @@
       const data = await res.json();
       alert(data.error || 'No se pudo ajustar.');
     }
+  });
+
+  // Cantidad escrita a mano: se fija la existencia exacta (el servidor registra la diferencia).
+  async function setStockExact(input) {
+    const tr = input.closest('tr');
+    const current = parseInt(input.dataset.current, 10) || 0;
+    const wanted = Math.max(0, parseInt(input.value, 10) || 0);
+    if (wanted === current) { input.value = current; return; }
+    const wh = document.getElementById('stockWarehouse').value || stockMeta.warehouses[0];
+    input.disabled = true;
+    const res = await fetch('/api/admin/inventory/adjust', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId: tr.dataset.product, size: tr.dataset.size, delta: wanted - current, warehouse: wh, reason: `Ajuste manual: de ${current} a ${wanted}` }),
+    });
+    input.disabled = false;
+    if (res.ok) {
+      await loadProducts();
+      loadStock();
+    } else {
+      const data = await res.json();
+      input.value = current;
+      alert(data.error || 'No se pudo ajustar.');
+    }
+  }
+  document.getElementById('stockTableBody').addEventListener('keydown', (e) => {
+    if (e.target.classList.contains('admin-stock-input') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  });
+  document.getElementById('stockTableBody').addEventListener('focusout', (e) => {
+    if (e.target.classList.contains('admin-stock-input')) setStockExact(e.target);
+  });
+  document.getElementById('stockTableBody').addEventListener('focusin', (e) => {
+    if (e.target.classList.contains('admin-stock-input')) e.target.select();
   });
 
   document.getElementById('stockEntryBtn').addEventListener('click', () => document.getElementById('newEntryBtn').click());
