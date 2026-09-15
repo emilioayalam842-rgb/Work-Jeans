@@ -314,7 +314,8 @@ function openOrderDetail(id) {
   orderDetailContent.innerHTML = `
     <p><strong>${sourceLabel}</strong></p>
     <p class="admin-muted">${date}</p>
-    <p>${order.customerName || 'Cliente sin nombre'}${order.customerPhone ? ` · ${order.customerPhone}` : ''}</p>
+    <p>${order.customerName || 'Cliente sin nombre'}${order.customerPhone ? ` · ${order.customerPhone}` : ''}${order.customerEmail ? ` · ${order.customerEmail}` : ''}</p>
+    ${order.shipping ? `<p><strong>Envío a:</strong> ${[order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', ')}</p>` : ''}
     <table class="admin-table admin-detail-table">
       <thead><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
       <tbody>

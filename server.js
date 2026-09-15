@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const Stripe = require('stripe');
+const compression = require('compression');
 
 // DATA_DIR: carpeta donde viven los datos que cambian desde el panel (productos, pedidos,
 // ajustes, contraseña, fotos subidas). En hosting se apunta a un volumen persistente
@@ -38,10 +39,14 @@ if (USES_EXTERNAL_DATA) {
     const seed = JSON.parse(fs.readFileSync(path.join(__dirname, 'settings.json'), 'utf-8'));
     const current = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
     const missing = Object.keys(seed).filter((k) => !(k in current));
-    if (missing.length) {
-      for (const k of missing) current[k] = seed[k];
+    for (const k of missing) current[k] = seed[k];
+    // Valores por defecto antiguos que conviene reemplazar por el nuevo (solo si nadie los editó).
+    const OLD_DEFAULTS = { hours: 'Abre a las 9:00 a.m.' };
+    const migrated = Object.keys(OLD_DEFAULTS).filter((k) => current[k] === OLD_DEFAULTS[k] && seed[k] && seed[k] !== current[k]);
+    for (const k of migrated) current[k] = seed[k];
+    if (missing.length || migrated.length) {
       fs.writeFileSync(SETTINGS_PATH, JSON.stringify(current, null, 2) + '\n');
-      console.log(`Ajustes completados con claves nuevas: ${missing.join(', ')}`);
+      console.log(`Ajustes actualizados: ${[...missing, ...migrated].join(', ')}`);
     }
   } catch {
     // Si algo falla, el sitio sigue con los ajustes que ya tenía.
@@ -158,12 +163,52 @@ app.use((req, res, next) => {
   res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
 });
 
+app.use(compression());
+app.use((req, res, next) => {
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'SAMEORIGIN');
+  res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (req.protocol === 'https') res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
+
+// --- Webhook de Stripe: registra el pedido aunque el cliente cierre el navegador antes de volver.
+// Va antes de express.json() porque Stripe necesita el cuerpo sin procesar para verificar la firma.
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
+    res.status(503).send('Webhook no configurado.');
+    return;
+  }
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    res.status(400).send(`Firma inválida: ${err.message}`);
+    return;
+  }
+  if (event.type === 'checkout.session.completed') {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(event.data.object.id, { expand: ['line_items'] });
+      if (session.payment_status === 'paid') recordStripeOrder(session);
+    } catch (err) {
+      console.error('Webhook: no se pudo registrar el pedido:', err.message);
+    }
+  }
+  res.json({ received: true });
+});
+
 app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'works-jeans-dev-secret-change-me',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 8 },
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 8,
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  },
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
@@ -193,6 +238,55 @@ app.use((req, res, next) => {
 });
 
 // products.json y settings.json se sirven desde DATA_DIR (el panel los edita ahí).
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// /producto/<id>: la misma portada, pero con título, descripción e imagen del producto para
+// compartir por WhatsApp y para Google. Al cargar, se abre la ficha del producto.
+app.get('/producto/:id', (req, res) => {
+  const product = getProducts().find((p) => p.id === req.params.id);
+  if (!product) {
+    res.status(404).send('Producto no encontrado');
+    return;
+  }
+  const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
+  const url = `${origin}/producto/${product.id}`;
+  const title = `${product.name} | Works Jeans`;
+  const desc = `${product.description} Precio: ${(product.priceCents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })} MXN. Tallas ${product.sizes[0]?.size} a ${product.sizes[product.sizes.length - 1]?.size}.`;
+  const image = `${origin}/${product.image}`;
+  let html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
+  html = html
+    .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)}</title>`)
+    .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${escapeHtml(desc)}">`)
+    .replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${url}">`)
+    .replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${escapeHtml(title)}">`)
+    .replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${escapeHtml(desc)}">`)
+    .replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`)
+    .replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${image}">`)
+    .replace(/<meta name="twitter:title" content="[^"]*">/, `<meta name="twitter:title" content="${escapeHtml(title)}">`)
+    .replace(/<meta name="twitter:description" content="[^"]*">/, `<meta name="twitter:description" content="${escapeHtml(product.description)}">`)
+    .replace(/<meta name="twitter:image" content="[^"]*">/, `<meta name="twitter:image" content="${image}">`)
+    .replace('</head>', `  <script>window.__openProduct = ${JSON.stringify(product.id)};</script>\n</head>`);
+  // Los recursos relativos deben resolverse desde la raíz aunque la URL tenga /producto/.
+  html = html.replace('<head>', '<head>\n  <base href="/">');
+  res.set('Cache-Control', 'no-cache');
+  res.send(html);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
+  const today = new Date().toISOString().slice(0, 10);
+  const urls = [
+    { loc: `${origin}/`, priority: '1.0' },
+    ...getProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8' })),
+    { loc: `${origin}/aviso-de-privacidad.html`, priority: '0.3' },
+    { loc: `${origin}/envios-y-devoluciones.html`, priority: '0.3' },
+  ];
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${today}</lastmod><priority>${u.priority}</priority></url>`).join('\n')}\n</urlset>\n`;
+  res.type('application/xml').send(xml);
+});
+
 app.get(['/products.json', '/settings.json'], (req, res) => {
   res.set('Cache-Control', 'no-cache');
   res.sendFile(req.path === '/products.json' ? PRODUCTS_PATH : SETTINGS_PATH);
@@ -231,17 +325,40 @@ function requireAdmin(req, res, next) {
 
 // --- Auth ---
 
+// Máximo 5 intentos fallidos por IP cada 15 minutos.
+const loginAttempts = new Map();
+function loginBlocked(ip) {
+  const entry = loginAttempts.get(ip);
+  if (!entry) return false;
+  if (Date.now() - entry.first > 15 * 60 * 1000) {
+    loginAttempts.delete(ip);
+    return false;
+  }
+  return entry.count >= 5;
+}
+function noteFailedLogin(ip) {
+  const entry = loginAttempts.get(ip);
+  if (!entry || Date.now() - entry.first > 15 * 60 * 1000) loginAttempts.set(ip, { first: Date.now(), count: 1 });
+  else entry.count += 1;
+}
+
 app.post('/api/admin/login', (req, res) => {
+  if (loginBlocked(req.ip)) {
+    res.status(429).json({ error: 'Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.' });
+    return;
+  }
   if (!getAdminAuth()) {
     res.status(503).json({ error: 'El panel admin no está configurado (falta ADMIN_PASSWORD en .env la primera vez).' });
     return;
   }
 
   if (!verifyAdminPassword(req.body.password)) {
+    noteFailedLogin(req.ip);
     res.status(401).json({ error: 'Contraseña incorrecta.' });
     return;
   }
 
+  loginAttempts.delete(req.ip);
   req.session.isAdmin = true;
   res.json({ ok: true });
 });
@@ -442,6 +559,101 @@ app.delete('/api/admin/orders/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// --- Aviso por correo de pedidos nuevos (Resend). Solo si hay RESEND_API_KEY y NOTIFY_EMAIL. ---
+
+function formatMxn(cents) {
+  return (cents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+}
+
+async function notifyNewOrder(order) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = process.env.NOTIFY_EMAIL;
+  if (!apiKey || !to) return;
+  const from = process.env.NOTIFY_FROM || 'Works Jeans <onboarding@resend.dev>';
+  const rows = order.items.map((i) => `<tr><td>${i.name}</td><td>${i.size || '—'}</td><td>${i.quantity}</td><td>${formatMxn(i.priceCents * i.quantity)}</td></tr>`).join('');
+  const ship = order.shipping ? `<p><b>Envío:</b> ${[order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', ')}</p>` : '';
+  const html = `
+    <h2>Nuevo pedido ${order.id}</h2>
+    <p><b>Origen:</b> ${order.source === 'stripe' ? 'Pago con tarjeta' : 'WhatsApp'}<br>
+    <b>Cliente:</b> ${order.customerName || 'Sin nombre'}${order.customerPhone ? ` · ${order.customerPhone}` : ''}${order.customerEmail ? ` · ${order.customerEmail}` : ''}</p>
+    ${ship}
+    <table border="1" cellpadding="6" style="border-collapse:collapse"><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>Subtotal</th></tr>${rows}</table>
+    <p><b>Total:</b> ${formatMxn(order.totalCents)}</p>
+    <p>Revísalo en el panel: https://www.workjeans.mx/workmapadmin.html</p>`;
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to, subject: `Nuevo pedido ${order.id} · ${formatMxn(order.totalCents)}`, html }),
+    });
+    if (!r.ok) console.error('Aviso de pedido no enviado:', r.status, await r.text());
+  } catch (err) {
+    console.error('Aviso de pedido no enviado:', err.message);
+  }
+}
+
+// Crea (si no existe) el pedido a partir de una sesión de Stripe pagada. Devuelve el pedido.
+function recordStripeOrder(session) {
+  const orders = getOrders();
+  let order = orders.find((o) => o.stripeSessionId === session.id);
+  if (order) return order;
+
+  let cartMeta = [];
+  try {
+    cartMeta = JSON.parse(session.metadata?.cart || '[]');
+  } catch {
+    cartMeta = [];
+  }
+
+  const addr = session.shipping_details?.address || session.customer_details?.address || null;
+  order = {
+    id: makeOrderId(),
+    source: 'stripe',
+    status: 'pagado',
+    createdAt: new Date().toISOString(),
+    customerName: session.shipping_details?.name || session.customer_details?.name || '',
+    customerPhone: session.customer_details?.phone || '',
+    customerEmail: session.customer_details?.email || '',
+    shipping: addr ? {
+      name: session.shipping_details?.name || '',
+      line1: addr.line1 || '',
+      line2: addr.line2 || '',
+      city: addr.city || '',
+      state: addr.state || '',
+      postalCode: addr.postal_code || '',
+      country: addr.country || '',
+    } : null,
+    notes: '',
+    stripeSessionId: session.id,
+    items: session.line_items.data.map((li, i) => ({
+      id: cartMeta[i]?.id || null,
+      name: li.description,
+      size: cartMeta[i]?.size || null,
+      quantity: li.quantity,
+      priceCents: li.amount_total / li.quantity,
+    })),
+    totalCents: session.amount_total,
+  };
+  orders.push(order);
+  saveOrders(orders);
+
+  if (cartMeta.length > 0) {
+    try {
+      const products = getProducts();
+      decrementStock(products, order.items, { strict: false });
+      saveProducts(products);
+    } catch {
+      // Never block order confirmation on stock bookkeeping issues.
+    }
+  }
+  notifyNewOrder(order);
+  return order;
+}
+
+function publicOrigin(req) {
+  return CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
+}
+
 // --- Storefront ---
 
 app.post('/api/create-checkout-session', async (req, res) => {
@@ -481,8 +693,11 @@ app.post('/api/create-checkout-session', async (req, res) => {
       mode: 'payment',
       line_items,
       metadata: { cart: JSON.stringify(cartMeta) },
-      success_url: `${req.protocol}://${req.get('host')}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.protocol}://${req.get('host')}/cancel.html`,
+      shipping_address_collection: { allowed_countries: ['MX'] },
+      phone_number_collection: { enabled: true },
+      locale: 'es',
+      success_url: `${publicOrigin(req)}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${publicOrigin(req)}/cancel.html`,
     });
 
     res.json({ url: session.url });
@@ -511,49 +726,7 @@ app.get('/api/verify-session', async (req, res) => {
       return;
     }
 
-    const orders = getOrders();
-    let order = orders.find((o) => o.stripeSessionId === session_id);
-
-    if (!order) {
-      let cartMeta = [];
-      try {
-        cartMeta = JSON.parse(session.metadata?.cart || '[]');
-      } catch {
-        cartMeta = [];
-      }
-
-      order = {
-        id: makeOrderId(),
-        source: 'stripe',
-        status: 'pagado',
-        createdAt: new Date().toISOString(),
-        customerName: session.customer_details?.name || '',
-        customerPhone: session.customer_details?.phone || '',
-        notes: '',
-        stripeSessionId: session_id,
-        items: session.line_items.data.map((li, i) => ({
-          id: cartMeta[i]?.id || null,
-          name: li.description,
-          size: cartMeta[i]?.size || null,
-          quantity: li.quantity,
-          priceCents: li.amount_total / li.quantity,
-        })),
-        totalCents: session.amount_total,
-      };
-      orders.push(order);
-      saveOrders(orders);
-
-      if (cartMeta.length > 0) {
-        try {
-          const products = getProducts();
-          decrementStock(products, order.items, { strict: false });
-          saveProducts(products);
-        } catch {
-          // Never block order confirmation on stock bookkeeping issues.
-        }
-      }
-    }
-
+    const order = recordStripeOrder(session);
     res.json(order);
   } catch (err) {
     res.status(400).json({ error: err.message });

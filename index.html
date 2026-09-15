@@ -322,6 +322,38 @@
           <li><span class="num" aria-hidden="true">04</span> Envíos a todo México</li>
         </ul>
       </div>
+      <div class="container">
+        <div class="cotizador" id="cotizador">
+          <div class="cotizador-head">
+            <span class="kicker">Cotizador de mayoreo</span>
+            <h3>Arma tu pedido por talla.</h3>
+            <p>Elige la prenda, captura cuántas piezas necesitas de cada talla y envíanos la cotización armada por WhatsApp.</p>
+          </div>
+          <div class="cotizador-body">
+            <label class="cotizador-field">
+              <span>Prenda</span>
+              <select id="cotProduct" class="size-select"></select>
+            </label>
+            <span class="cotizador-label">Piezas por talla</span>
+            <div class="cotizador-sizes" id="cotSizes"></div>
+            <button type="button" class="btn btn-secondary" id="cotAdd">Agregar a la cotización</button>
+            <div class="cotizador-list" id="cotList"></div>
+            <div class="cotizador-summary"><span>Total de piezas</span><b id="cotTotal">0</b></div>
+            <div class="cotizador-contact">
+              <label class="cotizador-field"><span>Nombre o empresa</span><input type="text" id="cotName" autocomplete="organization"></label>
+              <label class="cotizador-field"><span>Personalización</span>
+                <select id="cotLogo" class="size-select">
+                  <option value="">Sin personalizar</option>
+                  <option value="Bordado con logotipo">Bordado con logotipo</option>
+                  <option value="Estampado DTF con logotipo">Estampado DTF con logotipo</option>
+                </select>
+              </label>
+            </div>
+            <button type="button" class="btn btn-primary" id="cotSend">Enviar cotización por WhatsApp</button>
+            <p class="form-status" id="cotStatus"></p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- NOSOTROS -->
@@ -346,7 +378,7 @@
         <div class="ubicacion-info">
           <span class="kicker">Tienda</span>
           <h2>Visítanos.</h2>
-          <p class="rating"><span class="stars" aria-hidden="true">★★★★</span> <span id="googleRating">4.0</span> en Google (<span id="googleReviewCount">1</span> opinión)</p>
+          <p class="rating" id="googleRatingRow" hidden><span class="stars" aria-hidden="true">★★★★</span> <span id="googleRating">4.0</span> en Google (<span id="googleReviewCount">1</span> opinión)</p>
           <ul class="info-list">
             <li>
               <span class="info-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-7.1 7-12a7 7 0 1 0-14 0c0 4.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
@@ -354,7 +386,7 @@
             </li>
             <li>
               <span class="info-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-              <span id="storeHours">Abre a las 9:00 a.m.</span>
+              <span id="storeHours">Lunes a sábado · 9:00 a. m. a 6:00 p. m.</span>
             </li>
             <li>
               <span class="info-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg></span>
@@ -420,7 +452,7 @@
           </li>
           <li>
             <span class="info-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-            <span id="footerHours">Abre a las 9:00 a.m.</span>
+            <span id="footerHours">Lunes a sábado · 9:00 a. m. a 6:00 p. m.</span>
           </li>
           <li>
             <span class="info-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg></span>
@@ -445,6 +477,8 @@
       <li><a href="#mayoreo">Mayoreo</a></li>
       <li><a href="#ubicacion">Ubicación</a></li>
       <li><a href="#contacto">Contacto</a></li>
+      <li><a href="aviso-de-privacidad.html">Aviso de privacidad</a></li>
+      <li><a href="envios-y-devoluciones.html">Envíos y devoluciones</a></li>
     </ul>
     <p class="footer-copy">Monterrey · México · &copy; 2026 Works Jeans</p>
   </footer>
@@ -454,7 +488,34 @@
     <span>WhatsApp</span>
   </a>
 
+  <div class="product-modal" id="productModal" hidden role="dialog" aria-modal="true" aria-labelledby="pmName">
+    <div class="product-modal-backdrop" id="pmBackdrop"></div>
+    <div class="product-modal-card">
+      <button type="button" class="product-modal-close" id="pmClose" aria-label="Cerrar">✕</button>
+      <div class="product-modal-gallery">
+        <img id="pmPhoto" alt="" width="800" height="1000">
+        <div class="product-thumbs" id="pmThumbs"></div>
+      </div>
+      <div class="product-modal-info">
+        <span class="kicker" id="pmCategory"></span>
+        <h2 id="pmName"></h2>
+        <p class="product-sizes" id="pmSizes"></p>
+        <p class="price" id="pmPrice"></p>
+        <p class="product-desc" id="pmDesc"></p>
+        <label class="size-label" for="pmSize">Talla</label>
+        <select class="size-select" id="pmSize"></select>
+        <button type="button" class="btn btn-dark" id="pmAdd">Agregar al carrito</button>
+        <div class="product-modal-share">
+          <button type="button" class="btn btn-secondary" id="pmShare">Compartir por WhatsApp</button>
+          <button type="button" class="btn btn-secondary" id="pmCopy">Copiar enlace</button>
+        </div>
+        <p class="form-status" id="pmStatus"></p>
+      </div>
+    </div>
+  </div>
+
   <script src="cart.js" defer></script>
+  <script src="mayoreo.js" defer></script>
   <script src="script.js" defer></script>
 </body>
 </html>

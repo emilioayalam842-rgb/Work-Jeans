@@ -14,6 +14,9 @@ async function loadSettings() {
     };
     setText('googleRating', settings.googleRating);
     setText('googleReviewCount', settings.googleReviewCount);
+    // La calificación de Google solo se muestra cuando ya hay al menos 5 reseñas.
+    const ratingRow = document.getElementById('googleRatingRow');
+    if (ratingRow) ratingRow.hidden = !(parseInt(settings.googleReviewCount, 10) >= 5);
     setText('storeAddress', settings.address);
     setText('storeHours', settings.hours);
     setText('resenasScore', settings.googleRating);
@@ -253,11 +256,122 @@ function injectProductSchema(products) {
   document.head.appendChild(script);
 }
 
+let PRODUCTS = [];
+let modalPushedState = false;
+
+function productUrl(id) {
+  return `${window.location.origin}/producto/${id}`;
+}
+
+function openProduct(id, { pushState = true } = {}) {
+  const product = PRODUCTS.find((p) => p.id === id);
+  if (!product) return;
+  const modal = document.getElementById('productModal');
+  const images = product.images && product.images.length ? product.images : [product.image];
+  const photo = document.getElementById('pmPhoto');
+  photo.src = images[0];
+  photo.alt = product.name;
+  document.getElementById('pmThumbs').innerHTML = images.length > 1
+    ? images.map((img, i) => `<img src="${img}" alt="" class="product-thumb ${i === 0 ? 'active' : ''}" data-src="${img}" width="46" height="58">`).join('')
+    : '';
+  document.getElementById('pmCategory').textContent = product.category;
+  document.getElementById('pmName').textContent = product.name;
+  const first = product.sizes[0]?.size || '';
+  const last = product.sizes[product.sizes.length - 1]?.size || '';
+  document.getElementById('pmSizes').innerHTML = `Tallas <b>${first}</b>${last && last !== first ? ` / <b>${last}</b>` : ''}`;
+  document.getElementById('pmPrice').innerHTML = `${formatPrice(product.priceCents)}<small>MXN</small>`;
+  document.getElementById('pmDesc').textContent = product.description;
+  const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
+  const select = document.getElementById('pmSize');
+  select.innerHTML = product.sizes
+    .map((s) => `<option value="${s.size}" ${s.stock <= 0 ? 'disabled' : ''}>${s.size}${s.stock <= 0 ? ' (agotado)' : ''}</option>`)
+    .join('');
+  select.disabled = totalStock <= 0;
+  const addBtn = document.getElementById('pmAdd');
+  addBtn.disabled = totalStock <= 0;
+  addBtn.textContent = totalStock <= 0 ? 'Agotado' : 'Agregar al carrito';
+  addBtn.dataset.id = product.id;
+  document.getElementById('pmStatus').textContent = '';
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+  document.title = `${product.name} | Works Jeans`;
+  if (pushState) {
+    history.pushState({ product: id }, '', `/producto/${id}`);
+    modalPushedState = true;
+  }
+}
+
+function closeProduct({ fromHistory = false } = {}) {
+  const modal = document.getElementById('productModal');
+  if (modal.hidden) return;
+  modal.hidden = true;
+  document.body.classList.remove('modal-open');
+  document.title = 'Works Jeans | Ropa de trabajo de mezclilla en Monterrey · Workwear industrial';
+  if (fromHistory) return;
+  if (modalPushedState) {
+    modalPushedState = false;
+    history.back();
+  } else if (window.location.pathname.startsWith('/producto/')) {
+    history.replaceState({}, '', '/#productos');
+  }
+}
+
+function setupProductModal() {
+  const modal = document.getElementById('productModal');
+  if (!modal) return;
+  document.getElementById('pmClose').addEventListener('click', () => closeProduct());
+  document.getElementById('pmBackdrop').addEventListener('click', () => closeProduct());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeProduct();
+  });
+  document.getElementById('pmThumbs').addEventListener('click', (e) => {
+    const thumb = e.target.closest('.product-thumb');
+    if (!thumb) return;
+    document.getElementById('pmPhoto').src = thumb.dataset.src;
+    modal.querySelectorAll('.product-thumb').forEach((t) => t.classList.remove('active'));
+    thumb.classList.add('active');
+  });
+  document.getElementById('pmAdd').addEventListener('click', (e) => {
+    const product = PRODUCTS.find((p) => p.id === e.currentTarget.dataset.id);
+    if (!product) return;
+    closeProduct();
+    addToCart(product.id, product.name, product.priceCents, document.getElementById('pmSize').value);
+  });
+  document.getElementById('pmShare').addEventListener('click', () => {
+    const id = document.getElementById('pmAdd').dataset.id;
+    const product = PRODUCTS.find((p) => p.id === id);
+    if (!product) return;
+    const text = `Mira ${product.name} de Works Jeans: ${productUrl(id)}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+  });
+  document.getElementById('pmCopy').addEventListener('click', async () => {
+    const id = document.getElementById('pmAdd').dataset.id;
+    const status = document.getElementById('pmStatus');
+    try {
+      await navigator.clipboard.writeText(productUrl(id));
+      status.textContent = 'Enlace copiado.';
+    } catch {
+      status.textContent = productUrl(id);
+    }
+  });
+  window.addEventListener('popstate', (e) => {
+    const match = window.location.pathname.match(/^\/producto\/([^/]+)/);
+    if (match) {
+      modalPushedState = false;
+      openProduct(match[1], { pushState: false });
+    } else {
+      modalPushedState = false;
+      closeProduct({ fromHistory: true });
+    }
+  });
+}
+
 async function loadProducts() {
   const grid = document.getElementById('productsGrid');
   try {
     const res = await fetch('products.json');
     const products = await res.json();
+    PRODUCTS = products;
     grid.innerHTML = products.map(renderProductCard).join('');
     injectProductSchema(products);
 
@@ -273,6 +387,16 @@ async function loadProducts() {
     if (window.revealObserver) {
       grid.querySelectorAll('.reveal').forEach((el) => window.revealObserver.observe(el));
     }
+
+    // Foto o nombre abren la ficha del producto.
+    grid.querySelectorAll('.product-photo, .product-card h3').forEach((el) => {
+      el.classList.add('product-open');
+      el.addEventListener('click', () => openProduct(el.closest('.product-card').dataset.id));
+    });
+
+    const fromUrl = window.location.pathname.match(/^\/producto\/([^/]+)/);
+    const initial = window.__openProduct || (fromUrl && fromUrl[1]);
+    if (initial) openProduct(initial, { pushState: false });
   } catch {
     grid.innerHTML = '<p class="products-loading">No se pudieron cargar los productos.</p>';
   }
@@ -280,6 +404,7 @@ async function loadProducts() {
 
 document.addEventListener('DOMContentLoaded', () => {
   renderCart();
+  setupProductModal();
   loadProducts();
   loadSettings();
 
