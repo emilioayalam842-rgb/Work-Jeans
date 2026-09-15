@@ -19,10 +19,11 @@
   function renderSizes() {
     const product = products.find((p) => p.id === productSelect.value);
     if (!product) return;
+    const label = (v) => [v.size, v.length ? `L${v.length}` : '', v.color || ''].filter(Boolean).join(' / ');
     sizesEl.innerHTML = product.sizes.map((s) => `
       <label class="cot-size">
-        <span>${s.size}</span>
-        <input type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-size="${s.size}">
+        <span>${label(s)}</span>
+        <input type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-size="${label(s)}">
       </label>
     `).join('');
   }

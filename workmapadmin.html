@@ -60,16 +60,32 @@
     </header>
 
     <main class="admin-main">
-      <div class="admin-tabs">
+      <nav class="admin-side" aria-label="Secciones del panel">
         <button class="admin-tab active" data-tab="dashboard">Dashboard</button>
-        <button class="admin-tab" data-tab="tablero">Tablero</button>
-        <button class="admin-tab" data-tab="pedidos">Pedidos</button>
-        <button class="admin-tab" data-tab="productos">Productos</button>
-        <button class="admin-tab" data-tab="clientes">Clientes</button>
-        <button class="admin-tab" data-tab="inventario">Inventario</button>
-        <button class="admin-tab" data-tab="reportes">Reportes</button>
-        <button class="admin-tab" data-tab="configuracion">Configuración</button>
-      </div>
+        <div class="admin-side-group"><span>Ventas</span>
+          <button class="admin-tab" data-tab="tablero">Tablero</button>
+          <button class="admin-tab" data-tab="pedidos">Pedidos</button>
+          <button class="admin-tab" data-tab="clientes">Clientes</button>
+        </div>
+        <div class="admin-side-group"><span>Catálogo</span>
+          <button class="admin-tab" data-tab="productos">Productos</button>
+          <button class="admin-tab" data-tab="variantes">Variantes</button>
+          <button class="admin-tab" data-tab="categorias">Categorías</button>
+          <button class="admin-tab" data-tab="colecciones">Colecciones</button>
+        </div>
+        <div class="admin-side-group"><span>Inventario</span>
+          <button class="admin-tab" data-tab="existencias">Existencias</button>
+          <button class="admin-tab" data-tab="inventario">Movimientos</button>
+          <button class="admin-tab" data-tab="almacenes">Almacenes</button>
+        </div>
+        <div class="admin-side-group"><span>Análisis</span>
+          <button class="admin-tab" data-tab="reportes">Reportes</button>
+        </div>
+        <div class="admin-side-group"><span>Sistema</span>
+          <button class="admin-tab" data-tab="configuracion">Configuración</button>
+        </div>
+      </nav>
+      <div class="admin-content">
 
       <div id="tabDashboard" class="admin-tab-panel">
         <h2>Resumen</h2>
@@ -229,6 +245,97 @@
         </div>
       </div>
 
+      <div id="tabVariantes" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Variantes</h2>
+          <button type="button" class="btn btn-secondary admin-btn-icon" id="exportVariantsBtn"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Exportar a Excel</button>
+        </div>
+        <div class="admin-filters">
+          <label class="admin-search-box"><svg class="admin-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="variantsSearch" placeholder="Buscar por modelo, SKU, código de barras, color o talla"></label>
+          <select id="variantsProduct" class="admin-filter"><option value="">Todos los modelos</option></select>
+          <select id="variantsStock" class="admin-filter"><option value="">Todas</option><option value="low">Stock bajo</option><option value="out">Agotadas</option></select>
+        </div>
+        <p class="admin-toolbar-sub" id="variantsSummary"></p>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Modelo</th><th>Variante</th><th>SKU</th><th>Cód. barras</th><th>Precio</th><th>Costo</th><th>Existencia</th><th>Apartadas</th><th></th></tr></thead>
+            <tbody id="variantsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabCategorias" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Categorías</h2>
+        </div>
+        <p class="admin-help">Cada categoría tiene su página en la tienda (por ejemplo <code>/pantalones-de-trabajo</code>). Las dos originales tienen textos especiales; las nuevas generan su página automáticamente.</p>
+        <div class="admin-panel-box">
+          <div class="admin-list" id="categoriesList"></div>
+          <form id="categoryForm" class="admin-inline-form">
+            <input type="text" id="categoryName" placeholder="Nueva categoría (ej. Chalecos)" required>
+            <input type="text" id="categorySlug" placeholder="URL (ej. chalecos-de-trabajo)">
+            <button type="submit" class="btn btn-primary">Agregar</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="tabColecciones" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Colecciones</h2>
+        </div>
+        <p class="admin-help">Agrupa modelos por temporada o línea (Catálogo 2026, Invierno 2026…). Se asignan en cada producto y sirven para filtrar reportes y promociones.</p>
+        <div class="admin-panel-box">
+          <div class="admin-list" id="collectionsList"></div>
+          <form id="collectionForm" class="admin-inline-form">
+            <input type="text" id="collectionName" placeholder="Nueva colección" required>
+            <button type="submit" class="btn btn-primary">Agregar</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="tabExistencias" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Existencias</h2>
+          <div class="admin-toolbar-actions">
+            <button type="button" class="btn btn-secondary admin-btn-icon" id="stockEntryBtn"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Registrar entrada</button>
+            <button type="button" class="btn btn-primary admin-btn-icon" id="stockTransferBtn"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h11l-3-3"/><path d="M20 17H9l3 3"/></svg> Traspaso</button>
+          </div>
+        </div>
+        <div class="admin-stats admin-stats--compact">
+          <div class="admin-stat-card"><p class="admin-stat-label">Piezas en existencia</p><p class="admin-stat-value" id="stkTotal">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Apartadas en pedidos</p><p class="admin-stat-value" id="stkReserved">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Valor a costo</p><p class="admin-stat-value" id="stkCostValue">$0.00</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Variantes en stock bajo</p><p class="admin-stat-value" id="stkLow">0</p></div>
+        </div>
+        <div class="admin-filters">
+          <label class="admin-search-box"><svg class="admin-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="stockSearch" placeholder="Buscar modelo, SKU, color o talla"></label>
+          <select id="stockColor" class="admin-filter"><option value="">Todos los colores</option></select>
+          <select id="stockWarehouse" class="admin-filter"><option value="">Todos los almacenes</option></select>
+          <select id="stockLevel" class="admin-filter"><option value="">Todas</option><option value="low">Stock bajo</option><option value="out">Agotadas</option></select>
+        </div>
+        <div class="admin-alerts" id="stockAlerts"></div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead id="stockTableHead"></thead>
+            <tbody id="stockTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabAlmacenes" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Almacenes</h2>
+        </div>
+        <p class="admin-help">Si solo tienes la tienda, deja un almacén. Al agregar otro (bodega, taller) podrás registrar entradas y traspasos por almacén.</p>
+        <div class="admin-panel-box">
+          <div class="admin-list" id="warehousesList"></div>
+          <form id="warehouseForm" class="admin-inline-form">
+            <input type="text" id="warehouseName" placeholder="Nuevo almacén (ej. Bodega)" required>
+            <button type="submit" class="btn btn-primary">Agregar</button>
+          </form>
+        </div>
+      </div>
+
       <div id="tabInventario" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
           <h2>Inventario</h2>
@@ -245,6 +352,7 @@
                 <th>Cambio</th>
                 <th>Quedan</th>
                 <th>Motivo</th>
+                <th>Almacén</th>
                 <th>Costo</th>
               </tr>
             </thead>
@@ -353,6 +461,7 @@
           <p class="admin-success" id="passwordSuccess"></p>
         </form>
       </div>
+      </div>
     </main>
   </section>
 
@@ -364,8 +473,16 @@
       <label for="fieldName">Nombre</label>
       <input type="text" id="fieldName" name="name" required>
 
-      <label for="fieldCategory">Categoría</label>
-      <input type="text" id="fieldCategory" name="category" placeholder="Camisas / Pantalones" required>
+      <div class="admin-field-grid">
+        <div>
+          <label for="fieldCategory">Categoría</label>
+          <select id="fieldCategory" name="category" class="admin-filter" required></select>
+        </div>
+        <div>
+          <label for="fieldSku">SKU del modelo</label>
+          <input type="text" id="fieldSku" name="sku" placeholder="Ej. STR01" style="text-transform:uppercase">
+        </div>
+      </div>
 
       <div class="admin-field-grid">
         <div>
@@ -404,11 +521,47 @@
         </div>
       </div>
 
-      <label class="admin-check"><input type="checkbox" id="fieldActive" checked> Visible en la tienda</label>
+      <details class="admin-attrs">
+        <summary>Atributos de mezclilla (corte, tiro, lavado, composición…)</summary>
+        <div class="admin-field-grid">
+          <div><label for="fieldGender">Para</label><select id="fieldGender" name="gender" class="admin-filter"><option value="">Sin especificar</option><option value="hombre">Hombre</option><option value="mujer">Mujer</option><option value="unisex">Unisex</option></select></div>
+          <div><label for="fieldFit">Corte</label><input type="text" id="fieldFit" name="fit" list="fitList" placeholder="Straight, Slim, Relaxed…"><datalist id="fitList"><option value="Straight"></option><option value="Slim"></option><option value="Skinny"></option><option value="Relaxed"></option><option value="Bootcut"></option><option value="Baggy"></option><option value="Regular"></option></datalist></div>
+          <div><label for="fieldRise">Tiro</label><select id="fieldRise" name="rise" class="admin-filter"><option value="">Sin especificar</option><option value="bajo">Bajo</option><option value="medio">Medio</option><option value="alto">Alto</option></select></div>
+          <div><label for="fieldWash">Lavado / color base</label><input type="text" id="fieldWash" name="wash" list="washList" placeholder="Índigo, Negro, Stone wash…"><datalist id="washList"><option value="Índigo"></option><option value="Índigo oscuro"></option><option value="Negro"></option><option value="Stone wash"></option><option value="Acid wash"></option><option value="Crudo"></option></datalist></div>
+          <div><label for="fieldComposition">Composición</label><input type="text" id="fieldComposition" name="composition" placeholder="100% algodón"></div>
+          <div><label for="fieldStretch">Nivel de stretch</label><select id="fieldStretch" name="stretch" class="admin-filter"><option value="">Sin especificar</option><option value="sin stretch">Sin stretch</option><option value="bajo">Bajo</option><option value="medio">Medio</option><option value="alto">Alto</option></select></div>
+          <div><label for="fieldSeason">Temporada</label><input type="text" id="fieldSeason" name="season" placeholder="Ej. Invierno 2026"></div>
+          <div><label for="fieldCollection">Colección</label><select id="fieldCollection" name="collection" class="admin-filter"><option value="">Sin colección</option></select></div>
+        </div>
+      </details>
 
-      <label>Tallas y stock</label>
-      <div id="sizeRows" class="admin-size-rows"></div>
-      <button type="button" id="addSizeRowBtn" class="btn btn-secondary admin-add-item-btn admin-btn-icon"><svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Agregar talla</button>
+      <div class="admin-field-grid">
+        <div>
+          <label for="fieldStatus">Estado</label>
+          <select id="fieldStatus" name="status" class="admin-filter">
+            <option value="activo">Activo (visible en la tienda)</option>
+            <option value="borrador">Borrador (oculto)</option>
+            <option value="descontinuado">Descontinuado (oculto)</option>
+          </select>
+        </div>
+      </div>
+      <input type="hidden" id="fieldActive">
+
+      <label>Variantes (talla · largo · color) y existencias</label>
+      <p class="admin-help">Cada combinación tiene su SKU, código de barras, existencia y, si quieres, precio y costo propios. Deja largo y color vacíos si el producto solo maneja tallas.</p>
+      <div class="admin-variant-gen">
+        <input type="text" id="genSizes" placeholder="Tallas: 28, 30, 32, 34, 36">
+        <input type="text" id="genLengths" placeholder="Largos (opcional): 30, 32, 34">
+        <input type="text" id="genColors" placeholder="Colores (opcional): Índigo, Negro">
+        <button type="button" id="genVariantsBtn" class="btn btn-secondary admin-add-item-btn">Generar combinaciones</button>
+      </div>
+      <div class="admin-table-wrap admin-table-wrap--flat">
+        <table class="admin-table admin-variants-table">
+          <thead><tr><th>Talla</th><th>Largo</th><th>Color</th><th>SKU</th><th>Cód. barras</th><th id="variantStockHead">Existencia</th><th>Precio</th><th>Costo</th><th></th></tr></thead>
+          <tbody id="sizeRows"></tbody>
+        </table>
+      </div>
+      <button type="button" id="addSizeRowBtn" class="btn btn-secondary admin-add-item-btn admin-btn-icon"><svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Agregar variante</button>
 
       <label for="fieldDescription">Descripción</label>
       <textarea id="fieldDescription" name="description" rows="3" required></textarea>
@@ -472,7 +625,11 @@
           <input type="number" id="entryCost" step="0.01" min="0" placeholder="Opcional">
         </div>
       </div>
-      <label class="admin-check"><input type="checkbox" id="entryUpdateCost" checked> Actualizar el costo del producto con este</label>
+      <label class="admin-check"><input type="checkbox" id="entryUpdateCost" checked> Actualizar el costo con este</label>
+      <div id="entryWarehouseWrap" hidden>
+        <label for="entryWarehouse">Almacén que recibe</label>
+        <select id="entryWarehouse" class="admin-filter"></select>
+      </div>
 
       <label>Piezas recibidas por talla</label>
       <div id="entrySizes" class="admin-stock-grid admin-entry-grid"></div>
@@ -487,6 +644,28 @@
         <button type="submit" class="btn btn-primary">Guardar entrada</button>
       </div>
       <p class="admin-error" id="entryError"></p>
+    </form>
+  </div>
+
+  <div class="admin-overlay" id="transferOverlay" hidden>
+    <form id="transferForm" class="admin-form">
+      <h2>Traspaso entre almacenes</h2>
+      <label for="transferProduct">Producto</label>
+      <select id="transferProduct" class="admin-filter"></select>
+      <label for="transferVariant">Variante</label>
+      <select id="transferVariant" class="admin-filter"></select>
+      <div class="admin-field-grid">
+        <div><label for="transferFrom">De</label><select id="transferFrom" class="admin-filter"></select></div>
+        <div><label for="transferTo">A</label><select id="transferTo" class="admin-filter"></select></div>
+      </div>
+      <label for="transferQty">Piezas</label>
+      <input type="number" id="transferQty" min="1" step="1" value="1">
+      <p class="admin-help" id="transferInfo"></p>
+      <div class="admin-form-actions">
+        <button type="button" id="cancelTransferBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Traspasar</button>
+      </div>
+      <p class="admin-error" id="transferError"></p>
     </form>
   </div>
 
@@ -540,5 +719,6 @@
   </div>
 
   <script src="admin.js"></script>
+  <script src="admin-catalogo.js"></script>
 </body>
 </html>

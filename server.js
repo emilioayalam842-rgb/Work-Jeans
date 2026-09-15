@@ -134,6 +134,21 @@ try {
   // Sin productos aún; no pasa nada.
 }
 
+// Variantes sin SKU (datos anteriores al catálogo con variantes): se les asigna uno automático.
+try {
+  const products = JSON.parse(fs.readFileSync(PRODUCTS_PATH, 'utf-8'));
+  let changed = false;
+  for (const p of products) {
+    if (!p.status) { p.status = p.active === false ? 'borrador' : 'activo'; changed = true; }
+    for (const v of p.sizes || []) {
+      if (!v.sku) { v.sku = autoSku(p, v); changed = true; }
+    }
+  }
+  if (changed) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
+} catch {
+  // Sin productos aún.
+}
+
 const LOW_STOCK_THRESHOLD = 5;
 
 function lowStockThreshold() {
@@ -152,7 +167,7 @@ function getProducts() {
 // Productos que ve la tienda: solo los visibles, en el orden definido en el panel.
 function publicProducts() {
   return getProducts()
-    .filter((p) => p.active !== false)
+    .filter((p) => (p.status ? p.status === 'activo' : p.active !== false))
     .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
 }
 
@@ -163,12 +178,26 @@ function parseMoney(value) {
 
 // Campos opcionales del producto que vienen del formulario del panel (multipart, todo es texto).
 function applyProductExtras(product, body) {
-  if (body.active !== undefined) product.active = body.active === 'true' || body.active === '1' || body.active === 'on';
+  if (body.active !== undefined && body.status === undefined) {
+    product.active = body.active === 'true' || body.active === '1' || body.active === 'on';
+    product.status = product.active ? 'activo' : (product.status === 'descontinuado' ? 'descontinuado' : 'borrador');
+  }
   if (body.tag !== undefined) product.tag = ['nuevo', 'oferta'].includes(body.tag) ? body.tag : '';
   if (body.costMxn !== undefined) {
     const cents = parseMoney(body.costMxn);
     if (cents) product.costCents = cents;
     else delete product.costCents;
+  }
+  for (const key of ['sku', 'gender', 'fit', 'rise', 'wash', 'composition', 'stretch', 'season', 'collection']) {
+    if (body[key] !== undefined) {
+      const value = String(body[key] || '').trim().slice(0, 120);
+      if (value) product[key] = key === 'sku' ? value.toUpperCase() : value;
+      else delete product[key];
+    }
+  }
+  if (body.status !== undefined) {
+    product.status = ['activo', 'borrador', 'descontinuado'].includes(body.status) ? body.status : 'activo';
+    product.active = product.status === 'activo';
   }
   if (body.compareMxn !== undefined) {
     const cents = parseMoney(body.compareMxn);
@@ -181,6 +210,107 @@ function applyProductExtras(product, body) {
     if (minQty > 1 && cents) product.wholesale = { minQty, priceCents: cents };
     else delete product.wholesale;
   }
+}
+
+// --- Variantes: cada entrada de `sizes` es una variante (talla, largo opcional, color opcional) ---
+function variantLabel(v) {
+  return [v.size, v.length ? `L${v.length}` : '', v.color || ''].filter(Boolean).join(' / ');
+}
+
+function findVariant(product, label) {
+  if (!product || !label) return null;
+  return product.sizes.find((s) => variantLabel(s) === label) || product.sizes.find((s) => s.size === label) || null;
+}
+
+function slugCode(text) {
+  return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '').toUpperCase();
+}
+
+function autoSku(product, v) {
+  const base = product.sku || slugCode(product.name).slice(0, 6) || 'WJ';
+  return [base, v.color ? slugCode(v.color).slice(0, 3) : '', slugCode(v.size), v.length ? slugCode(v.length) : ''].filter(Boolean).join('-');
+}
+
+function warehouseNames() {
+  try {
+    const list = getSettings().warehouses;
+    return Array.isArray(list) && list.length ? list.map(String) : ['Tienda'];
+  } catch {
+    return ['Tienda'];
+  }
+}
+
+// Normaliza las variantes que llegan del panel: números enteros, SKU automático, stock por almacén.
+function normalizeVariants(list, product) {
+  const names = warehouseNames();
+  const seen = new Set();
+  const out = [];
+  for (const raw of Array.isArray(list) ? list : []) {
+    const v = {
+      size: String(raw.size || '').trim(),
+      length: String(raw.length || '').trim(),
+      color: String(raw.color || '').trim(),
+      sku: String(raw.sku || '').trim().toUpperCase(),
+      barcode: String(raw.barcode || '').trim(),
+      stock: Math.max(0, parseInt(raw.stock, 10) || 0),
+    };
+    if (!v.size) continue;
+    if (!v.length) delete v.length;
+    if (!v.color) delete v.color;
+    if (!v.barcode) delete v.barcode;
+    const label = variantLabel(v);
+    if (seen.has(label)) continue;
+    seen.add(label);
+    if (!v.sku) v.sku = autoSku(product, v);
+    const price = parseMoney(raw.priceMxn ?? (raw.priceCents != null ? raw.priceCents / 100 : ''));
+    const cost = parseMoney(raw.costMxn ?? (raw.costCents != null ? raw.costCents / 100 : ''));
+    if (price) v.priceCents = price;
+    if (cost) v.costCents = cost;
+    if (raw.warehouses && typeof raw.warehouses === 'object') {
+      const wh = {};
+      for (const n of names) wh[n] = Math.max(0, parseInt(raw.warehouses[n], 10) || 0);
+      v.warehouses = wh;
+      v.stock = Object.values(wh).reduce((a, b) => a + b, 0);
+    } else if (names.length > 1) {
+      v.warehouses = { [names[0]]: v.stock };
+    }
+    out.push(v);
+  }
+  return out;
+}
+
+// Ajusta el stock de una variante repartiendo entre almacenes (positivo entra al almacén dado,
+// negativo sale del dado o, si no alcanza, de los demás en orden).
+function applyStockDelta(variant, delta, warehouse) {
+  const names = warehouseNames();
+  if (names.length > 1 || variant.warehouses) {
+    variant.warehouses = variant.warehouses || { [names[0]]: variant.stock };
+    for (const n of names) if (!(n in variant.warehouses)) variant.warehouses[n] = 0;
+    const target = warehouse && names.includes(warehouse) ? warehouse : names[0];
+    if (delta >= 0) {
+      variant.warehouses[target] += delta;
+    } else {
+      let remaining = -delta;
+      for (const n of [target, ...names.filter((x) => x !== target)]) {
+        const take = Math.min(variant.warehouses[n], remaining);
+        variant.warehouses[n] -= take;
+        remaining -= take;
+        if (remaining <= 0) break;
+      }
+    }
+    variant.stock = Object.values(variant.warehouses).reduce((a, b) => a + b, 0);
+  } else {
+    variant.stock = Math.max(0, variant.stock + delta);
+  }
+  return variant.stock;
+}
+
+function productPrice(product, variant) {
+  return variant?.priceCents || product.priceCents;
+}
+
+function productCost(product, variant) {
+  return variant?.costCents || product.costCents || 0;
 }
 
 function saveProducts(products) {
@@ -280,15 +410,15 @@ function decrementStock(products, items, { strict, orderId = null, reason = 'Ped
   for (const item of items) {
     const product = products.find((p) => p.id === item.id);
     if (!product || !item.size) continue;
-    const sizeEntry = product.sizes.find((s) => s.size === item.size);
+    const sizeEntry = findVariant(product, item.size);
     if (!sizeEntry) continue;
 
     if (strict && sizeEntry.stock < item.quantity) {
-      throw new Error(`Sin stock suficiente de ${product.name} talla ${item.size} (disponible: ${sizeEntry.stock}).`);
+      throw new Error(`Sin stock suficiente de ${product.name} ${variantLabel(sizeEntry)} (disponible: ${sizeEntry.stock}).`);
     }
     const before = sizeEntry.stock;
-    sizeEntry.stock = Math.max(0, sizeEntry.stock - item.quantity);
-    movements.push({ productId: product.id, productName: product.name, size: sizeEntry.size, delta: sizeEntry.stock - before, stockAfter: sizeEntry.stock, reason, orderId });
+    applyStockDelta(sizeEntry, -item.quantity, item.warehouse);
+    movements.push({ productId: product.id, productName: product.name, size: variantLabel(sizeEntry), sku: sizeEntry.sku, delta: sizeEntry.stock - before, stockAfter: sizeEntry.stock, reason, orderId, warehouse: item.warehouse || warehouseNames()[0] });
     if (before > threshold && sizeEntry.stock <= threshold) {
       alerts.push({ productName: product.name, size: sizeEntry.size, stock: sizeEntry.stock });
     }
@@ -304,10 +434,10 @@ function restoreStock(products, items, { orderId = null, reason = 'Pedido cancel
   for (const item of items) {
     const product = products.find((p) => p.id === item.id);
     if (!product || !item.size) continue;
-    const sizeEntry = product.sizes.find((s) => s.size === item.size);
+    const sizeEntry = findVariant(product, item.size);
     if (!sizeEntry) continue;
-    sizeEntry.stock += item.quantity;
-    movements.push({ productId: product.id, productName: product.name, size: sizeEntry.size, delta: item.quantity, stockAfter: sizeEntry.stock, reason, orderId });
+    applyStockDelta(sizeEntry, item.quantity, item.warehouse);
+    movements.push({ productId: product.id, productName: product.name, size: variantLabel(sizeEntry), sku: sizeEntry.sku, delta: item.quantity, stockAfter: sizeEntry.stock, reason, orderId, warehouse: item.warehouse || warehouseNames()[0] });
   }
   logInventory(movements);
   return products;
@@ -606,11 +736,28 @@ function productCardStatic(p, origin) {
     </a>`;
 }
 
-app.get('/:slug(pantalones-de-trabajo|camisas-de-trabajo)', (req, res) => {
-  const page = CATEGORY_PAGES[req.params.slug];
+function categoryPageFor(slug) {
+  if (CATEGORY_PAGES[slug]) return CATEGORY_PAGES[slug];
+  let cats = [];
+  try { cats = getSettings().categories || []; } catch { cats = []; }
+  const c = cats.find((x) => x.slug === slug);
+  if (!c) return null;
+  return {
+    category: c.name,
+    kicker: `${c.name} · Ropa de trabajo`,
+    h1: `${c.name} de trabajo`,
+    h1Html: `${escapeHtml(c.name)}<br>de trabajo.`,
+    title: `${c.name} de Trabajo | Works Jeans Monterrey`,
+    description: `${c.name} de trabajo de Works Jeans: ropa de mezclilla resistente hecha en Monterrey, mayoreo con stock inmediato y envíos a todo México.`,
+    intro: `${c.name} de trabajo hechos en Monterrey con mezclilla 100% algodón y costuras reforzadas.`,
+    seoText: `<p>Consulta tallas, precios de mayoreo y personalización con tu logotipo. Arma tu pedido en el <a href="/#cotizador">cotizador de mayoreo</a> o escríbenos por WhatsApp.</p>`,
+  };
+}
+
+function renderCategoryPage(req, res, slug, page) {
   const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
   const products = publicProducts().filter((p) => p.category === page.category);
-  const canonical = `${origin}/${req.params.slug}`;
+  const canonical = `${origin}/${slug}`;
   const jsonld = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -654,7 +801,9 @@ app.get('/:slug(pantalones-de-trabajo|camisas-de-trabajo)', (req, res) => {
   for (const [key, value] of Object.entries(fill)) html = html.split(`{{${key}}}`).join(value);
   res.set('Cache-Control', 'no-cache');
   res.send(html);
-});
+}
+
+app.get('/:slug(pantalones-de-trabajo|camisas-de-trabajo)', (req, res) => renderCategoryPage(req, res, req.params.slug, CATEGORY_PAGES[req.params.slug]));
 
 // --- Feed de productos para Google Merchant Center (RSS 2.0 con espacio de nombres g:) ---
 app.get('/feed/google-merchant.xml', (req, res) => {
@@ -674,10 +823,12 @@ app.get('/feed/google-merchant.xml', (req, res) => {
       <g:image_link>${x(images[0])}</g:image_link>
       ${images.slice(1).map((i) => `<g:additional_image_link>${x(i)}</g:additional_image_link>`).join('')}
       <g:availability>${s.stock > 0 ? 'in_stock' : 'out_of_stock'}</g:availability>
-      <g:price>${(p.priceCents / 100).toFixed(2)} MXN</g:price>
+      <g:price>${(productPrice(p, s) / 100).toFixed(2)} MXN</g:price>
       <g:brand>Works Jeans</g:brand>
       <g:condition>new</g:condition>
-      <g:size>${x(s.size)}</g:size>
+      <g:size>${x(s.length ? `${s.size} x ${s.length}` : s.size)}</g:size>
+      ${s.color ? `<g:color>${x(s.color)}</g:color>` : ''}
+      ${s.sku ? `<g:mpn>${x(s.sku)}</g:mpn>` : ''}
       <g:gender>unisex</g:gender>
       <g:age_group>adult</g:age_group>
       <g:material>Mezclilla 100% algodón</g:material>
@@ -793,8 +944,11 @@ app.get('/articulos/:slug', (req, res, next) => {
 
 app.get('/:slug', (req, res, next) => {
   const page = CONTENT.LANDINGS[req.params.slug];
-  if (!page) return next();
-  renderContentPage(req, res, req.params.slug, page, { isArticle: false });
+  if (page) return renderContentPage(req, res, req.params.slug, page, { isArticle: false });
+  const cat = categoryPageFor(req.params.slug);
+  if (!cat || CATEGORY_PAGES[req.params.slug]) return next();
+  req.params.slug = req.params.slug;
+  return renderCategoryPage(req, res, req.params.slug, cat);
 });
 
 app.get('/sitemap.xml', (req, res) => {
@@ -985,11 +1139,13 @@ app.post('/api/admin/products', requireAdmin, productUpload, (req, res) => {
       image: images[0],
       images,
       description,
-      sizes: JSON.parse(sizes),
+      sizes: [],
       active: true,
+      status: 'activo',
       order: products.reduce((max, p) => Math.max(max, p.order ?? 0), 0) + 1,
     };
     applyProductExtras(product, req.body);
+    product.sizes = normalizeVariants(JSON.parse(sizes), product);
 
     products.push(product);
     saveProducts(products);
@@ -1014,13 +1170,14 @@ app.put('/api/admin/products/:id', requireAdmin, productUpload, (req, res) => {
     if (priceMxn) product.priceCents = Math.round(parseFloat(priceMxn) * 100);
     if (description) product.description = description;
     if (sizes) {
-      const newSizes = JSON.parse(sizes);
+      applyProductExtras(product, req.body);
+      const newSizes = normalizeVariants(JSON.parse(sizes), product);
       const movements = [];
       for (const ns of newSizes) {
-        const old = product.sizes.find((s) => s.size === ns.size);
+        const old = findVariant(product, variantLabel(ns));
         const before = old ? old.stock : 0;
         if (ns.stock !== before) {
-          movements.push({ productId: product.id, productName: product.name, size: ns.size, delta: ns.stock - before, stockAfter: ns.stock, reason: 'Edición de producto', orderId: null });
+          movements.push({ productId: product.id, productName: product.name, size: variantLabel(ns), sku: ns.sku, delta: ns.stock - before, stockAfter: ns.stock, reason: 'Edición de producto', orderId: null });
         }
       }
       logInventory(movements);
@@ -1128,13 +1285,15 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
         throw new Error(`Producto inválido: ${item.id}`);
       }
       const quantity = Math.max(1, Math.min(50, parseInt(item.quantity, 10) || 1));
+      const variant = findVariant(product, item.size);
       return {
         id: product.id,
         name: product.name,
-        size: item.size || null,
+        size: variant ? variantLabel(variant) : (item.size || null),
+        sku: variant?.sku || product.sku || null,
         quantity,
-        priceCents: product.priceCents,
-        costCents: product.costCents || 0,
+        priceCents: productPrice(product, variant),
+        costCents: productCost(product, variant),
       };
     });
 
@@ -1242,6 +1401,7 @@ app.post('/api/admin/inventory/entry', requireAdmin, (req, res) => {
     return;
   }
   const costCents = parseMoney(costMxn);
+  const warehouse = String(req.body.warehouse || '').trim();
   const supplierName = String(supplier || '').trim().slice(0, 80);
   const reason = `Entrada${supplierName ? `: ${supplierName}` : ' de mercancía'}${note ? ` · ${String(note).trim().slice(0, 120)}` : ''}`;
   const movements = [];
@@ -1249,15 +1409,17 @@ app.post('/api/admin/inventory/entry', requireAdmin, (req, res) => {
   for (const row of sizes) {
     const qty = parseInt(row.qty, 10);
     if (!Number.isFinite(qty) || qty <= 0) continue;
-    let sizeEntry = product.sizes.find((s) => s.size === row.size);
+    let sizeEntry = findVariant(product, row.size);
     if (!sizeEntry) {
       if (!row.size) continue;
       sizeEntry = { size: String(row.size).trim(), stock: 0 };
+      sizeEntry.sku = autoSku(product, sizeEntry);
       product.sizes.push(sizeEntry);
     }
-    sizeEntry.stock += qty;
+    applyStockDelta(sizeEntry, qty, warehouse);
+    if (costCents && (updateCost === true || updateCost === 'true')) sizeEntry.costCents = costCents;
     totalQty += qty;
-    movements.push({ productId: product.id, productName: product.name, size: sizeEntry.size, delta: qty, stockAfter: sizeEntry.stock, reason, orderId: null, supplier: supplierName || null, costCents: costCents || null, type: 'entrada' });
+    movements.push({ productId: product.id, productName: product.name, size: variantLabel(sizeEntry), sku: sizeEntry.sku, delta: qty, stockAfter: sizeEntry.stock, reason, orderId: null, supplier: supplierName || null, costCents: costCents || null, type: 'entrada', warehouse: warehouse || warehouseNames()[0] });
   }
   if (totalQty === 0) {
     res.status(400).json({ error: 'Captura al menos una cantidad mayor a cero.' });
@@ -1267,6 +1429,65 @@ app.post('/api/admin/inventory/entry', requireAdmin, (req, res) => {
   saveProducts(products);
   logInventory(movements);
   res.status(201).json({ ok: true, pieces: totalQty, product });
+});
+
+// Traspaso entre almacenes.
+app.post('/api/admin/inventory/transfer', requireAdmin, (req, res) => {
+  const { productId, size, from, to, qty } = req.body;
+  const n = parseInt(qty, 10);
+  const names = warehouseNames();
+  if (!productId || !size || !names.includes(from) || !names.includes(to) || from === to || !(n > 0)) {
+    res.status(400).json({ error: 'Indica producto, variante, almacén origen y destino distintos y una cantidad mayor a cero.' });
+    return;
+  }
+  const products = getProducts();
+  const product = products.find((p) => p.id === productId);
+  const v = findVariant(product, size);
+  if (!v) {
+    res.status(404).json({ error: 'Variante no encontrada.' });
+    return;
+  }
+  v.warehouses = v.warehouses || { [names[0]]: v.stock };
+  for (const w of names) if (!(w in v.warehouses)) v.warehouses[w] = 0;
+  if (v.warehouses[from] < n) {
+    res.status(400).json({ error: `En ${from} solo hay ${v.warehouses[from]} piezas.` });
+    return;
+  }
+  v.warehouses[from] -= n;
+  v.warehouses[to] += n;
+  saveProducts(products);
+  logInventory([
+    { productId: product.id, productName: product.name, size: variantLabel(v), sku: v.sku, delta: -n, stockAfter: v.stock, reason: `Traspaso a ${to}`, orderId: null, warehouse: from, type: 'traspaso' },
+    { productId: product.id, productName: product.name, size: variantLabel(v), sku: v.sku, delta: n, stockAfter: v.stock, reason: `Traspaso desde ${from}`, orderId: null, warehouse: to, type: 'traspaso' },
+  ]);
+  res.json({ ok: true, warehouses: v.warehouses });
+});
+
+// Existencias por variante: físico, apartadas (pedidos por salir) y disponible.
+app.get('/api/admin/stock', requireAdmin, (req, res) => {
+  const names = warehouseNames();
+  const reserved = {};
+  for (const o of getOrders()) {
+    if (!['pendiente', 'pagado', 'preparacion'].includes(o.status)) continue;
+    for (const i of o.items) {
+      const key = `${i.id}|${i.size}`;
+      reserved[key] = (reserved[key] || 0) + i.quantity;
+    }
+  }
+  const rows = [];
+  for (const p of getProducts()) {
+    for (const v of p.sizes) {
+      const label = variantLabel(v);
+      const wh = v.warehouses || { [names[0]]: v.stock };
+      rows.push({
+        productId: p.id, productName: p.name, status: p.status || (p.active === false ? 'borrador' : 'activo'),
+        size: v.size, length: v.length || '', color: v.color || '', label, sku: v.sku || '', barcode: v.barcode || '',
+        stock: v.stock, reserved: reserved[`${p.id}|${label}`] || 0, warehouses: names.map((n) => ({ name: n, qty: wh[n] || 0 })),
+        priceCents: productPrice(p, v), costCents: productCost(p, v),
+      });
+    }
+  }
+  res.json({ warehouses: names, threshold: lowStockThreshold(), rows });
 });
 
 // Resumen ligero para detectar pedidos nuevos desde el panel sin recargar.
@@ -1290,15 +1511,15 @@ app.post('/api/admin/inventory/adjust', requireAdmin, (req, res) => {
   }
   const products = getProducts();
   const product = products.find((p) => p.id === productId);
-  const sizeEntry = product?.sizes.find((s) => s.size === size);
+  const sizeEntry = findVariant(product, size);
   if (!sizeEntry) {
     res.status(404).json({ error: 'Producto o talla no encontrados.' });
     return;
   }
   const before = sizeEntry.stock;
-  sizeEntry.stock = Math.max(0, before + change);
+  applyStockDelta(sizeEntry, change, req.body.warehouse);
   saveProducts(products);
-  logInventory([{ productId: product.id, productName: product.name, size, delta: sizeEntry.stock - before, stockAfter: sizeEntry.stock, reason: String(reason || 'Ajuste manual').slice(0, 120), orderId: null }]);
+  logInventory([{ productId: product.id, productName: product.name, size: variantLabel(sizeEntry), sku: sizeEntry.sku, delta: sizeEntry.stock - before, stockAfter: sizeEntry.stock, reason: String(reason || 'Ajuste manual').slice(0, 120), orderId: null, warehouse: req.body.warehouse || warehouseNames()[0] }]);
   const threshold = lowStockThreshold();
   if (before > threshold && sizeEntry.stock <= threshold) notifyLowStock([{ productName: product.name, size, stock: sizeEntry.stock }], threshold);
   res.json({ productId: product.id, size, stock: sizeEntry.stock });
@@ -1420,13 +1641,15 @@ function recordStripeOrder(session) {
     stripeSessionId: session.id,
     items: session.line_items.data.map((li, i) => {
       const product = cartMeta[i]?.id ? productsNow.find((p) => p.id === cartMeta[i].id) : null;
+      const variant = product ? findVariant(product, cartMeta[i]?.size) : null;
       return {
         id: cartMeta[i]?.id || null,
         name: li.description,
         size: cartMeta[i]?.size || null,
+        sku: variant?.sku || product?.sku || null,
         quantity: li.quantity,
         priceCents: li.amount_total / li.quantity,
-        costCents: product?.costCents || 0,
+        costCents: productCost(product || {}, variant),
       };
     }),
     totalCents: session.amount_total,
@@ -1476,12 +1699,13 @@ app.post('/api/create-checkout-session', async (req, res) => {
         throw new Error(`Producto inválido: ${item.id}`);
       }
       const quantity = Math.max(1, Math.min(20, parseInt(item.quantity, 10) || 1));
-      const name = item.size ? `${product.name} (Talla ${item.size})` : product.name;
+      const variant = findVariant(product, item.size);
+      const name = item.size ? `${product.name} (${variant ? variantLabel(variant) : item.size})` : product.name;
       return {
         quantity,
         price_data: {
           currency: 'mxn',
-          unit_amount: product.priceCents,
+          unit_amount: productPrice(product, variant),
           product_data: { name },
         },
       };

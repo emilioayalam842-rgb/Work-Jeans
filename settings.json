@@ -9,5 +9,21 @@
   "mapsQuery": "Works jeans, Calle Emiliano Zapata 3737, Venustiano Carranza, 64560 Monterrey, N.L.",
   "googleMapsUrl": "https://maps.google.com/?cid=2378529028541799733",
   "notifyEmail": "",
-  "lowStockThreshold": 5
+  "lowStockThreshold": 5,
+  "categories": [
+    {
+      "name": "Pantalones",
+      "slug": "pantalones-de-trabajo"
+    },
+    {
+      "name": "Camisas",
+      "slug": "camisas-de-trabajo"
+    }
+  ],
+  "collections": [
+    "Catálogo 2026"
+  ],
+  "warehouses": [
+    "Tienda"
+  ]
 }

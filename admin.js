@@ -220,6 +220,11 @@ function showTab(name) {
   if (name === 'pedidos') loadOrders();
   if (name === 'clientes') loadCustomers();
   if (name === 'inventario') loadInventory();
+  if (name === 'variantes') window.loadVariants?.();
+  if (name === 'categorias') window.renderCategories?.();
+  if (name === 'colecciones') window.renderCollections?.();
+  if (name === 'existencias') window.loadStock?.();
+  if (name === 'almacenes') window.renderWarehouses?.();
   if (name === 'reportes') loadOrders().then(renderReports);
   if (name === 'configuracion') loadSettingsForm();
 }
@@ -278,7 +283,7 @@ function renderProductsTable(products) {
           ${iconBtn('move-down', 'down', 'Bajar', index === products.length - 1 ? 'disabled' : '')}
         </td>
         <td><img src="${p.image}" alt="${p.name}" class="admin-table-photo"></td>
-        <td>${p.name} ${tag}<br>${wholesale}</td>
+        <td>${p.name} ${tag}${p.status === 'descontinuado' ? '<span class="admin-tag admin-tag--off">Descontinuado</span>' : p.status === 'borrador' ? '<span class="admin-tag admin-tag--draft">Borrador</span>' : ''}<br><span class="admin-muted admin-small">${[p.sku, p.fit, p.wash, p.collection].filter(Boolean).join(' · ')}</span>${wholesale ? '<br>' + wholesale : ''}</td>
         <td>${p.category}</td>
         <td>${p.comparePriceCents ? `<s class="admin-muted">${formatPrice(p.comparePriceCents)}</s> ` : ''}${formatPrice(p.priceCents)}</td>
         <td class="${p.sizes.some((s) => s.stock <= limit) ? 'admin-stock-low' : ''}">
@@ -300,8 +305,8 @@ function renderProductsTable(products) {
         <td colspan="8">
           <div class="admin-stock-grid">
             ${p.sizes.map((s) => `
-              <div class="admin-stock-size ${s.stock <= limit ? 'is-low' : ''}" data-size="${s.size}">
-                <span class="admin-stock-size-name">${s.size}</span>
+              <div class="admin-stock-size ${s.stock <= limit ? 'is-low' : ''}" data-size="${variantLabel(s)}">
+                <span class="admin-stock-size-name">${variantLabel(s)}</span>
                 <div class="admin-stock-controls">
                   <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="-1" aria-label="Quitar una pieza">−</button>
                   <b class="admin-stock-count">${s.stock}</b>
@@ -341,19 +346,75 @@ async function adjustStock(productId, size, delta, sizeEl) {
   }
 }
 
-function addSizeRow(size = '', stock = 0) {
-  const row = document.createElement('div');
+function warehouseList() {
+  const list = settingsCache.warehouses;
+  return Array.isArray(list) && list.length ? list : ['Tienda'];
+}
+
+function variantLabel(v) {
+  return [v.size, v.length ? `L${v.length}` : '', v.color || ''].filter(Boolean).join(' / ');
+}
+
+function addSizeRow(v = {}) {
+  const names = warehouseList();
+  const row = document.createElement('tr');
   row.className = 'admin-size-row';
+  const wh = v.warehouses || {};
+  const stockCell = names.length > 1
+    ? names.map((n) => `<label class="admin-wh-cell"><span>${n}</span><input type="number" class="size-row-wh" data-wh="${n}" min="0" value="${wh[n] ?? (n === names[0] ? (v.stock ?? 0) : 0)}"></label>`).join('')
+    : `<input type="number" class="size-row-stock" min="0" value="${v.stock ?? 0}">`;
   row.innerHTML = `
-    <input type="text" class="size-row-name" placeholder="Talla" value="${size}">
-    <input type="number" class="size-row-stock" placeholder="Stock" min="0" value="${stock}">
-    ${iconBtn('remove-size', 'close', 'Quitar talla')}
+    <td><input type="text" class="size-row-name" placeholder="32" value="${v.size || ''}"></td>
+    <td><input type="text" class="size-row-length" placeholder="32" value="${v.length || ''}"></td>
+    <td><input type="text" class="size-row-color" placeholder="Índigo" value="${v.color || ''}"></td>
+    <td><input type="text" class="size-row-sku" placeholder="auto" value="${v.sku || ''}"></td>
+    <td><input type="text" class="size-row-barcode" placeholder="EAN" value="${v.barcode || ''}"></td>
+    <td class="admin-wh-cells">${stockCell}</td>
+    <td><input type="number" class="size-row-price" step="0.01" min="0" placeholder="=" value="${v.priceCents ? (v.priceCents / 100).toFixed(2) : ''}"></td>
+    <td><input type="number" class="size-row-cost" step="0.01" min="0" placeholder="=" value="${v.costCents ? (v.costCents / 100).toFixed(2) : ''}"></td>
+    <td>${iconBtn('remove-size', 'close', 'Quitar variante')}</td>
   `;
   row.querySelector('[data-action="remove-size"]').addEventListener('click', () => row.remove());
   sizeRowsContainer.appendChild(row);
 }
 
 document.getElementById('addSizeRowBtn').addEventListener('click', () => addSizeRow());
+
+document.getElementById('genVariantsBtn').addEventListener('click', () => {
+  const parse = (id) => document.getElementById(id).value.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
+  const sizes = parse('genSizes');
+  const lengths = parse('genLengths');
+  const colors = parse('genColors');
+  if (sizes.length === 0) {
+    formError.textContent = 'Escribe al menos una talla para generar combinaciones.';
+    return;
+  }
+  const existing = new Set(Array.from(sizeRowsContainer.querySelectorAll('.admin-size-row')).map((r) => variantLabel({
+    size: r.querySelector('.size-row-name').value.trim(),
+    length: r.querySelector('.size-row-length').value.trim(),
+    color: r.querySelector('.size-row-color').value.trim(),
+  })));
+  let added = 0;
+  for (const color of colors.length ? colors : ['']) {
+    for (const size of sizes) {
+      for (const length of lengths.length ? lengths : ['']) {
+        const v = { size, length, color, stock: 0 };
+        if (existing.has(variantLabel(v))) continue;
+        addSizeRow(v);
+        added += 1;
+      }
+    }
+  }
+  formError.textContent = added ? '' : 'Esas combinaciones ya existen.';
+});
+
+function fillProductFormSelects() {
+  const cats = settingsCache.categories || [];
+  document.getElementById('fieldCategory').innerHTML = cats.map((c) => `<option value="${c.name}">${c.name}</option>`).join('') || '<option value="Pantalones">Pantalones</option><option value="Camisas">Camisas</option>';
+  const cols = settingsCache.collections || [];
+  document.getElementById('fieldCollection').innerHTML = '<option value="">Sin colección</option>' + cols.map((c) => `<option value="${c}">${c}</option>`).join('');
+  document.getElementById('variantStockHead').textContent = warehouseList().length > 1 ? `Existencia (${warehouseList().join(' / ')})` : 'Existencia';
+}
 
 function renderImageList() {
   const list = document.getElementById('imageList');
@@ -398,6 +459,8 @@ function openForm(product) {
   formImages = product ? [...(product.images && product.images.length ? product.images : [product.image])] : [];
   renderImageList();
   sizeRowsContainer.innerHTML = '';
+  fillProductFormSelects();
+  ['genSizes', 'genLengths', 'genColors'].forEach((id) => { document.getElementById(id).value = ''; });
 
   if (product) {
     formTitle.textContent = 'Editar producto';
@@ -411,12 +474,19 @@ function openForm(product) {
     document.getElementById('fieldTag').value = product.tag || '';
     document.getElementById('fieldWholesaleQty').value = product.wholesale ? product.wholesale.minQty : '';
     document.getElementById('fieldWholesalePrice').value = product.wholesale ? (product.wholesale.priceCents / 100).toFixed(2) : '';
-    document.getElementById('fieldActive').checked = product.active !== false;
-    product.sizes.forEach((s) => addSizeRow(s.size, s.stock));
+    document.getElementById('fieldStatus').value = product.status || (product.active === false ? 'borrador' : 'activo');
+    document.getElementById('fieldSku').value = product.sku || '';
+    ['gender', 'fit', 'rise', 'wash', 'composition', 'stretch', 'season', 'collection'].forEach((k) => {
+      const el = document.getElementById(`field${k.charAt(0).toUpperCase()}${k.slice(1)}`);
+      if (el) el.value = product[k] || '';
+    });
+    document.querySelector('.admin-attrs').open = Boolean(product.fit || product.wash || product.gender);
+    product.sizes.forEach((s) => addSizeRow(s));
   } else {
     formTitle.textContent = 'Nuevo producto';
     document.getElementById('productId').value = '';
-    document.getElementById('fieldActive').checked = true;
+    document.getElementById('fieldStatus').value = 'activo';
+    document.querySelector('.admin-attrs').open = false;
     addSizeRow();
   }
 
@@ -500,10 +570,25 @@ productForm.addEventListener('submit', async (e) => {
   formError.textContent = '';
 
   const sizes = Array.from(sizeRowsContainer.querySelectorAll('.admin-size-row'))
-    .map((row) => ({
-      size: row.querySelector('.size-row-name').value.trim(),
-      stock: Math.max(0, parseInt(row.querySelector('.size-row-stock').value, 10) || 0),
-    }))
+    .map((row) => {
+      const v = {
+        size: row.querySelector('.size-row-name').value.trim(),
+        length: row.querySelector('.size-row-length').value.trim(),
+        color: row.querySelector('.size-row-color').value.trim(),
+        sku: row.querySelector('.size-row-sku').value.trim(),
+        barcode: row.querySelector('.size-row-barcode').value.trim(),
+        priceMxn: row.querySelector('.size-row-price').value,
+        costMxn: row.querySelector('.size-row-cost').value,
+      };
+      const whInputs = row.querySelectorAll('.size-row-wh');
+      if (whInputs.length) {
+        v.warehouses = {};
+        whInputs.forEach((i) => { v.warehouses[i.dataset.wh] = Math.max(0, parseInt(i.value, 10) || 0); });
+      } else {
+        v.stock = Math.max(0, parseInt(row.querySelector('.size-row-stock').value, 10) || 0);
+      }
+      return v;
+    })
     .filter((s) => s.size);
 
   if (sizes.length === 0) {
@@ -515,7 +600,7 @@ productForm.addEventListener('submit', async (e) => {
   const formData = new FormData(productForm);
   formData.set('sizes', JSON.stringify(sizes));
   if (id) formData.set('keepImages', JSON.stringify(formImages));
-  formData.set('active', document.getElementById('fieldActive').checked ? 'true' : 'false');
+  formData.delete('active');
   if (!id && document.getElementById('fieldImages').files.length === 0) {
     formError.textContent = 'Sube al menos una foto del producto.';
     return;
@@ -1077,6 +1162,7 @@ async function loadInventory() {
       <td class="${m.delta < 0 ? 'admin-delta-neg' : 'admin-delta-pos'}">${m.delta > 0 ? '+' : ''}${m.delta}</td>
       <td>${m.stockAfter}</td>
       <td>${m.reason}${m.orderId ? ` <span class="admin-muted">· ${m.orderId}</span>` : ''}</td>
+      <td>${m.warehouse || '—'}</td>
       <td>${m.costCents ? `${formatPrice(m.costCents)} c/u` : '—'}</td>
     </tr>
   `).join('');
@@ -1090,8 +1176,8 @@ function renderEntrySizes() {
   const product = productsCache.find((p) => p.id === document.getElementById('entryProduct').value);
   const grid = document.getElementById('entrySizes');
   grid.innerHTML = product ? product.sizes.map((s) => `
-    <label class="admin-stock-size admin-entry-size" data-size="${s.size}">
-      <span class="admin-stock-size-name">${s.size}</span>
+    <label class="admin-stock-size admin-entry-size" data-size="${variantLabel(s)}">
+      <span class="admin-stock-size-name">${variantLabel(s)}</span>
       <input type="number" min="0" step="1" placeholder="0" inputmode="numeric">
       <span class="admin-muted admin-small">hay ${s.stock}</span>
     </label>
@@ -1111,6 +1197,9 @@ document.getElementById('newEntryBtn').addEventListener('click', () => {
   document.getElementById('entryForm').reset();
   document.getElementById('entryUpdateCost').checked = true;
   document.getElementById('entryProduct').innerHTML = productsCache.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+  const names = warehouseList();
+  document.getElementById('entryWarehouseWrap').hidden = names.length < 2;
+  document.getElementById('entryWarehouse').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
   renderEntrySizes();
   document.getElementById('entryOverlay').hidden = false;
 });
@@ -1138,6 +1227,7 @@ document.getElementById('entryForm').addEventListener('submit', async (e) => {
       supplier: document.getElementById('entrySupplier').value,
       costMxn: document.getElementById('entryCost').value,
       updateCost: document.getElementById('entryUpdateCost').checked,
+      warehouse: document.getElementById('entryWarehouse').value,
       note: document.getElementById('entryNote').value,
       sizes,
     }),
@@ -1317,7 +1407,7 @@ function addOrderItemRow() {
   function fillSizes() {
     const product = productsCache.find((p) => p.id === productSelect.value);
     sizeSelect.innerHTML = product
-      ? product.sizes.map((s) => `<option value="${s.size}" ${s.stock <= 0 ? 'disabled' : ''}>${s.size} (${s.stock} disp.)</option>`).join('')
+      ? product.sizes.map((s) => `<option value="${variantLabel(s)}" ${s.stock <= 0 ? 'disabled' : ''}>${variantLabel(s)} (${s.stock} disp.)</option>`).join('')
       : '';
   }
 

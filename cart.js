@@ -83,9 +83,35 @@ function saveCart(cart) {
 
 let LOW_STOCK_LIMIT = 5;
 
+// Etiqueta de variante: talla, largo (L32) y color/lavado si existen.
+function variantLabel(v) {
+  return [v.size, v.length ? `L${v.length}` : '', v.color || ''].filter(Boolean).join(' / ');
+}
+
+function findVariant(product, label) {
+  if (!product) return null;
+  return product.sizes.find((s) => variantLabel(s) === label) || product.sizes.find((s) => s.size === label) || null;
+}
+
+function variantOptions(product) {
+  return product.sizes
+    .map((s) => {
+      const label = variantLabel(s);
+      const price = s.priceCents && s.priceCents !== product.priceCents ? ` · ${formatPrice(s.priceCents)}` : '';
+      return `<option value="${label}" ${s.stock <= 0 ? 'disabled' : ''}>${label}${price}${s.stock <= 0 ? ' (agotado)' : ''}</option>`;
+    })
+    .join('');
+}
+
+function variantPrice(productId, label) {
+  const product = PRODUCTS.find((p) => p.id === productId);
+  const v = findVariant(product, label);
+  return v?.priceCents || product?.priceCents || 0;
+}
+
 function sizeStock(productId, size) {
   const product = PRODUCTS.find((p) => p.id === productId);
-  const entry = product?.sizes.find((s) => s.size === size);
+  const entry = findVariant(product, size);
   return entry ? entry.stock : null;
 }
 
@@ -284,9 +310,7 @@ const CARD_SIZES = '(max-width: 600px) calc(100vw - 40px), (max-width: 1024px) 4
 
 function renderProductCard(product) {
   const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
-  const sizeOptions = product.sizes
-    .map((s) => `<option value="${s.size}" ${s.stock <= 0 ? 'disabled' : ''}>${s.size}${s.stock <= 0 ? ' (agotado)' : ''}</option>`)
-    .join('');
+  const sizeOptions = variantOptions(product);
   // Siempre se muestran las miniaturas (aunque haya una sola) para que todas las tarjetas alineen igual.
   const images = product.images && product.images.length ? product.images : [product.image];
   const gallery = `<div class="product-thumbs">${
@@ -324,7 +348,7 @@ function renderProductCard(product) {
           </div>
         </div>
       </div>
-      <p class="stock-note" data-stock-note>${stockNoteText(product.id, product.sizes.find((s) => s.stock > 0)?.size || product.sizes[0]?.size)}</p>
+      <p class="stock-note" data-stock-note>${stockNoteText(product.id, variantLabel(product.sizes.find((s) => s.stock > 0) || product.sizes[0] || { size: '' }))}</p>
       <button class="btn btn-dark add-to-cart" ${totalStock <= 0 ? 'disabled' : ''}>${totalStock <= 0 ? 'Agotado' : 'Agregar al carrito'}</button>
     </article>
   `;
@@ -393,9 +417,7 @@ function openProduct(id, { pushState = true } = {}) {
   document.getElementById('pmDesc').textContent = product.description;
   const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
   const select = document.getElementById('pmSize');
-  select.innerHTML = product.sizes
-    .map((s) => `<option value="${s.size}" ${s.stock <= 0 ? 'disabled' : ''}>${s.size}${s.stock <= 0 ? ' (agotado)' : ''}</option>`)
-    .join('');
+  select.innerHTML = variantOptions(product);
   select.disabled = totalStock <= 0;
   const addBtn = document.getElementById('pmAdd');
   addBtn.disabled = totalStock <= 0;
@@ -453,8 +475,9 @@ function setupProductModal() {
     const product = PRODUCTS.find((p) => p.id === e.currentTarget.dataset.id);
     if (!product) return;
     const qty = clampQty(document.getElementById('pmQty').value);
+    const label = document.getElementById('pmSize').value;
     closeProduct();
-    addToCart(product.id, product.name, product.priceCents, document.getElementById('pmSize').value, qty);
+    addToCart(product.id, product.name, variantPrice(product.id, label), label, qty);
   });
   document.getElementById('pmSize').addEventListener('change', (e) => {
     document.getElementById('pmStock').textContent = stockNoteText(document.getElementById('pmAdd').dataset.id, e.target.value);
@@ -564,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const { id, name, price } = card.dataset;
     const size = card.querySelector('.size-select').value;
     const qty = clampQty(card.querySelector('.qty-input')?.value);
-    addToCart(id, name, parseInt(price, 10), size, qty);
+    addToCart(id, name, variantPrice(id, size) || parseInt(price, 10), size, qty);
   });
 
   document.getElementById('productsGrid').addEventListener('change', (e) => {
