@@ -25,6 +25,34 @@ let settingsCache = {};
 let formImages = []; // fotos existentes del producto que se está editando, en orden
 let ordersMonth = ''; // filtro de mes en Pedidos ('' = todos, 'YYYY-MM')
 
+// Íconos en línea (trazo, 16px) para los botones del panel.
+const ICONS = {
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  up: '<path d="m18 15-6-6-6 6"/>',
+  down: '<path d="m6 9 6 6 6-6"/>',
+  close: '<path d="M18 6 6 18M6 6l12 12"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  print: '<path d="M6 9V3h12v6"/><rect x="6" y="14" width="12" height="7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>',
+  download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/>',
+  whatsapp: '<path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L4 20l1.1-4.2A8.5 8.5 0 1 1 21 11.5Z"/><path d="M9.5 9.5c.3 1.6 2.4 3.7 4 4l1.3-1.2 2 1c-.4 1.6-1.6 2-2.6 1.9-2.6-.3-6.3-4-6.6-6.6-.1-1 .3-2.2 1.9-2.6l1 2Z"/>',
+  card: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+  chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>',
+  alert: '<path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+  external: '<path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+};
+
+function icon(name, size = 16) {
+  return `<svg class="admin-svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
+
+function iconBtn(action, name, title, extra = '') {
+  return `<button type="button" class="admin-icon-btn ${name === 'trash' ? 'admin-icon-btn--danger' : ''}" data-action="${action}" title="${title}" aria-label="${title}" ${extra}>${icon(name)}</button>`;
+}
+
 const STATUS_LABELS = {
   pendiente: 'Pendiente',
   pagado: 'Pagado',
@@ -185,8 +213,8 @@ function renderProductsTable(products) {
     return `
       <tr data-id="${p.id}" class="${hidden ? 'admin-row-hidden' : ''}">
         <td class="admin-order-btns">
-          <button type="button" class="admin-icon-btn" data-action="move-up" title="Subir" ${index === 0 ? 'disabled' : ''}>▲</button>
-          <button type="button" class="admin-icon-btn" data-action="move-down" title="Bajar" ${index === products.length - 1 ? 'disabled' : ''}>▼</button>
+          ${iconBtn('move-up', 'up', 'Subir', index === 0 ? 'disabled' : '')}
+          ${iconBtn('move-down', 'down', 'Bajar', index === products.length - 1 ? 'disabled' : '')}
         </td>
         <td><img src="${p.image}" alt="${p.name}" class="admin-table-photo"></td>
         <td>${p.name} ${tag}<br>${wholesale}</td>
@@ -202,9 +230,9 @@ function renderProductsTable(products) {
           </label>
         </td>
         <td class="admin-table-actions">
-          <button class="admin-icon-btn" data-action="duplicate" title="Duplicar">⧉</button>
-          <button class="admin-icon-btn" data-action="edit" title="Editar">✏️</button>
-          <button class="admin-icon-btn" data-action="delete" title="Eliminar">🗑️</button>
+          ${iconBtn('duplicate', 'copy', 'Duplicar')}
+          ${iconBtn('edit', 'edit', 'Editar')}
+          ${iconBtn('delete', 'trash', 'Eliminar')}
         </td>
       </tr>
       <tr class="admin-stock-row" data-id="${p.id}" hidden>
@@ -258,7 +286,7 @@ function addSizeRow(size = '', stock = 0) {
   row.innerHTML = `
     <input type="text" class="size-row-name" placeholder="Talla" value="${size}">
     <input type="number" class="size-row-stock" placeholder="Stock" min="0" value="${stock}">
-    <button type="button" class="admin-icon-btn" data-action="remove-size">✕</button>
+    ${iconBtn('remove-size', 'close', 'Quitar talla')}
   `;
   row.querySelector('[data-action="remove-size"]').addEventListener('click', () => row.remove());
   sizeRowsContainer.appendChild(row);
@@ -274,7 +302,7 @@ function renderImageList() {
       <span class="admin-image-tag">${i === 0 ? 'Principal' : `#${i + 1}`}</span>
       <div class="admin-image-actions">
         ${i > 0 ? `<button type="button" class="admin-inline-btn" data-action="main" data-index="${i}">Hacer principal</button>` : ''}
-        <button type="button" class="admin-icon-btn" data-action="remove-image" data-index="${i}" title="Quitar">✕</button>
+        ${iconBtn('remove-image', 'close', 'Quitar foto', `data-index="${i}"`)}
       </div>
     </div>
   `).join('');
@@ -544,7 +572,7 @@ function renderOrders(orders) {
   ordersTableBody.innerHTML = orders.map((o) => {
     const date = new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
     const itemsSummary = o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join(', ');
-    const sourceLabel = o.source === 'stripe' ? '💳 Stripe' : '💬 WhatsApp';
+    const sourceLabel = o.source === 'stripe' ? `<span class="admin-source">${icon('card', 14)} Tarjeta</span>` : `<span class="admin-source">${icon('chat', 14)} WhatsApp</span>`;
     return `
       <tr data-id="${o.id}">
         <td class="admin-clickable" data-action="view">${date}</td>
@@ -556,8 +584,9 @@ function renderOrders(orders) {
           <select class="admin-status-select status-${o.status}" data-action="status">${statusOptions(o.status)}</select>
           ${o.tracking?.number ? `<span class="admin-muted admin-tracking-tag">${o.tracking.carrier ? `${o.tracking.carrier} · ` : ''}${o.tracking.number}</span>` : ''}
         </td>
-        <td>
-          <button class="admin-icon-btn" data-action="delete-order" title="Eliminar">🗑️</button>
+        <td class="admin-table-actions">
+          ${iconBtn('view-order', 'eye', 'Ver detalle')}
+          ${iconBtn('delete-order', 'trash', 'Eliminar')}
         </td>
       </tr>
     `;
@@ -568,13 +597,14 @@ ordersTableBody.addEventListener('click', async (e) => {
   const tr = e.target.closest('tr');
   if (!tr) return;
   const id = tr.dataset.id;
+  const action = e.target.closest('[data-action]')?.dataset.action;
 
-  if (e.target.dataset.action === 'view') {
+  if (action === 'view' || action === 'view-order') {
     openOrderDetail(id);
     return;
   }
 
-  if (e.target.dataset.action === 'delete-order') {
+  if (action === 'delete-order') {
     if (!confirm('¿Eliminar este pedido?')) return;
     const res = await fetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
     if (res.ok) loadOrders();
@@ -609,7 +639,7 @@ function openOrderDetail(id) {
   activeOrderId = id;
 
   const date = new Date(order.createdAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
-  const sourceLabel = order.source === 'stripe' ? '💳 Pago con tarjeta (Stripe)' : '💬 Pedido por WhatsApp';
+  const sourceLabel = order.source === 'stripe' ? `${icon('card', 14)} Pago con tarjeta` : `${icon('chat', 14)} Pedido por WhatsApp`;
 
   orderDetailContent.innerHTML = `
     <p><strong>${sourceLabel}</strong></p>
@@ -709,7 +739,7 @@ function orderCard(o) {
     <article class="admin-card" draggable="true" data-id="${o.id}">
       <header>
         <span class="admin-card-date">${date}</span>
-        <span class="admin-card-source">${o.source === 'stripe' ? '💳' : '💬'}</span>
+        <span class="admin-card-source">${o.source === 'stripe' ? icon('card', 14) : icon('chat', 14)}</span>
       </header>
       <strong>${o.customerName || 'Sin nombre'}</strong>
       <p>${items}</p>
@@ -900,7 +930,7 @@ function addOrderItemRow() {
     </select>
     <select class="order-item-size"></select>
     <input type="number" class="order-item-qty" value="1" min="1" max="50">
-    <button type="button" class="admin-icon-btn" data-action="remove-item">✕</button>
+    ${iconBtn('remove-item', 'close', 'Quitar producto')}
   `;
   orderItemsContainer.appendChild(row);
 

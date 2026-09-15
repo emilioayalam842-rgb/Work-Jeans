@@ -31,7 +31,7 @@
         <span>Panel admin</span>
       </a>
       <div>
-        <a href="index.html" class="admin-link" target="_blank" rel="noopener">Ver tienda ↗</a>
+        <a href="index.html" class="admin-link" target="_blank" rel="noopener">Ver tienda <svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5"/></svg></a>
         <button id="logoutBtn" class="btn btn-secondary admin-logout">Cerrar sesión</button>
       </div>
     </header>
@@ -97,7 +97,7 @@
             <ol class="admin-rank-list" id="topProductsList"></ol>
           </div>
           <div class="admin-panel-box">
-            <h3>⚠️ Stock bajo</h3>
+            <h3>Stock bajo</h3>
             <ul class="admin-rank-list" id="lowStockList"></ul>
           </div>
         </div>
@@ -114,7 +114,7 @@
       <div id="tabProductos" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
           <h2>Productos</h2>
-          <button id="newProductBtn" class="btn btn-primary">+ Nuevo producto</button>
+          <button id="newProductBtn" class="btn btn-primary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nuevo producto</button>
         </div>
 
         <div class="admin-table-wrap">
@@ -152,8 +152,8 @@
               <option value="cancelado">Cancelado</option>
             </select>
             <select id="ordersMonthFilter" class="admin-filter" aria-label="Filtrar por mes"><option value="">Todos los meses</option></select>
-            <button id="exportOrdersBtn" class="btn btn-secondary">Exportar a Excel</button>
-            <button id="newOrderBtn" class="btn btn-primary">+ Agregar pedido de WhatsApp</button>
+            <button id="exportOrdersBtn" class="btn btn-secondary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Exportar a Excel</button>
+            <button id="newOrderBtn" class="btn btn-primary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Pedido de WhatsApp</button>
           </div>
         </div>
 
@@ -259,7 +259,7 @@
         <h2 class="admin-section-spacer">Respaldo</h2>
         <div class="admin-panel-box admin-settings-form">
           <p class="admin-help">Descarga un archivo con productos, pedidos, clientes, inventario y configuración. Guárdalo en tu computadora o en la nube de vez en cuando. No incluye las fotos.</p>
-          <a class="btn btn-primary" href="/api/admin/backup" download>Descargar respaldo</a>
+          <a class="btn btn-primary admin-btn-icon" href="/api/admin/backup" download><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Descargar respaldo</a>
           <label for="restoreFile" class="admin-section-spacer">Restaurar desde un respaldo</label>
           <input type="file" id="restoreFile" accept="application/json,.json">
           <button type="button" id="restoreBtn" class="btn btn-secondary">Restaurar</button>
@@ -327,7 +327,7 @@
 
       <label>Tallas y stock</label>
       <div id="sizeRows" class="admin-size-rows"></div>
-      <button type="button" id="addSizeRowBtn" class="btn btn-secondary admin-add-item-btn">+ Agregar talla</button>
+      <button type="button" id="addSizeRowBtn" class="btn btn-secondary admin-add-item-btn admin-btn-icon"><svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Agregar talla</button>
 
       <label for="fieldDescription">Descripción</label>
       <textarea id="fieldDescription" name="description" rows="3" required></textarea>
@@ -358,7 +358,7 @@
 
       <label>Productos</label>
       <div id="orderItems" class="admin-order-items"></div>
-      <button type="button" id="addOrderItemBtn" class="btn btn-secondary admin-add-item-btn">+ Agregar producto</button>
+      <button type="button" id="addOrderItemBtn" class="btn btn-secondary admin-add-item-btn admin-btn-icon"><svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Agregar producto</button>
 
       <label for="orderNotes">Notas</label>
       <textarea id="orderNotes" rows="2" placeholder="Opcional"></textarea>
@@ -402,8 +402,8 @@
       <textarea id="orderDetailNotes" rows="3"></textarea>
 
       <div class="admin-form-actions admin-form-actions--wrap">
-        <button type="button" id="orderWhatsappBtn" class="btn btn-secondary">WhatsApp al cliente</button>
-        <button type="button" id="orderPrintBtn" class="btn btn-secondary">Imprimir nota</button>
+        <button type="button" id="orderWhatsappBtn" class="btn btn-secondary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L4 20l1.1-4.2A8.5 8.5 0 1 1 21 11.5Z"/></svg> WhatsApp al cliente</button>
+        <button type="button" id="orderPrintBtn" class="btn btn-secondary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="6" y="14" width="12" height="7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg> Imprimir nota</button>
         <button type="button" id="closeOrderDetailBtn" class="btn btn-secondary">Cerrar</button>
         <button type="button" id="saveOrderNotesBtn" class="btn btn-primary">Guardar cambios</button>
       </div>

@@ -399,16 +399,33 @@
 
 .admin-table-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  justify-content: flex-end;
+  white-space: nowrap;
 }
 
 .admin-icon-btn {
-  background: none;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  color: #333;
   cursor: pointer;
-  font-size: 1rem;
-  padding: 4px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
 }
+.admin-icon-btn:hover { background: var(--yellow); border-color: var(--black); color: var(--black); }
+.admin-icon-btn:active { transform: translateY(1px); }
+.admin-icon-btn:disabled { opacity: 0.3; cursor: default; }
+.admin-icon-btn:disabled:hover { background: var(--paper); border-color: var(--line); color: #333; }
+.admin-icon-btn--danger:hover { background: #fbe6e9; border-color: #b00020; color: #b00020; }
+.admin-svg { display: inline-block; vertical-align: -3px; flex: none; }
+.admin-btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.admin-source { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 
 /* Form overlay */
 .admin-overlay {
@@ -491,18 +508,26 @@
 .admin-help { font-size: 0.85rem; color: var(--muted); margin: -4px 0 10px; line-height: 1.5; }
 
 .admin-inline-btn {
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--paper);
   border: 1.5px solid var(--black);
   border-radius: var(--radius);
-  padding: 4px 10px;
+  padding: 6px 12px;
   font-family: var(--label);
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
   color: var(--black);
+  text-decoration: none;
+  line-height: 1.2;
+  transition: background 0.15s, transform 0.1s;
 }
 .admin-inline-btn:hover { background: var(--yellow); }
+.admin-inline-btn:active { transform: translateY(1px); }
 
 .admin-image-list { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 12px; }
 .admin-image-list:empty { margin: 0; }
@@ -524,7 +549,8 @@
 .admin-image-tag { font-family: var(--label); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .admin-image-item.is-main .admin-image-tag { color: var(--black); font-weight: 600; }
 .admin-image-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
-.admin-image-actions .admin-inline-btn { font-size: 0.64rem; padding: 3px 6px; }
+.admin-image-actions .admin-inline-btn { font-size: 0.62rem; padding: 4px 7px; }
+.admin-image-actions .admin-icon-btn { width: 26px; height: 26px; }
 
 .admin-monthly { margin-bottom: 24px; }
 .admin-monthly h3 { margin-bottom: 12px; }
@@ -605,8 +631,8 @@
 .admin-row-hidden td { opacity: 0.5; }
 .admin-row-hidden td:last-child, .admin-row-hidden td:nth-child(7) { opacity: 1; }
 .admin-order-btns { white-space: nowrap; }
-.admin-order-btns .admin-icon-btn { font-size: 0.7rem; padding: 2px 6px; }
-.admin-order-btns .admin-icon-btn:disabled { opacity: 0.3; cursor: default; }
+.admin-order-btns { display: flex; flex-direction: column; gap: 4px; }
+.admin-order-btns .admin-icon-btn { width: 28px; height: 24px; }
 
 .admin-switch { position: relative; display: inline-block; width: 42px; height: 24px; cursor: pointer; }
 .admin-switch input { opacity: 0; width: 0; height: 0; }
@@ -649,3 +675,43 @@
   .admin-field-grid { grid-template-columns: 1fr; }
   .admin-kanban { grid-template-columns: repeat(5, 240px); }
 }
+
+/* Botones del panel: tamaños y jerarquía uniformes ----------------------- */
+
+.admin-body .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 20px;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  border-radius: var(--radius);
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+.admin-body .btn:active { transform: translateY(1px); }
+.admin-body .btn-primary:hover { box-shadow: 0 4px 12px rgba(255, 214, 0, 0.45); }
+.admin-body .btn-secondary { background: var(--paper); }
+.admin-body .btn-secondary:hover { background: var(--black); color: var(--paper); }
+.admin-body .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+.admin-logout { min-height: 36px; padding: 0 16px; font-size: 0.76rem; }
+.admin-link { display: inline-flex; align-items: center; gap: 6px; opacity: 0.85; }
+.admin-link:hover { opacity: 1; text-decoration: underline; }
+.admin-add-item-btn { min-height: 36px; padding: 0 14px; font-size: 0.76rem; }
+.admin-form-actions .btn { min-height: 44px; }
+.admin-status-select { padding: 7px 28px 7px 10px; border-radius: var(--radius); font-weight: 600; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23333' stroke-width='2'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; }
+.admin-stock-btn { transition: background 0.15s; }
+.admin-stock-toggle:hover { color: var(--black); }
+.admin-tab { position: relative; padding: 12px 16px; letter-spacing: 0.02em; transition: color 0.15s; }
+.admin-tab:hover { color: var(--black); }
+
+/* Ajustes de tablas y formularios ---------------------------------------- */
+.admin-table { background: var(--white); min-width: 100%; }
+.admin-table th:last-child, .admin-table td:last-child { text-align: right; }
+.admin-table .admin-order-items-cell { white-space: normal; min-width: 220px; max-width: 360px; }
+.admin-form { max-width: 560px; }
+.admin-size-row input, .admin-order-item-row input, .admin-order-item-row select { width: 100%; min-width: 0; }
+.admin-size-row, .admin-order-item-row { align-items: center; }
+.admin-size-row input { border: 1.5px solid var(--line); border-radius: var(--radius); }
+.admin-size-row input:focus, .admin-order-item-row input:focus, .admin-order-item-row select:focus { outline: 2px solid var(--yellow); outline-offset: 0; border-color: var(--black); }
