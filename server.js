@@ -157,6 +157,65 @@ try {
   // Sin productos aún.
 }
 
+// Lista de precios de Works Jeans del 02-abr-2025 (precios de lista sin IVA, por grupo de tallas).
+// En la tienda se muestra el precio a cliente final CON IVA (16%). Se aplica una sola vez; después manda el panel.
+const PRICE_LIST_ID = '2025-04-02';
+const IVA = 1.16;
+const PRICE_LIST = {
+  'camisa-mezclilla': [
+    { sizes: ['XCH', 'CH', 'M', 'G', 'XG'], socio: 141.08, distribuidor: 156.06, final: 187.28 },
+    { sizes: ['2XG', '3XG', '4XG'], socio: 155.19, distribuidor: 171.67, final: 206.01 },
+    { sizes: ['5XG', '6XG'], socio: 169.30, distribuidor: 187.27, final: 224.74 },
+  ],
+  'camisa-reflejante-verde': [
+    { sizes: ['XCH', 'CH', 'M', 'G', 'XG'], socio: 180.18, distribuidor: 199.31, final: 239.18 },
+    { sizes: ['2XG', '3XG', '4XG'], socio: 198.20, distribuidor: 219.24, final: 263.10 },
+    { sizes: ['5XG', '6XG'], socio: 216.22, distribuidor: 239.17, final: 287.02 },
+  ],
+  'pantalon-mezclilla': [
+    { sizes: ['28', '29', '30', '31', '32', '33', '34', '36', '38', '40', '42'], socio: 144.50, distribuidor: 159.85, final: 191.82 },
+    { sizes: ['44', '46'], socio: 158.95, distribuidor: 175.84, final: 211.00 },
+    { sizes: ['48', '50'], socio: 173.40, distribuidor: 191.82, final: 230.18 },
+  ],
+  'pantalon-reflejante-verde': [
+    { sizes: ['28', '29', '30', '31', '32', '33', '34', '36', '38', '40', '42'], socio: 168.68, distribuidor: 186.60, final: 223.92 },
+    { sizes: ['44', '46'], socio: 185.55, distribuidor: 205.26, final: 246.31 },
+    { sizes: ['48', '50'], socio: 202.42, distribuidor: 223.92, final: 268.70 },
+  ],
+};
+PRICE_LIST['camisa-reflejante-naranja'] = PRICE_LIST['camisa-reflejante-verde'];
+PRICE_LIST['pantalon-reflejante-naranja'] = PRICE_LIST['pantalon-reflejante-verde'];
+const withIva = (mxn) => Math.round(mxn * IVA * 100);
+
+function applyPriceList(products) {
+  let changed = false;
+  for (const p of products) {
+    const groups = PRICE_LIST[p.id];
+    if (!groups) continue;
+    for (const v of p.sizes || []) {
+      const g = groups.find((x) => x.sizes.includes(String(v.size).toUpperCase()));
+      if (g) { v.priceCents = withIva(g.final); changed = true; }
+    }
+    p.priceCents = Math.min(...groups.map((g) => withIva(g.final)));
+    p.priceTiers = groups.map((g) => ({ sizes: g.sizes.join(', '), socioCents: withIva(g.socio), distribuidorCents: withIva(g.distribuidor), finalCents: withIva(g.final), listWithoutIva: { socio: g.socio, distribuidor: g.distribuidor, final: g.final } }));
+    p.priceListId = PRICE_LIST_ID;
+  }
+  return changed;
+}
+
+try {
+  const settings = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
+  if (settings.priceListApplied !== PRICE_LIST_ID) {
+    const products = JSON.parse(fs.readFileSync(PRODUCTS_PATH, 'utf-8'));
+    if (applyPriceList(products)) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
+    settings.priceListApplied = PRICE_LIST_ID;
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n');
+    console.log(`Precios actualizados con la lista ${PRICE_LIST_ID} (cliente final + IVA).`);
+  }
+} catch {
+  // Sin datos aún.
+}
+
 // Variantes sin SKU (datos anteriores al catálogo con variantes): se les asigna uno automático.
 try {
   const products = JSON.parse(fs.readFileSync(PRODUCTS_PATH, 'utf-8'));
@@ -196,7 +255,7 @@ function publicProducts() {
     .filter((p) => (p.status ? p.status === 'activo' : p.active !== false))
     .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER))
     .map((p) => {
-      const { costCents, ...rest } = p;
+      const { costCents, priceTiers, ...rest } = p;
       return { ...rest, sizes: (p.sizes || []).map(({ costCents: c, warehouses, barcode, ...v }) => v) };
     });
 }
@@ -932,7 +991,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260915e';
+const ASSET_V = '20260915f';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1000,7 +1059,9 @@ function renderProductPage(product, req) {
       : `<div class="pdp-video"><video controls muted playsinline preload="none" poster="/img/800/${images[0]}"><source src="${escapeHtml(product.videoUrl)}"></video></div>`;
   }
 
-  const priceHtml = `${product.comparePriceCents && product.comparePriceCents > product.priceCents ? `<s class="price-compare">${money(product.comparePriceCents)}</s>` : ''}${money(product.priceCents)} <small>MXN</small>`;
+  const distinct = [...new Set(product.sizes.map((v) => v.priceCents || product.priceCents))];
+  const priceHtml = `${product.comparePriceCents && product.comparePriceCents > product.priceCents ? `<s class="price-compare">${money(product.comparePriceCents)}</s>` : ''}${distinct.length > 1 ? '<span class="pdp-from">desde</span> ' : ''}${money(product.priceCents)} <small>MXN · IVA incluido</small>`;
+  const priceBySize = distinct.length > 1 ? `<p class="pdp-price-sizes">${distinct.sort((a, b) => a - b).map((cents) => `${product.sizes.filter((v) => (v.priceCents || product.priceCents) === cents).map((v) => v.size).join(' · ')}: <b>${money(cents)}</b>`).join(' &nbsp;|&nbsp; ')}</p>` : '';
   const wholesaleLine = product.wholesale ? `<p class="pdp-wholesale">Mayoreo: <b>${money(product.wholesale.priceCents)}</b> por pieza a partir de ${product.wholesale.minQty} piezas. <a href="/empresas">Cotizar para empresa</a></p>` : '';
 
   // Secciones (solo con información real)
@@ -1052,7 +1113,7 @@ function renderProductPage(product, req) {
     VIDEO: video,
     SKU_KICKER: product.sku ? ` · ${escapeHtml(product.sku)}` : '',
     PRICE_HTML: priceHtml,
-    WHOLESALE_LINE: wholesaleLine,
+    WHOLESALE_LINE: priceBySize + wholesaleLine,
     AVAIL_CLASS: avail.cls,
     AVAIL_TEXT: avail.text,
     SHORT_DESC: escapeHtml(product.description),

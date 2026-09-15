@@ -1961,3 +1961,6 @@ html { overflow-x: clip; }
 .article-meta { font-family: var(--label); font-size: 0.8rem; letter-spacing: 0.06em; color: var(--muted); margin-top: 10px; }
 .content-body h3 { font-size: 1.15rem; margin-top: 26px; }
 .content-body ol { padding-left: 22px; }
+
+.pdp-from { font-family: var(--label); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.pdp-price-sizes { margin: -2px 0 10px; font-size: 0.85rem; color: #333; line-height: 1.7; }

@@ -3,7 +3,7 @@
     "id": "camisa-mezclilla",
     "name": "Camisa de Trabajo de Mezclilla",
     "category": "Camisas",
-    "priceCents": 45000,
+    "priceCents": 21724,
     "image": "assets/products/camisa-mezclilla.jpg",
     "images": [
       "assets/products/camisa-mezclilla.jpg"
@@ -12,47 +12,92 @@
     "sizes": [
       {
         "size": "XCH",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 21724
       },
       {
         "size": "CH",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 21724
       },
       {
         "size": "M",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 21724
       },
       {
         "size": "G",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 21724
       },
       {
         "size": "XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 21724
       },
       {
         "size": "2XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 23897
       },
       {
         "size": "3XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 23897
       },
       {
         "size": "4XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 23897
       },
       {
         "size": "5XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 26070
       }
-    ]
+    ],
+    "priceTiers": [
+      {
+        "sizes": "XCH, CH, M, G, XG",
+        "socioCents": 16365,
+        "distribuidorCents": 18103,
+        "finalCents": 21724,
+        "listWithoutIva": {
+          "socio": 141.08,
+          "distribuidor": 156.06,
+          "final": 187.28
+        }
+      },
+      {
+        "sizes": "2XG, 3XG, 4XG",
+        "socioCents": 18002,
+        "distribuidorCents": 19914,
+        "finalCents": 23897,
+        "listWithoutIva": {
+          "socio": 155.19,
+          "distribuidor": 171.67,
+          "final": 206.01
+        }
+      },
+      {
+        "sizes": "5XG, 6XG",
+        "socioCents": 19639,
+        "distribuidorCents": 21723,
+        "finalCents": 26070,
+        "listWithoutIva": {
+          "socio": 169.3,
+          "distribuidor": 187.27,
+          "final": 224.74
+        }
+      }
+    ],
+    "priceListId": "2025-04-02"
   },
   {
     "id": "camisa-reflejante-verde",
     "name": "Camisa de Trabajo Reflejante Verde",
     "category": "Camisas",
-    "priceCents": 52000,
+    "priceCents": 27745,
     "image": "assets/products/camisa-reflejante-verde-front.jpg",
     "images": [
       "assets/products/camisa-reflejante-verde-front.jpg",
@@ -62,47 +107,92 @@
     "sizes": [
       {
         "size": "XCH",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "CH",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "M",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "G",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "2XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 30520
       },
       {
         "size": "3XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 30520
       },
       {
         "size": "4XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 30520
       },
       {
         "size": "5XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 33294
       }
-    ]
+    ],
+    "priceTiers": [
+      {
+        "sizes": "XCH, CH, M, G, XG",
+        "socioCents": 20901,
+        "distribuidorCents": 23120,
+        "finalCents": 27745,
+        "listWithoutIva": {
+          "socio": 180.18,
+          "distribuidor": 199.31,
+          "final": 239.18
+        }
+      },
+      {
+        "sizes": "2XG, 3XG, 4XG",
+        "socioCents": 22991,
+        "distribuidorCents": 25432,
+        "finalCents": 30520,
+        "listWithoutIva": {
+          "socio": 198.2,
+          "distribuidor": 219.24,
+          "final": 263.1
+        }
+      },
+      {
+        "sizes": "5XG, 6XG",
+        "socioCents": 25082,
+        "distribuidorCents": 27744,
+        "finalCents": 33294,
+        "listWithoutIva": {
+          "socio": 216.22,
+          "distribuidor": 239.17,
+          "final": 287.02
+        }
+      }
+    ],
+    "priceListId": "2025-04-02"
   },
   {
     "id": "camisa-reflejante-naranja",
     "name": "Camisa de Trabajo Reflejante Naranja",
     "category": "Camisas",
-    "priceCents": 52000,
+    "priceCents": 27745,
     "image": "assets/products/camisa-reflejante-naranja-front.jpg",
     "images": [
       "assets/products/camisa-reflejante-naranja-front.jpg",
@@ -112,47 +202,92 @@
     "sizes": [
       {
         "size": "XCH",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "CH",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "M",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "G",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 27745
       },
       {
         "size": "2XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 30520
       },
       {
         "size": "3XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 30520
       },
       {
         "size": "4XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 30520
       },
       {
         "size": "5XG",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 33294
       }
-    ]
+    ],
+    "priceTiers": [
+      {
+        "sizes": "XCH, CH, M, G, XG",
+        "socioCents": 20901,
+        "distribuidorCents": 23120,
+        "finalCents": 27745,
+        "listWithoutIva": {
+          "socio": 180.18,
+          "distribuidor": 199.31,
+          "final": 239.18
+        }
+      },
+      {
+        "sizes": "2XG, 3XG, 4XG",
+        "socioCents": 22991,
+        "distribuidorCents": 25432,
+        "finalCents": 30520,
+        "listWithoutIva": {
+          "socio": 198.2,
+          "distribuidor": 219.24,
+          "final": 263.1
+        }
+      },
+      {
+        "sizes": "5XG, 6XG",
+        "socioCents": 25082,
+        "distribuidorCents": 27744,
+        "finalCents": 33294,
+        "listWithoutIva": {
+          "socio": 216.22,
+          "distribuidor": 239.17,
+          "final": 287.02
+        }
+      }
+    ],
+    "priceListId": "2025-04-02"
   },
   {
     "id": "pantalon-mezclilla",
     "name": "Pantalón de Trabajo de Mezclilla",
     "category": "Pantalones",
-    "priceCents": 55000,
+    "priceCents": 22251,
     "image": "assets/products/pantalon-mezclilla.jpg",
     "images": [
       "assets/products/pantalon-mezclilla.jpg"
@@ -161,67 +296,117 @@
     "sizes": [
       {
         "size": "28",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "29",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "30",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "32",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "33",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "34",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "36",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "38",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "40",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "42",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 22251
       },
       {
         "size": "44",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 24476
       },
       {
         "size": "46",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 24476
       },
       {
         "size": "48",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 26701
       },
       {
         "size": "50",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 26701
       }
-    ]
+    ],
+    "priceTiers": [
+      {
+        "sizes": "28, 29, 30, 31, 32, 33, 34, 36, 38, 40, 42",
+        "socioCents": 16762,
+        "distribuidorCents": 18543,
+        "finalCents": 22251,
+        "listWithoutIva": {
+          "socio": 144.5,
+          "distribuidor": 159.85,
+          "final": 191.82
+        }
+      },
+      {
+        "sizes": "44, 46",
+        "socioCents": 18438,
+        "distribuidorCents": 20397,
+        "finalCents": 24476,
+        "listWithoutIva": {
+          "socio": 158.95,
+          "distribuidor": 175.84,
+          "final": 211
+        }
+      },
+      {
+        "sizes": "48, 50",
+        "socioCents": 20114,
+        "distribuidorCents": 22251,
+        "finalCents": 26701,
+        "listWithoutIva": {
+          "socio": 173.4,
+          "distribuidor": 191.82,
+          "final": 230.18
+        }
+      }
+    ],
+    "priceListId": "2025-04-02"
   },
   {
     "id": "pantalon-reflejante-verde",
     "name": "Pantalón de Trabajo Reflejante Verde",
     "category": "Pantalones",
-    "priceCents": 62000,
+    "priceCents": 25975,
     "image": "assets/products/pantalon-reflejante-verde-front.jpg",
     "images": [
       "assets/products/pantalon-reflejante-verde-front.jpg",
@@ -231,67 +416,117 @@
     "sizes": [
       {
         "size": "28",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "29",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "30",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "32",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "33",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "34",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "36",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "38",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "40",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "42",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "44",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 28572
       },
       {
         "size": "46",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 28572
       },
       {
         "size": "48",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 31169
       },
       {
         "size": "50",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 31169
       }
-    ]
+    ],
+    "priceTiers": [
+      {
+        "sizes": "28, 29, 30, 31, 32, 33, 34, 36, 38, 40, 42",
+        "socioCents": 19567,
+        "distribuidorCents": 21646,
+        "finalCents": 25975,
+        "listWithoutIva": {
+          "socio": 168.68,
+          "distribuidor": 186.6,
+          "final": 223.92
+        }
+      },
+      {
+        "sizes": "44, 46",
+        "socioCents": 21524,
+        "distribuidorCents": 23810,
+        "finalCents": 28572,
+        "listWithoutIva": {
+          "socio": 185.55,
+          "distribuidor": 205.26,
+          "final": 246.31
+        }
+      },
+      {
+        "sizes": "48, 50",
+        "socioCents": 23481,
+        "distribuidorCents": 25975,
+        "finalCents": 31169,
+        "listWithoutIva": {
+          "socio": 202.42,
+          "distribuidor": 223.92,
+          "final": 268.7
+        }
+      }
+    ],
+    "priceListId": "2025-04-02"
   },
   {
     "id": "pantalon-reflejante-naranja",
     "name": "Pantalón de Trabajo Reflejante Naranja",
     "category": "Pantalones",
-    "priceCents": 62000,
+    "priceCents": 25975,
     "image": "assets/products/pantalon-reflejante-naranja-front.jpg",
     "images": [
       "assets/products/pantalon-reflejante-naranja-front.jpg",
@@ -301,60 +536,110 @@
     "sizes": [
       {
         "size": "28",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "29",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "30",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "32",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "33",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "34",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "36",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "38",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "40",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "42",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 25975
       },
       {
         "size": "44",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 28572
       },
       {
         "size": "46",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 28572
       },
       {
         "size": "48",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 31169
       },
       {
         "size": "50",
-        "stock": 15
+        "stock": 15,
+        "priceCents": 31169
       }
-    ]
+    ],
+    "priceTiers": [
+      {
+        "sizes": "28, 29, 30, 31, 32, 33, 34, 36, 38, 40, 42",
+        "socioCents": 19567,
+        "distribuidorCents": 21646,
+        "finalCents": 25975,
+        "listWithoutIva": {
+          "socio": 168.68,
+          "distribuidor": 186.6,
+          "final": 223.92
+        }
+      },
+      {
+        "sizes": "44, 46",
+        "socioCents": 21524,
+        "distribuidorCents": 23810,
+        "finalCents": 28572,
+        "listWithoutIva": {
+          "socio": 185.55,
+          "distribuidor": 205.26,
+          "final": 246.31
+        }
+      },
+      {
+        "sizes": "48, 50",
+        "socioCents": 23481,
+        "distribuidorCents": 25975,
+        "finalCents": 31169,
+        "listWithoutIva": {
+          "socio": 202.42,
+          "distribuidor": 223.92,
+          "final": 268.7
+        }
+      }
+    ],
+    "priceListId": "2025-04-02"
   }
 ]

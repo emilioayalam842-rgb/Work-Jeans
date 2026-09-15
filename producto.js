@@ -25,6 +25,8 @@
       if (price) {
         const el = document.getElementById('pdpStickyPrice');
         if (el) el.textContent = formatPrice(price);
+        const big = document.getElementById('pdpPrice');
+        if (big) big.innerHTML = `${formatPrice(price)} <small>MXN · IVA incluido</small>`;
       }
     }
   }
