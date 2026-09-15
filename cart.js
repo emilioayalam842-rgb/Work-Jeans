@@ -230,12 +230,19 @@ async function refreshQuote() {
     const res = await fetch('/api/cart/quote', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: cart.map((i) => ({ id: i.id, size: i.size, quantity: i.quantity })), code }),
+      body: JSON.stringify({ items: cart.map((i) => ({ id: i.id, size: i.size, quantity: i.quantity })), code, postalCode: getZip() }),
     });
     const quote = await res.json();
     CART_QUOTE = quote;
-    const hasDiscount = quote.discounts.length > 0;
-    summary.hidden = !hasDiscount;
+    summary.hidden = false;
+    const ship = quote.shipping || {};
+    const shipEl = document.getElementById('cartShipping');
+    const shipMsg = document.getElementById('shipMsg');
+    if (shipEl) shipEl.textContent = ship.status === 'quoted' ? formatPrice(ship.costCents) : ship.status === 'free' ? 'Gratis' : ship.status === 'pending_rates' ? 'Por confirmar' : ship.status === 'quote_required' ? 'Por cotizar' : 'Por calcular';
+    if (shipMsg) {
+      shipMsg.textContent = ship.label || '';
+      shipMsg.classList.toggle('is-error', ['invalid_cp', 'unknown_cp'].includes(ship.status));
+    }
     document.getElementById('cartSubtotal').textContent = formatPrice(quote.subtotalCents);
     document.getElementById('cartDiscounts').innerHTML = quote.discounts.map((d) => `
       <div class="cart-summary-row cart-summary-row--discount"><span>${d.name}${d.code ? ` (${d.code})` : ''}</span><span>${d.cents ? `−${formatPrice(d.cents)}` : 'Envío gratis'}</span></div>`).join('');
@@ -265,26 +272,69 @@ function closeCart() {
 }
 
 const INVOICE_KEY = 'worksjeans_invoice';
+const ZIP_KEY = 'worksjeans_zip';
+const RFC_RE = /^([A-ZÑ&]{3,4})\d{6}[A-Z0-9]{3}$/;
+
+function getZip() {
+  const el = document.getElementById('shipZip');
+  if (el) return el.value.replace(/\D/g, '').slice(0, 5);
+  try { return (localStorage.getItem(ZIP_KEY) || '').slice(0, 5); } catch { return ''; }
+}
+
+function saveZip(value) {
+  try { localStorage.setItem(ZIP_KEY, value); } catch { /* sin almacenamiento */ }
+}
+
+const INVOICE_FIELDS = ['rfc', 'name', 'email', 'zip', 'regimen', 'uso'];
+const invoiceEl = (k) => document.getElementById(`invoice${k.charAt(0).toUpperCase()}${k.slice(1)}`);
 
 function getInvoice() {
   const box = document.getElementById('cartInvoice');
   if (!box || !box.open) return null;
-  const rfc = document.getElementById('invoiceRfc').value.trim().toUpperCase();
-  const name = document.getElementById('invoiceName').value.trim();
-  const email = document.getElementById('invoiceEmail').value.trim();
-  if (!rfc && !name && !email) return null;
-  return { rfc, name, email };
+  const inv = {};
+  INVOICE_FIELDS.forEach((k) => { inv[k] = (invoiceEl(k)?.value || '').trim(); });
+  inv.rfc = inv.rfc.toUpperCase();
+  if (!inv.rfc && !inv.name && !inv.email && !inv.zip) return null;
+  return inv;
+}
+
+// Mensaje de error si faltan datos de factura (misma regla que el servidor).
+function invoiceProblem(inv) {
+  if (!inv) return '';
+  if (!RFC_RE.test(inv.rfc)) return 'Revisa el RFC: 12 caracteres para empresa, 13 para persona física.';
+  if (!inv.name) return 'Escribe el nombre o razón social para la factura.';
+  if (!/^\d{5}$/.test(inv.zip)) return 'El código postal fiscal debe tener 5 dígitos.';
+  if (!inv.regimen) return 'Elige tu régimen fiscal.';
+  if (!inv.uso) return 'Elige el uso de CFDI.';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(inv.email)) return 'Escribe un correo válido para la factura.';
+  return '';
+}
+
+let satLoaded = false;
+async function loadSatCatalogs() {
+  if (satLoaded) return;
+  satLoaded = true;
+  try {
+    const data = await fetch('/api/sat-catalogs').then((r) => r.json());
+    const fill = (id, map) => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const current = sel.dataset.value || '';
+      sel.innerHTML = '<option value="">Elige…</option>' + Object.entries(map).map(([k, v]) => `<option value="${k}" ${k === current ? 'selected' : ''}>${k} · ${v}</option>`).join('');
+    };
+    fill('invoiceRegimen', data.regimenes);
+    fill('invoiceUso', data.usos);
+  } catch {
+    satLoaded = false;
+  }
 }
 
 function saveInvoiceDraft() {
   try {
     const box = document.getElementById('cartInvoice');
-    localStorage.setItem(INVOICE_KEY, JSON.stringify({
-      open: box.open,
-      rfc: document.getElementById('invoiceRfc').value,
-      name: document.getElementById('invoiceName').value,
-      email: document.getElementById('invoiceEmail').value,
-    }));
+    const draft = { open: box.open };
+    INVOICE_FIELDS.forEach((k) => { draft[k] = invoiceEl(k)?.value || ''; });
+    localStorage.setItem(INVOICE_KEY, JSON.stringify(draft));
   } catch {
     // Sin almacenamiento: no pasa nada.
   }
@@ -295,9 +345,13 @@ function restoreInvoiceDraft() {
     const saved = JSON.parse(localStorage.getItem(INVOICE_KEY) || 'null');
     if (!saved) return;
     document.getElementById('cartInvoice').open = Boolean(saved.open);
-    document.getElementById('invoiceRfc').value = saved.rfc || '';
-    document.getElementById('invoiceName').value = saved.name || '';
-    document.getElementById('invoiceEmail').value = saved.email || '';
+    INVOICE_FIELDS.forEach((k) => {
+      const el = invoiceEl(k);
+      if (!el) return;
+      el.value = saved[k] || '';
+      if (el.tagName === 'SELECT') el.dataset.value = saved[k] || '';
+    });
+    if (saved.open) loadSatCatalogs();
   } catch {
     // Ignorar.
   }
@@ -314,8 +368,10 @@ function buildWhatsappMessage() {
   } else {
     text += `\n\nTotal: ${formatPrice(cartTotalCents())}`;
   }
+  const zip = getZip();
+  if (zip) text += `\nCódigo postal de entrega: ${zip}${CART_QUOTE?.shipping?.label ? ` (${CART_QUOTE.shipping.label})` : ''}`;
   const invoice = getInvoice();
-  if (invoice) text += `\n\nNecesito factura:\nRFC: ${invoice.rfc || '(pendiente)'}\nRazón social: ${invoice.name || '(pendiente)'}\nCorreo: ${invoice.email || '(pendiente)'}`;
+  if (invoice) text += `\n\nNecesito factura:\nRFC: ${invoice.rfc || '(pendiente)'}\nRazón social: ${invoice.name || '(pendiente)'}\nCP fiscal: ${invoice.zip || '(pendiente)'}\nRégimen: ${invoice.regimen || '(pendiente)'}\nUso CFDI: ${invoice.uso || '(pendiente)'}\nCorreo: ${invoice.email || '(pendiente)'}`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
@@ -328,7 +384,24 @@ async function startStripeCheckout() {
     return;
   }
 
+  const problem = invoiceProblem(getInvoice());
+  if (problem) {
+    cartMessage.textContent = problem;
+    document.getElementById('cartInvoice').open = true;
+    return;
+  }
+  if (!getZip()) {
+    cartMessage.textContent = 'Escribe tu código postal para calcular el envío antes de pagar.';
+    document.getElementById('shipZip')?.focus();
+    return;
+  }
+  const btn = document.getElementById('checkoutStripe');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Procesando…';
   cartMessage.textContent = 'Redirigiendo al pago...';
+  const token = (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^\w-]/g, '');
+  window.wjTrack?.('begin_checkout', { items: cart.length });
 
   try {
     const res = await fetch('/api/create-checkout-session', {
@@ -338,17 +411,25 @@ async function startStripeCheckout() {
         items: cart.map((item) => ({ id: item.id, quantity: item.quantity, size: item.size })),
         invoice: getInvoice(),
         code: getCoupon() || null,
+        postalCode: getZip(),
+        checkoutToken: token,
       }),
     });
     const data = await res.json();
 
     if (!res.ok) {
-      cartMessage.textContent = data.error || 'No se pudo iniciar el pago. Intenta por WhatsApp.';
+      cartMessage.innerHTML = data.code === 'quote_required'
+        ? `${data.error} <a href="/empresas">Cotizar para empresa</a>`
+        : (data.error || 'No se pudo iniciar el pago. Intenta por WhatsApp.');
+      btn.disabled = false;
+      btn.textContent = original;
       return;
     }
 
     window.location.href = data.url;
   } catch {
+    btn.disabled = false;
+    btn.textContent = original;
     cartMessage.textContent = 'Pago en línea no disponible ahora mismo. Usa el botón de WhatsApp.';
   }
 }
@@ -540,8 +621,20 @@ document.addEventListener('DOMContentLoaded', () => {
     setCoupon(code);
     refreshQuote();
   });
-  ['invoiceRfc', 'invoiceName', 'invoiceEmail'].forEach((id) => document.getElementById(id)?.addEventListener('input', saveInvoiceDraft));
-  document.getElementById('cartInvoice')?.addEventListener('toggle', saveInvoiceDraft);
+  ['invoiceRfc', 'invoiceName', 'invoiceEmail', 'invoiceZip', 'invoiceRegimen', 'invoiceUso'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', saveInvoiceDraft);
+    document.getElementById(id)?.addEventListener('change', saveInvoiceDraft);
+  });
+  document.getElementById('cartInvoice')?.addEventListener('toggle', (e) => { saveInvoiceDraft(); if (e.target.open) loadSatCatalogs(); });
+  const zipInput = document.getElementById('shipZip');
+  if (zipInput) {
+    zipInput.value = getZip();
+    zipInput.addEventListener('input', () => {
+      zipInput.value = zipInput.value.replace(/\D/g, '').slice(0, 5);
+      saveZip(zipInput.value);
+      if (zipInput.value.length === 5 || zipInput.value.length === 0) { scheduleQuote(); if (zipInput.value.length === 5) window.wjTrack?.('shipping_calculated'); }
+    });
+  }
 
   document.getElementById('cartItems')?.addEventListener('click', (e) => {
     const itemEl = e.target.closest('.cart-item');

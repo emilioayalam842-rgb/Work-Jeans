@@ -1891,3 +1891,14 @@ body.cookie-open { overflow: hidden; }
 .admin-specs-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 
 html { overflow-x: clip; }
+
+/* Envío por código postal en el carrito */
+.cart-ship { display: grid; gap: 6px; margin: 6px 0 10px; }
+.cart-ship label { font-family: var(--label); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.cart-ship input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--line, #cfcfcf); font: inherit; font-size: 1rem; letter-spacing: 0.1em; }
+.cart-ship input:focus { border-color: var(--black); outline: none; }
+.cart-ship-msg { margin: 0; font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+.cart-ship-msg.is-error { color: #b00020; }
+.cart-invoice-fields select { width: 100%; padding: 9px 10px; font: inherit; font-size: 0.9rem; border: 1.5px solid var(--line, #cfcfcf); background: #fff; }
+.cart-message a { color: var(--black); font-weight: 600; }
+.admin-zones-table input { width: 100%; min-width: 80px; }

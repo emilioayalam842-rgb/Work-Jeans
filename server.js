@@ -189,6 +189,60 @@ function publicSettings() {
   return rest;
 }
 
+// Catálogos SAT usados en el formulario de factura (solo los habituales para una tienda).
+const SAT_REGIMENES = { 601: 'General de Ley Personas Morales', 603: 'Personas Morales con Fines no Lucrativos', 605: 'Sueldos y Salarios', 606: 'Arrendamiento', 608: 'Demás ingresos', 612: 'Personas Físicas con Actividades Empresariales y Profesionales', 616: 'Sin obligaciones fiscales', 621: 'Incorporación Fiscal', 625: 'Actividades Empresariales con ingresos a través de Plataformas Tecnológicas', 626: 'Régimen Simplificado de Confianza' };
+const SAT_USOS = { G01: 'Adquisición de mercancías', G03: 'Gastos en general', S01: 'Sin efectos fiscales' };
+const RFC_RE = /^([A-ZÑ&]{3,4})\d{6}[A-Z0-9]{3}$/;
+
+// Devuelve { invoice, error }. invoice = null cuando no se pidió factura.
+function normalizeInvoice(raw, { strict = false } = {}) {
+  if (!raw || typeof raw !== 'object') return { invoice: null };
+  const inv = {
+    rfc: cleanText(raw.rfc, 13).toUpperCase().replace(/[^A-Z0-9Ñ&]/g, ''),
+    name: cleanText(raw.name, 120),
+    email: cleanText(raw.email, 120),
+    zip: cleanText(raw.zip, 5).replace(/\D/g, ''),
+    regimen: cleanText(raw.regimen, 3),
+    uso: cleanText(raw.uso, 3).toUpperCase(),
+  };
+  if (!inv.rfc && !inv.name && !inv.email && !inv.zip && !raw.requested) return { invoice: null };
+  if (strict) {
+    if (!RFC_RE.test(inv.rfc)) return { error: 'El RFC no tiene un formato válido (12 o 13 caracteres).' };
+    if (!inv.name) return { error: 'Escribe el nombre o razón social para la factura.' };
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(inv.email)) return { error: 'Escribe un correo válido para enviarte la factura.' };
+    if (!/^\d{5}$/.test(inv.zip)) return { error: 'El código postal fiscal debe tener 5 dígitos.' };
+    if (!SAT_REGIMENES[inv.regimen]) return { error: 'Elige tu régimen fiscal.' };
+    if (!SAT_USOS[inv.uso]) return { error: 'Elige el uso de CFDI.' };
+  }
+  if (inv.regimen && !SAT_REGIMENES[inv.regimen]) inv.regimen = '';
+  if (inv.uso && !SAT_USOS[inv.uso]) inv.uso = '';
+  return { invoice: inv };
+}
+
+// ---------- Envíos por código postal (tarifas configurables en el panel; sin tarifa = "por confirmar") ----------
+function shippingConfig() {
+  const s = getSettings().shipping || {};
+  return { summary: s.summary || '', freeFromCents: s.freeFromCents || 0, quoteFromQty: s.quoteFromQty || 0, zones: Array.isArray(s.zones) ? s.zones : [] };
+}
+
+function shippingQuote({ postalCode, subtotalCents, qty, freeShipping }) {
+  const cfg = shippingConfig();
+  const cp = String(postalCode || '').replace(/\D/g, '');
+  if (cfg.quoteFromQty > 0 && qty >= cfg.quoteFromQty) {
+    return { status: 'quote_required', costCents: null, label: `Pedidos de ${cfg.quoteFromQty} piezas o más: el envío se cotiza aparte (te confirmamos el costo antes de cobrar).` };
+  }
+  if (!cp) return { status: 'need_cp', costCents: null, label: 'Escribe tu código postal para calcular el envío.' };
+  if (!/^\d{5}$/.test(cp)) return { status: 'invalid_cp', costCents: null, label: 'El código postal debe tener 5 dígitos.' };
+  const zone = cfg.zones.find((z) => cp >= String(z.cpFrom || '00000').padStart(5, '0') && cp <= String(z.cpTo || '99999').padStart(5, '0'));
+  if (!zone) return { status: 'unknown_cp', costCents: null, label: 'No cubrimos ese código postal por paquetería. Escríbenos por WhatsApp para revisarlo.' };
+  const free = freeShipping || (cfg.freeFromCents > 0 && subtotalCents >= cfg.freeFromCents);
+  if (free) return { status: 'free', zone: zone.name, costCents: 0, days: zone.days || '', label: `Envío gratis a ${zone.name}${zone.days ? ` · ${zone.days}` : ''}` };
+  if (!Number.isFinite(zone.costCents) || zone.costCents === null) {
+    return { status: 'pending_rates', zone: zone.name, costCents: null, days: zone.days || '', label: `Envío a ${zone.name}: te confirmamos el costo por WhatsApp antes de enviar. No se cobra nada de envío al pagar.` };
+  }
+  return { status: 'quoted', zone: zone.name, costCents: zone.costCents, days: zone.days || '', label: `Envío a ${zone.name}${zone.days ? ` · ${zone.days}` : ''}` };
+}
+
 function parseMoney(value) {
   const n = parseFloat(value);
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null;
@@ -487,7 +541,7 @@ function promoAppliesTo(promo, product) {
 }
 
 // Devuelve { lines, subtotalCents, discounts:[{id,name,cents,code}], discountCents, totalCents, freeShipping, codeError }
-function quoteCart(items, code) {
+function quoteCart(items, code, postalCode) {
   const products = getProducts();
   const lines = [];
   for (const item of Array.isArray(items) ? items : []) {
@@ -546,12 +600,16 @@ function quoteCart(items, code) {
     }
   }
   const discountCents = Math.min(subtotalCents, discounts.reduce((s, d) => s + d.cents, 0));
+  const shipping = shippingQuote({ postalCode, subtotalCents: subtotalCents - discountCents, qty: lines.reduce((s, l) => s + l.quantity, 0), freeShipping });
+  const shippingCents = shipping.costCents || 0;
   return {
     lines: lines.map(({ product, ...l }) => l),
     subtotalCents,
     discounts,
     discountCents,
-    totalCents: subtotalCents - discountCents,
+    shipping,
+    shippingCents,
+    totalCents: subtotalCents - discountCents + shippingCents,
     freeShipping,
     codeError,
   };
@@ -1780,6 +1838,11 @@ app.put('/api/admin/security', requireAdmin, perm('usuarios'), (req, res) => {
 
 // --- Settings ---
 
+app.get('/api/sat-catalogs', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.json({ regimenes: SAT_REGIMENES, usos: SAT_USOS });
+});
+
 app.get('/api/settings', (req, res) => {
   res.json(loadSessionUser(req) ? getSettings() : publicSettings());
 });
@@ -2041,9 +2104,7 @@ app.post('/api/admin/orders', requireAdmin, perm('pedidos.editar'), (req, res) =
       customerName: cleanText(customerName, 120),
       customerPhone: cleanText(customerPhone, 40),
       notes: cleanText(notes, 1000),
-      invoice: invoice && (invoice.rfc || invoice.name || invoice.email)
-        ? { requested: true, issued: false, rfc: cleanText(invoice.rfc, 13).toUpperCase(), name: cleanText(invoice.name, 120), email: cleanText(invoice.email, 120) }
-        : null,
+      invoice: (() => { const { invoice: inv } = normalizeInvoice(invoice); return inv ? { requested: true, issued: false, ...inv } : null; })(),
       discount,
       items: orderItems,
       subtotalCents,
@@ -2099,9 +2160,8 @@ app.put('/api/admin/orders/:id', requireAdmin, perm('pedidos.editar'), (req, res
   if (notes !== undefined) order.notes = cleanText(notes, 1000);
   if (req.body.invoice !== undefined) {
     const inv = req.body.invoice;
-    order.invoice = inv && (inv.rfc || inv.name || inv.email || inv.requested)
-      ? { requested: true, issued: Boolean(inv.issued), rfc: cleanText(inv.rfc, 13).toUpperCase(), name: cleanText(inv.name, 120), email: cleanText(inv.email, 120) }
-      : null;
+    const { invoice: normalized } = normalizeInvoice(inv);
+    order.invoice = normalized ? { requested: true, issued: Boolean(inv.issued), ...normalized } : null;
   }
   if (tracking !== undefined) {
     order.tracking = tracking && (tracking.carrier || tracking.number)
@@ -2322,7 +2382,7 @@ async function notifyNewOrder(order) {
     <p><b>Origen:</b> ${order.source === 'stripe' ? 'Pago con tarjeta' : 'WhatsApp'}<br>
     <b>Cliente:</b> ${order.customerName || 'Sin nombre'}${order.customerPhone ? ` · ${order.customerPhone}` : ''}${order.customerEmail ? ` · ${order.customerEmail}` : ''}</p>
     ${ship}
-    ${order.invoice ? `<p><b>Pide factura:</b> RFC ${order.invoice.rfc || '—'} · ${order.invoice.name || '—'} · ${order.invoice.email || '—'}</p>` : ''}
+    ${order.invoice ? `<p><b>Pide factura:</b> RFC ${order.invoice.rfc || '—'} · ${order.invoice.name || '—'} · ${order.invoice.email || '—'}${order.invoice.zip ? ` · CP ${order.invoice.zip}` : ''}${order.invoice.regimen ? ` · Régimen ${order.invoice.regimen}` : ''}${order.invoice.uso ? ` · Uso ${order.invoice.uso}` : ''}</p>` : ''}
     <table border="1" cellpadding="6" style="border-collapse:collapse"><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>Subtotal</th></tr>${rows}</table>
     <p><b>Total:</b> ${formatMxn(order.totalCents)}</p>
     <p>Revísalo en el panel: https://www.workjeans.mx/workmapadmin.html</p>`;
@@ -2366,7 +2426,8 @@ function recordStripeOrder(session) {
     invoice: (() => {
       try {
         const inv = session.metadata?.invoice ? JSON.parse(session.metadata.invoice) : null;
-        return inv ? { requested: true, issued: false, rfc: cleanText(inv.rfc, 13).toUpperCase(), name: cleanText(inv.name, 120), email: cleanText(inv.email, 120) } : null;
+        const { invoice } = normalizeInvoice(inv);
+        return invoice ? { requested: true, issued: false, ...invoice } : null;
       } catch {
         return null;
       }
@@ -2379,6 +2440,7 @@ function recordStripeOrder(session) {
       }
     })(),
     stripeSessionId: session.id,
+    shippingCostCents: session.shipping_cost?.amount_total ?? null,
     items: session.line_items.data.map((li, i) => {
       const product = cartMeta[i]?.id ? productsNow.find((p) => p.id === cartMeta[i].id) : null;
       const variant = product ? findVariant(product, cartMeta[i]?.size) : null;
@@ -2419,7 +2481,7 @@ function publicOrigin(req) {
 
 // Cotización del carrito (precios reales, promociones automáticas y cupón).
 app.post('/api/cart/quote', (req, res) => {
-  const quote = quoteCart(req.body?.items, req.body?.code);
+  const quote = quoteCart(req.body?.items, req.body?.code, req.body?.postalCode);
   res.json(quote);
 });
 
@@ -2505,12 +2567,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
     res.status(400).json({ error: 'El carrito está vacío.' });
     return;
   }
-  const invoiceMeta = invoice && typeof invoice === 'object'
-    ? { rfc: cleanText(invoice.rfc, 13).toUpperCase(), name: cleanText(invoice.name, 120), email: cleanText(invoice.email, 120) }
-    : null;
+  const { invoice: invoiceMeta, error: invoiceError } = normalizeInvoice(invoice, { strict: true });
+  if (invoiceError) {
+    res.status(400).json({ error: invoiceError });
+    return;
+  }
 
   try {
-    const quote = quoteCart(items, req.body.code);
+    const quote = quoteCart(items, req.body.code, req.body.postalCode);
     if (quote.lines.length === 0) {
       throw new Error('El carrito no tiene productos válidos.');
     }
@@ -2518,6 +2582,31 @@ app.post('/api/create-checkout-session', async (req, res) => {
       res.status(400).json({ error: quote.codeError });
       return;
     }
+    // Existencias reales antes de cobrar: no se vende una talla agotada.
+    const stockProducts = getProducts();
+    for (const l of quote.lines) {
+      const v = findVariant(stockProducts.find((p) => p.id === l.id), l.size);
+      if (v && v.stock < l.quantity) {
+        res.status(400).json({ error: `Solo quedan ${v.stock} piezas de ${l.name} talla ${l.size}. Ajusta la cantidad.` });
+        return;
+      }
+    }
+    if (quote.shipping.status === 'quote_required') {
+      res.status(400).json({ error: quote.shipping.label, code: 'quote_required' });
+      return;
+    }
+    if (quote.shipping.status === 'invalid_cp' || quote.shipping.status === 'unknown_cp') {
+      res.status(400).json({ error: quote.shipping.label });
+      return;
+    }
+    const shippingOptions = ['quoted', 'free'].includes(quote.shipping.status) ? [{
+      shipping_rate_data: {
+        type: 'fixed_amount',
+        fixed_amount: { amount: quote.shipping.costCents, currency: 'mxn' },
+        display_name: quote.shipping.status === 'free' ? `Envío gratis · ${quote.shipping.zone}` : `Envío · ${quote.shipping.zone}`,
+      },
+    }] : [];
+    const checkoutToken = String(req.body.checkoutToken || '').replace(/[^\w-]/g, '').slice(0, 64);
     const line_items = quote.lines.map((l) => ({
       quantity: l.quantity,
       price_data: {
@@ -2545,13 +2634,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
       mode: 'payment',
       line_items,
       ...(discountsOpt.length ? { discounts: discountsOpt } : {}),
-      metadata: { cart: JSON.stringify(cartMeta), invoice: invoiceMeta ? JSON.stringify(invoiceMeta) : '', promo: promoMeta },
+      metadata: { cart: JSON.stringify(cartMeta), invoice: invoiceMeta ? JSON.stringify(invoiceMeta) : '', promo: promoMeta, shipping: JSON.stringify({ status: quote.shipping.status, zone: quote.shipping.zone || '', cp: String(req.body.postalCode || '').replace(/\D/g, '').slice(0, 5), costCents: quote.shipping.costCents }) },
       shipping_address_collection: { allowed_countries: ['MX'] },
+      ...(shippingOptions.length ? { shipping_options: shippingOptions } : {}),
       phone_number_collection: { enabled: true },
       locale: 'es',
       success_url: `${publicOrigin(req)}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${publicOrigin(req)}/cancel.html`,
-    });
+    }, checkoutToken.length >= 16 ? { idempotencyKey: `wj-checkout-${checkoutToken}` } : {});
 
     res.json({ url: session.url });
   } catch (err) {

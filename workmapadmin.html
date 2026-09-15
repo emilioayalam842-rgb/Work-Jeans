@@ -579,6 +579,22 @@
           <label for="settingLowStock">Avisar cuando una talla tenga estas piezas o menos</label>
           <input type="number" id="settingLowStock" name="lowStockThreshold" min="0" step="1" placeholder="5">
 
+          <h3 class="admin-section-spacer">Envíos por código postal</h3>
+          <p class="admin-help">Cada zona cubre un rango de códigos postales. Si dejas el costo vacío, la tienda muestra "te confirmamos el costo antes de enviar" y no cobra envío al pagar con tarjeta. Cuando pongas el costo, se suma al total y se cobra en Stripe.</p>
+          <div class="admin-table-wrap admin-table-wrap--flat">
+            <table class="admin-table admin-zones-table">
+              <thead><tr><th>Zona</th><th>CP desde</th><th>CP hasta</th><th>Costo (MXN)</th><th>Tiempo estimado</th><th></th></tr></thead>
+              <tbody id="shipZones"></tbody>
+            </table>
+          </div>
+          <button type="button" id="addZoneBtn" class="btn btn-secondary admin-add-item-btn">+ Agregar zona</button>
+          <div class="admin-field-grid">
+            <div><label for="settingFreeFrom">Envío gratis a partir de (MXN, vacío = nunca)</label><input type="number" id="settingFreeFrom" min="0" step="1" placeholder="Ej. 1500"></div>
+            <div><label for="settingQuoteFromQty">Envío por cotizar a partir de (piezas, vacío = nunca)</label><input type="number" id="settingQuoteFromQty" min="0" step="1" placeholder="Ej. 12"></div>
+          </div>
+          <label for="settingShipSummary">Texto de envíos en la página de producto (opcional)</label>
+          <textarea id="settingShipSummary" rows="2" placeholder="Enviamos a todo México por paquetería…"></textarea>
+
           <button type="submit" class="btn btn-primary">Guardar configuración</button>
           <p class="admin-error" id="settingsError"></p>
           <p class="admin-success" id="settingsSuccess"></p>
@@ -1161,6 +1177,9 @@
         <div class="admin-field-grid">
           <div><label for="orderInvoiceRfc">RFC</label><input type="text" id="orderInvoiceRfc" maxlength="13"></div>
           <div><label for="orderInvoiceName">Razón social</label><input type="text" id="orderInvoiceName"></div>
+          <div><label for="orderInvoiceZip">CP fiscal</label><input type="text" id="orderInvoiceZip" maxlength="5" inputmode="numeric"></div>
+          <div><label for="orderInvoiceRegimen">Régimen (clave SAT)</label><input type="text" id="orderInvoiceRegimen" maxlength="3" placeholder="601, 612, 626…"></div>
+          <div><label for="orderInvoiceUso">Uso CFDI</label><input type="text" id="orderInvoiceUso" maxlength="3" placeholder="G01, G03, S01"></div>
         </div>
         <label for="orderInvoiceEmail">Correo para la factura</label>
         <input type="email" id="orderInvoiceEmail">

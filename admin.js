@@ -1014,6 +1014,9 @@ function openOrderDetail(id) {
   document.getElementById('orderInvoiceRfc').value = inv?.rfc || '';
   document.getElementById('orderInvoiceName').value = inv?.name || '';
   document.getElementById('orderInvoiceEmail').value = inv?.email || '';
+  document.getElementById('orderInvoiceZip').value = inv?.zip || '';
+  document.getElementById('orderInvoiceRegimen').value = inv?.regimen || '';
+  document.getElementById('orderInvoiceUso').value = inv?.uso || '';
   document.getElementById('orderInvoiceIssued').checked = Boolean(inv?.issued);
   orderDetailOverlay.hidden = false;
 }
@@ -1067,6 +1070,9 @@ document.getElementById('saveOrderNotesBtn').addEventListener('click', async () 
         rfc: document.getElementById('orderInvoiceRfc').value,
         name: document.getElementById('orderInvoiceName').value,
         email: document.getElementById('orderInvoiceEmail').value,
+        zip: document.getElementById('orderInvoiceZip').value,
+        regimen: document.getElementById('orderInvoiceRegimen').value,
+        uso: document.getElementById('orderInvoiceUso').value,
         issued: document.getElementById('orderInvoiceIssued').checked,
         requested: Boolean(order?.invoice) || Boolean(document.getElementById('orderInvoiceRfc').value || document.getElementById('orderInvoiceName').value),
       },
@@ -1710,6 +1716,51 @@ async function loadSettingsForm() {
   document.getElementById('settingReviewCount').value = settings.googleReviewCount || '';
   document.getElementById('settingNotifyEmail').value = settings.notifyEmail || '';
   document.getElementById('settingLowStock').value = settings.lowStockThreshold ?? 5;
+  const ship = settings.shipping || {};
+  document.getElementById('settingFreeFrom').value = ship.freeFromCents ? (ship.freeFromCents / 100).toFixed(0) : '';
+  document.getElementById('settingQuoteFromQty').value = ship.quoteFromQty || '';
+  document.getElementById('settingShipSummary').value = ship.summary || '';
+  const zones = document.getElementById('shipZones');
+  zones.innerHTML = '';
+  (ship.zones || []).forEach(addZoneRow);
+  if (!zones.children.length) addZoneRow();
+}
+
+function addZoneRow(z = {}) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="zone-name" value="${esc(z.name || '')}" placeholder="Nuevo León"></td>
+    <td><input type="text" class="zone-from" value="${esc(z.cpFrom || '')}" maxlength="5" inputmode="numeric" placeholder="64000"></td>
+    <td><input type="text" class="zone-to" value="${esc(z.cpTo || '')}" maxlength="5" inputmode="numeric" placeholder="67999"></td>
+    <td><input type="number" class="zone-cost" value="${Number.isFinite(z.costCents) && z.costCents !== null ? (z.costCents / 100).toFixed(0) : ''}" min="0" step="1" placeholder="pendiente"></td>
+    <td><input type="text" class="zone-days" value="${esc(z.days || '')}" placeholder="2 a 4 días hábiles"></td>
+    <td class="admin-table-actions">${iconBtn('remove-zone', 'close', 'Quitar')}</td>`;
+  document.getElementById('shipZones').appendChild(tr);
+}
+document.getElementById('addZoneBtn').addEventListener('click', () => addZoneRow());
+document.getElementById('shipZones').addEventListener('click', (e) => {
+  if (e.target.closest('[data-action="remove-zone"]')) e.target.closest('tr').remove();
+});
+
+function collectShipping() {
+  const zones = [...document.querySelectorAll('#shipZones tr')].map((tr, i) => {
+    const cost = tr.querySelector('.zone-cost').value;
+    return {
+      id: `z${i + 1}`,
+      name: tr.querySelector('.zone-name').value.trim().slice(0, 60),
+      cpFrom: tr.querySelector('.zone-from').value.replace(/\D/g, '').slice(0, 5),
+      cpTo: tr.querySelector('.zone-to').value.replace(/\D/g, '').slice(0, 5),
+      costCents: cost === '' ? null : Math.round(parseFloat(cost) * 100),
+      days: tr.querySelector('.zone-days').value.trim().slice(0, 60),
+    };
+  }).filter((z) => z.name && z.cpFrom && z.cpTo);
+  const free = parseFloat(document.getElementById('settingFreeFrom').value);
+  return {
+    summary: document.getElementById('settingShipSummary').value.trim().slice(0, 400),
+    freeFromCents: Number.isFinite(free) && free > 0 ? Math.round(free * 100) : 0,
+    quoteFromQty: Math.max(0, parseInt(document.getElementById('settingQuoteFromQty').value, 10) || 0),
+    zones,
+  };
 }
 
 document.getElementById('testEmailBtn').addEventListener('click', async () => {
@@ -1737,6 +1788,7 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     googleReviewCount: document.getElementById('settingReviewCount').value,
     notifyEmail: document.getElementById('settingNotifyEmail').value.trim(),
     lowStockThreshold: Math.max(0, parseInt(document.getElementById('settingLowStock').value, 10) || 0),
+    shipping: collectShipping(),
   };
 
   const res = await fetch('/api/admin/settings', {

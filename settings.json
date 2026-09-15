@@ -25,5 +25,28 @@
   ],
   "warehouses": [
     "Tienda"
-  ]
+  ],
+  "shipping": {
+    "summary": "",
+    "freeFromCents": 0,
+    "quoteFromQty": 0,
+    "zones": [
+      {
+        "id": "nl",
+        "name": "Nuevo León",
+        "cpFrom": "64000",
+        "cpTo": "67999",
+        "costCents": null,
+        "days": ""
+      },
+      {
+        "id": "mx",
+        "name": "Resto de México",
+        "cpFrom": "01000",
+        "cpTo": "99999",
+        "costCents": null,
+        "days": ""
+      }
+    ]
+  }
 }

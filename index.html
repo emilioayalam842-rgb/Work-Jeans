@@ -135,9 +135,15 @@
         <button type="submit" class="btn btn-secondary" id="couponApply">Aplicar</button>
       </form>
       <p class="cart-coupon-msg" id="couponMsg"></p>
+      <div class="cart-ship">
+        <label for="shipZip">Código postal de entrega</label>
+        <input type="text" id="shipZip" inputmode="numeric" maxlength="5" placeholder="Ej. 64000" autocomplete="postal-code">
+        <p class="cart-ship-msg" id="shipMsg">Escribe tu código postal para calcular el envío.</p>
+      </div>
       <div class="cart-summary" id="cartSummary" hidden>
         <div class="cart-summary-row"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
         <div id="cartDiscounts"></div>
+        <div class="cart-summary-row" id="cartShippingRow"><span>Envío</span><span id="cartShipping">Por calcular</span></div>
       </div>
       <div class="cart-total">
         <span>Total</span>
@@ -146,10 +152,13 @@
       <details class="cart-invoice" id="cartInvoice">
         <summary><span class="cart-invoice-check" aria-hidden="true"></span> Necesito factura</summary>
         <div class="cart-invoice-fields">
-          <label>RFC <input type="text" id="invoiceRfc" autocomplete="off" maxlength="13" placeholder="XAXX010101000"></label>
-          <label>Razón social <input type="text" id="invoiceName" placeholder="Nombre o empresa"></label>
-          <label>Correo para la factura <input type="email" id="invoiceEmail" placeholder="facturas@empresa.com"></label>
-          <p class="cart-invoice-note">Te enviamos la factura al correo indicado. Régimen y uso de CFDI los confirmamos contigo.</p>
+          <label>RFC <input type="text" id="invoiceRfc" autocomplete="off" maxlength="13" placeholder="XAXX010101000" pattern="[A-ZÑ&amp;]{3,4}[0-9]{6}[A-Z0-9]{3}" style="text-transform:uppercase"></label>
+          <label>Nombre o razón social (como en la constancia) <input type="text" id="invoiceName" autocomplete="organization" placeholder="Nombre o empresa"></label>
+          <label>Código postal fiscal <input type="text" id="invoiceZip" inputmode="numeric" maxlength="5" placeholder="64000"></label>
+          <label>Régimen fiscal <select id="invoiceRegimen"><option value="">Elige…</option></select></label>
+          <label>Uso de CFDI <select id="invoiceUso"><option value="">Elige…</option></select></label>
+          <label>Correo para la factura <input type="email" id="invoiceEmail" autocomplete="email" placeholder="facturas@empresa.com"></label>
+          <p class="cart-invoice-note">Te enviamos la factura al correo indicado. Los datos deben coincidir con tu constancia de situación fiscal.</p>
         </div>
       </details>
       <button class="btn btn-primary" id="checkoutWhatsapp">Pedir por WhatsApp</button>
