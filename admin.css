@@ -731,3 +731,27 @@
 .admin-size-row, .admin-order-item-row { align-items: center; }
 .admin-size-row input { border: 1.5px solid var(--line); border-radius: var(--radius); }
 .admin-size-row input:focus, .admin-order-item-row input:focus, .admin-order-item-row select:focus { outline: 2px solid var(--yellow); outline-offset: 0; border-color: var(--black); }
+
+/* Utilidad, reportes, entradas, campana ---------------------------------- */
+
+.admin-stats { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.admin-stat-card--profit { border-left: 4px solid #2e7d32; }
+.admin-stat-note { margin: 4px 0 0; font-size: 0.76rem; color: var(--muted); }
+.admin-profit { color: #2e7d32; font-weight: 600; }
+.admin-stats--compact { margin-bottom: 20px; }
+.admin-table-wrap--flat { box-shadow: none; border: 1px solid #eee; }
+
+.admin-entry-grid { margin: 4px 0 10px; }
+.admin-entry-size input { width: 64px; border: 1.5px solid var(--line); border-radius: var(--radius); padding: 6px 4px; text-align: center; font-size: 1rem; font-family: inherit; }
+.admin-entry-size input:focus { outline: 2px solid var(--yellow); outline-offset: 0; border-color: var(--black); }
+
+.admin-header-right { display: flex; align-items: center; gap: 16px; position: relative; }
+.admin-bell { position: relative; width: 40px; height: 40px; border: 1.5px solid #444; background: transparent; color: var(--paper); border-radius: var(--radius); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.admin-bell:hover { background: #222; }
+.admin-bell-count { position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; background: var(--yellow); color: var(--black); font-size: 0.72rem; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; }
+.admin-bell-menu { position: absolute; top: 48px; left: 0; width: 320px; background: var(--paper); color: var(--black); border: 1.5px solid var(--black); border-radius: var(--radius); box-shadow: 0 12px 30px rgba(0,0,0,0.25); z-index: 50; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.admin-bell-item { text-align: left; background: #fff7cc; border: 1px solid #f0dc7a; border-radius: var(--radius); padding: 8px 10px; cursor: pointer; font: inherit; display: flex; flex-direction: column; gap: 2px; }
+.admin-bell-item:hover { background: var(--yellow); }
+.admin-bell-item span { font-size: 0.76rem; color: #555; }
+.admin-bell-clear { background: transparent; border: 0; padding: 8px; font: inherit; font-size: 0.8rem; color: var(--muted); cursor: pointer; text-decoration: underline; }
+.admin-bell-empty { margin: 0; padding: 10px; font-size: 0.85rem; color: var(--muted); }

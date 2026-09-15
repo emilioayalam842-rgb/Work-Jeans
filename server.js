@@ -85,6 +85,11 @@ function parseMoney(value) {
 function applyProductExtras(product, body) {
   if (body.active !== undefined) product.active = body.active === 'true' || body.active === '1' || body.active === 'on';
   if (body.tag !== undefined) product.tag = ['nuevo', 'oferta'].includes(body.tag) ? body.tag : '';
+  if (body.costMxn !== undefined) {
+    const cents = parseMoney(body.costMxn);
+    if (cents) product.costCents = cents;
+    else delete product.costCents;
+  }
   if (body.compareMxn !== undefined) {
     const cents = parseMoney(body.compareMxn);
     if (cents && cents > product.priceCents) product.comparePriceCents = cents;
@@ -690,6 +695,7 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
         size: item.size || null,
         quantity,
         priceCents: product.priceCents,
+        costCents: product.costCents || 0,
       };
     });
 
@@ -772,6 +778,59 @@ app.get('/api/admin/inventory', requireAdmin, (req, res) => {
   const limit = Math.max(1, Math.min(500, parseInt(req.query.limit, 10) || 200));
   const log = getInventoryLog().slice(-limit).reverse();
   res.json(log);
+});
+
+// Entrada de mercancía: varias tallas de un producto, con proveedor y costo.
+app.post('/api/admin/inventory/entry', requireAdmin, (req, res) => {
+  const { productId, supplier, costMxn, updateCost, note, sizes } = req.body;
+  if (!productId || !Array.isArray(sizes)) {
+    res.status(400).json({ error: 'Indica el producto y las cantidades por talla.' });
+    return;
+  }
+  const products = getProducts();
+  const product = products.find((p) => p.id === productId);
+  if (!product) {
+    res.status(404).json({ error: 'Producto no encontrado.' });
+    return;
+  }
+  const costCents = parseMoney(costMxn);
+  const supplierName = String(supplier || '').trim().slice(0, 80);
+  const reason = `Entrada${supplierName ? `: ${supplierName}` : ' de mercancía'}${note ? ` · ${String(note).trim().slice(0, 120)}` : ''}`;
+  const movements = [];
+  let totalQty = 0;
+  for (const row of sizes) {
+    const qty = parseInt(row.qty, 10);
+    if (!Number.isFinite(qty) || qty <= 0) continue;
+    let sizeEntry = product.sizes.find((s) => s.size === row.size);
+    if (!sizeEntry) {
+      if (!row.size) continue;
+      sizeEntry = { size: String(row.size).trim(), stock: 0 };
+      product.sizes.push(sizeEntry);
+    }
+    sizeEntry.stock += qty;
+    totalQty += qty;
+    movements.push({ productId: product.id, productName: product.name, size: sizeEntry.size, delta: qty, stockAfter: sizeEntry.stock, reason, orderId: null, supplier: supplierName || null, costCents: costCents || null, type: 'entrada' });
+  }
+  if (totalQty === 0) {
+    res.status(400).json({ error: 'Captura al menos una cantidad mayor a cero.' });
+    return;
+  }
+  if (costCents && (updateCost === true || updateCost === 'true')) product.costCents = costCents;
+  saveProducts(products);
+  logInventory(movements);
+  res.status(201).json({ ok: true, pieces: totalQty, product });
+});
+
+// Resumen ligero para detectar pedidos nuevos desde el panel sin recargar.
+app.get('/api/admin/orders-summary', requireAdmin, (req, res) => {
+  const orders = getOrders();
+  const since = req.query.since ? new Date(req.query.since) : null;
+  const recent = since ? orders.filter((o) => new Date(o.createdAt) > since) : [];
+  res.json({
+    count: orders.length,
+    latestAt: orders.reduce((max, o) => (o.createdAt > max ? o.createdAt : max), ''),
+    newOrders: recent.map((o) => ({ id: o.id, createdAt: o.createdAt, customerName: o.customerName, totalCents: o.totalCents, source: o.source })),
+  });
 });
 
 app.post('/api/admin/inventory/adjust', requireAdmin, (req, res) => {
@@ -881,6 +940,7 @@ function recordStripeOrder(session) {
   }
 
   const addr = session.shipping_details?.address || session.customer_details?.address || null;
+  const productsNow = getProducts();
   const orderId = makeOrderId();
   order = {
     id: orderId,
@@ -901,13 +961,17 @@ function recordStripeOrder(session) {
     } : null,
     notes: '',
     stripeSessionId: session.id,
-    items: session.line_items.data.map((li, i) => ({
-      id: cartMeta[i]?.id || null,
-      name: li.description,
-      size: cartMeta[i]?.size || null,
-      quantity: li.quantity,
-      priceCents: li.amount_total / li.quantity,
-    })),
+    items: session.line_items.data.map((li, i) => {
+      const product = cartMeta[i]?.id ? productsNow.find((p) => p.id === cartMeta[i].id) : null;
+      return {
+        id: cartMeta[i]?.id || null,
+        name: li.description,
+        size: cartMeta[i]?.size || null,
+        quantity: li.quantity,
+        priceCents: li.amount_total / li.quantity,
+        costCents: product?.costCents || 0,
+      };
+    }),
     totalCents: session.amount_total,
   };
   orders.push(order);

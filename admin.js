@@ -108,7 +108,7 @@ function formatPrice(cents) {
 function showAdmin() {
   loginScreen.hidden = true;
   adminScreen.hidden = false;
-  loadSettingsCache().then(loadProducts).then(loadOrders).then(renderDashboard);
+  loadSettingsCache().then(loadProducts).then(loadOrders).then(renderDashboard).then(pollNewOrders);
 }
 
 function showLogin() {
@@ -150,6 +150,26 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 // --- Tabs ---
 
+// Costo de una partida: el guardado en el pedido o, si no lo tiene, el costo actual del producto.
+function itemCost(item) {
+  if (Number.isFinite(item.costCents) && item.costCents > 0) return item.costCents;
+  const product = productsCache.find((p) => p.id === item.id);
+  return product?.costCents || 0;
+}
+
+function orderCost(order) {
+  return order.items.reduce((sum, i) => sum + itemCost(i) * i.quantity, 0);
+}
+
+function orderPieces(order) {
+  return order.items.reduce((sum, i) => sum + i.quantity, 0);
+}
+
+function marginText(sales, profit) {
+  if (!sales) return '';
+  return `${Math.round((profit / sales) * 100)}% de margen`;
+}
+
 function showTab(name) {
   document.querySelectorAll('.admin-tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.admin-tab-panel').forEach((panel) => { panel.hidden = true; });
@@ -160,6 +180,7 @@ function showTab(name) {
   if (name === 'pedidos') loadOrders();
   if (name === 'clientes') loadCustomers();
   if (name === 'inventario') loadInventory();
+  if (name === 'reportes') loadOrders().then(renderReports);
   if (name === 'configuracion') loadSettingsForm();
 }
 
@@ -346,6 +367,7 @@ function openForm(product) {
     document.getElementById('fieldPrice').value = (product.priceCents / 100).toFixed(2);
     document.getElementById('fieldDescription').value = product.description;
     document.getElementById('fieldCompare').value = product.comparePriceCents ? (product.comparePriceCents / 100).toFixed(2) : '';
+    document.getElementById('fieldCost').value = product.costCents ? (product.costCents / 100).toFixed(2) : '';
     document.getElementById('fieldTag').value = product.tag || '';
     document.getElementById('fieldWholesaleQty').value = product.wholesale ? product.wholesale.minQty : '';
     document.getElementById('fieldWholesalePrice').value = product.wholesale ? (product.wholesale.priceCents / 100).toFixed(2) : '';
@@ -534,7 +556,7 @@ document.getElementById('exportOrdersBtn').addEventListener('click', () => {
     alert('No hay pedidos para exportar.');
     return;
   }
-  const header = ['Pedido', 'Fecha', 'Origen', 'Estado', 'Cliente', 'Teléfono', 'Correo', 'Dirección de envío', 'Paquetería', 'Guía', 'Productos', 'Piezas', 'Total MXN', 'Notas'];
+  const header = ['Pedido', 'Fecha', 'Origen', 'Estado', 'Cliente', 'Teléfono', 'Correo', 'Dirección de envío', 'Paquetería', 'Guía', 'Productos', 'Piezas', 'Total MXN', 'Costo MXN', 'Utilidad MXN', 'Notas'];
   const rows = orders.map((o) => [
     o.id,
     new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }),
@@ -547,8 +569,10 @@ document.getElementById('exportOrdersBtn').addEventListener('click', () => {
     o.tracking?.carrier || '',
     o.tracking?.number || '',
     o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join('; '),
-    o.items.reduce((sum, i) => sum + i.quantity, 0),
+    orderPieces(o),
     (o.totalCents / 100).toFixed(2),
+    (orderCost(o) / 100).toFixed(2),
+    ((o.totalCents - orderCost(o)) / 100).toFixed(2),
     o.notes || '',
   ]);
   // Separador ";" y BOM para que Excel en español lo abra en columnas y con acentos.
@@ -915,9 +939,224 @@ async function loadInventory() {
       <td class="${m.delta < 0 ? 'admin-delta-neg' : 'admin-delta-pos'}">${m.delta > 0 ? '+' : ''}${m.delta}</td>
       <td>${m.stockAfter}</td>
       <td>${m.reason}${m.orderId ? ` <span class="admin-muted">· ${m.orderId}</span>` : ''}</td>
+      <td>${m.costCents ? `${formatPrice(m.costCents)} c/u` : '—'}</td>
     </tr>
   `).join('');
+  const suppliers = [...new Set(log.map((m) => m.supplier).filter(Boolean))];
+  document.getElementById('suppliersList').innerHTML = suppliers.map((s) => `<option value="${s}"></option>`).join('');
 }
+
+// --- Entradas de mercancía ---
+
+function renderEntrySizes() {
+  const product = productsCache.find((p) => p.id === document.getElementById('entryProduct').value);
+  const grid = document.getElementById('entrySizes');
+  grid.innerHTML = product ? product.sizes.map((s) => `
+    <label class="admin-stock-size admin-entry-size" data-size="${s.size}">
+      <span class="admin-stock-size-name">${s.size}</span>
+      <input type="number" min="0" step="1" placeholder="0" inputmode="numeric">
+      <span class="admin-muted admin-small">hay ${s.stock}</span>
+    </label>
+  `).join('') : '';
+  document.getElementById('entryCost').value = product?.costCents ? (product.costCents / 100).toFixed(2) : '';
+  updateEntryTotal();
+}
+
+function updateEntryTotal() {
+  let total = 0;
+  document.querySelectorAll('#entrySizes input').forEach((i) => { total += parseInt(i.value, 10) || 0; });
+  document.getElementById('entryTotal').textContent = `${total} piezas`;
+}
+
+document.getElementById('newEntryBtn').addEventListener('click', () => {
+  document.getElementById('entryError').textContent = '';
+  document.getElementById('entryForm').reset();
+  document.getElementById('entryUpdateCost').checked = true;
+  document.getElementById('entryProduct').innerHTML = productsCache.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+  renderEntrySizes();
+  document.getElementById('entryOverlay').hidden = false;
+});
+document.getElementById('entryProduct').addEventListener('change', renderEntrySizes);
+document.getElementById('entrySizes').addEventListener('input', updateEntryTotal);
+document.getElementById('cancelEntryBtn').addEventListener('click', () => { document.getElementById('entryOverlay').hidden = true; });
+
+document.getElementById('entryForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('entryError');
+  errorEl.textContent = '';
+  const sizes = Array.from(document.querySelectorAll('#entrySizes .admin-entry-size')).map((el) => ({
+    size: el.dataset.size,
+    qty: parseInt(el.querySelector('input').value, 10) || 0,
+  })).filter((s) => s.qty > 0);
+  if (sizes.length === 0) {
+    errorEl.textContent = 'Captura cuántas piezas llegaron de al menos una talla.';
+    return;
+  }
+  const res = await fetch('/api/admin/inventory/entry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      productId: document.getElementById('entryProduct').value,
+      supplier: document.getElementById('entrySupplier').value,
+      costMxn: document.getElementById('entryCost').value,
+      updateCost: document.getElementById('entryUpdateCost').checked,
+      note: document.getElementById('entryNote').value,
+      sizes,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    errorEl.textContent = data.error || 'No se pudo guardar la entrada.';
+    return;
+  }
+  document.getElementById('entryOverlay').hidden = true;
+  await loadProducts();
+  loadInventory();
+});
+
+// --- Reportes ---
+
+function reportRange() {
+  const value = document.getElementById('reportPeriod').value;
+  const now = new Date();
+  if (value === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+  if (value === 'year') return new Date(now.getFullYear(), 0, 1);
+  if (value === 'all') return null;
+  return new Date(now.getTime() - parseInt(value, 10) * 24 * 60 * 60 * 1000);
+}
+
+function renderReports() {
+  const from = reportRange();
+  const orders = ordersCache.filter((o) => o.status !== 'cancelado' && (!from || new Date(o.createdAt) >= from));
+  const sales = orders.reduce((sum, o) => sum + o.totalCents, 0);
+  const cost = orders.reduce((sum, o) => sum + orderCost(o), 0);
+  const pieces = orders.reduce((sum, o) => sum + orderPieces(o), 0);
+  document.getElementById('repSales').textContent = formatPrice(sales);
+  document.getElementById('repCost').textContent = formatPrice(cost);
+  document.getElementById('repProfit').textContent = formatPrice(sales - cost);
+  document.getElementById('repMargin').textContent = marginText(sales, sales - cost);
+  document.getElementById('repPieces').textContent = pieces;
+
+  const byProduct = {};
+  const bySize = {};
+  orders.forEach((o) => {
+    o.items.forEach((i) => {
+      const key = i.id || i.name;
+      byProduct[key] = byProduct[key] || { name: i.name, id: i.id, pieces: 0, sales: 0, cost: 0 };
+      byProduct[key].pieces += i.quantity;
+      byProduct[key].sales += i.priceCents * i.quantity;
+      byProduct[key].cost += itemCost(i) * i.quantity;
+      if (i.size) {
+        const sk = `${key}|${i.size}`;
+        bySize[sk] = bySize[sk] || { name: i.name, id: i.id, size: i.size, pieces: 0 };
+        bySize[sk].pieces += i.quantity;
+      }
+    });
+  });
+  const products = Object.values(byProduct).sort((a, b) => b.pieces - a.pieces);
+  document.getElementById('repProductsBody').innerHTML = products.length
+    ? products.map((p) => {
+      const product = productsCache.find((x) => x.id === p.id);
+      const stock = product ? totalStock(product) : '—';
+      return `<tr><td>${p.name}</td><td>${p.pieces}</td><td>${formatPrice(p.sales)}</td><td class="admin-profit">${formatPrice(p.sales - p.cost)}</td><td>${stock}</td></tr>`;
+    }).join('')
+    : '<tr><td colspan="5">Sin ventas en el periodo.</td></tr>';
+  const sizes = Object.values(bySize).sort((a, b) => b.pieces - a.pieces).slice(0, 15);
+  document.getElementById('repSizesBody').innerHTML = sizes.length
+    ? sizes.map((s) => {
+      const product = productsCache.find((x) => x.id === s.id);
+      const left = product?.sizes.find((z) => z.size === s.size)?.stock;
+      const low = Number.isFinite(left) && left <= lowStockLimit();
+      return `<tr><td>${s.name}</td><td>${s.size}</td><td>${s.pieces}</td><td class="${low ? 'admin-stock-low' : ''}">${Number.isFinite(left) ? left : '—'}</td></tr>`;
+    }).join('')
+    : '<tr><td colspan="4">Sin ventas en el periodo.</td></tr>';
+}
+
+document.getElementById('reportPeriod').addEventListener('change', renderReports);
+
+// --- Aviso de pedidos nuevos (campana) ---
+
+let lastSeenAt = null;
+const newOrdersQueue = [];
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 880;
+    g.gain.value = 0.08;
+    o.connect(g).connect(ctx.destination);
+    o.start();
+    o.frequency.setValueAtTime(1175, ctx.currentTime + 0.12);
+    o.stop(ctx.currentTime + 0.28);
+  } catch {
+    // Sin sonido si el navegador no lo permite.
+  }
+}
+
+function renderBell() {
+  const count = document.getElementById('bellCount');
+  const menu = document.getElementById('bellMenu');
+  count.textContent = newOrdersQueue.length;
+  count.hidden = newOrdersQueue.length === 0;
+  menu.innerHTML = newOrdersQueue.length
+    ? newOrdersQueue.map((o) => `
+      <button type="button" class="admin-bell-item" data-order="${o.id}">
+        <span class="admin-bell-title"><strong>${o.customerName || 'Sin nombre'}</strong> · ${formatPrice(o.totalCents)}</span>
+        <span>${o.source === 'stripe' ? 'Pago con tarjeta' : 'WhatsApp'} · ${new Date(o.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
+      </button>`).join('') + '<button type="button" class="admin-bell-clear" data-action="clear-bell">Marcar como vistos</button>'
+    : '<p class="admin-bell-empty">Sin pedidos nuevos.</p>';
+}
+
+async function pollNewOrders() {
+  if (adminScreen.hidden) return;
+  try {
+    const res = await fetch(`/api/admin/orders-summary${lastSeenAt ? `?since=${encodeURIComponent(lastSeenAt)}` : ''}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (lastSeenAt && data.newOrders.length) {
+      data.newOrders.forEach((o) => { if (!newOrdersQueue.some((q) => q.id === o.id)) newOrdersQueue.unshift(o); });
+      renderBell();
+      beep();
+      document.title = `(${newOrdersQueue.length}) Panel admin | Works Jeans`;
+      await loadOrders();
+      const activeTab = document.querySelector('.admin-tab.active')?.dataset.tab;
+      if (activeTab === 'dashboard') renderDashboard();
+      if (activeTab === 'tablero') renderKanban();
+      loadProducts();
+    }
+    if (data.latestAt) lastSeenAt = data.latestAt;
+    else if (!lastSeenAt) lastSeenAt = new Date().toISOString();
+  } catch {
+    // Reintenta en el siguiente ciclo.
+  }
+}
+
+document.getElementById('bellBtn').addEventListener('click', () => {
+  const menu = document.getElementById('bellMenu');
+  menu.hidden = !menu.hidden;
+});
+document.getElementById('bellMenu').addEventListener('click', (e) => {
+  const item = e.target.closest('[data-order]');
+  if (item) {
+    document.getElementById('bellMenu').hidden = true;
+    openOrderDetail(item.dataset.order);
+    return;
+  }
+  if (e.target.closest('[data-action="clear-bell"]')) {
+    newOrdersQueue.length = 0;
+    renderBell();
+    document.title = 'Panel admin | Works Jeans';
+    document.getElementById('bellMenu').hidden = true;
+  }
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#bellBtn') && !e.target.closest('#bellMenu')) document.getElementById('bellMenu').hidden = true;
+});
+setInterval(pollNewOrders, 30000);
+renderBell();
 
 // --- Manual WhatsApp order form ---
 
@@ -1037,6 +1276,15 @@ function renderDashboard() {
 
   const pending = ordersCache.filter((o) => ['pendiente', 'pagado', 'preparacion', 'enviado'].includes(o.status)).length;
 
+  const monthOrders = valid.filter((o) => {
+    const d = new Date(o.createdAt);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const monthProfit = monthOrders.reduce((sum, o) => sum + o.totalCents - orderCost(o), 0);
+  document.getElementById('statMonthProfit').textContent = formatPrice(monthProfit);
+  document.getElementById('statMonthMargin').textContent = productsCache.some((p) => p.costCents)
+    ? marginText(monthSales, monthProfit)
+    : 'Captura el costo de tus productos para ver la utilidad';
   document.getElementById('statTotalSales').textContent = formatPrice(totalSales);
   document.getElementById('statMonthSales').textContent = formatPrice(monthSales);
   document.getElementById('statPending').textContent = pending;
@@ -1073,18 +1321,19 @@ function renderDashboard() {
   const byMonth = {};
   valid.forEach((o) => {
     const key = monthKey(o.createdAt);
-    byMonth[key] = byMonth[key] || { orders: 0, pieces: 0, cents: 0 };
+    byMonth[key] = byMonth[key] || { orders: 0, pieces: 0, cents: 0, cost: 0 };
     byMonth[key].orders += 1;
-    byMonth[key].pieces += o.items.reduce((sum, i) => sum + i.quantity, 0);
+    byMonth[key].pieces += orderPieces(o);
     byMonth[key].cents += o.totalCents;
+    byMonth[key].cost += orderCost(o);
   });
   const monthKeys = [];
   for (let i = 0; i < 6; i += 1) {
     monthKeys.push(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
   }
   document.getElementById('monthlySalesBody').innerHTML = monthKeys.map((key) => {
-    const m = byMonth[key] || { orders: 0, pieces: 0, cents: 0 };
-    return `<tr class="${m.orders ? '' : 'admin-muted'}"><td>${monthLabel(key)}</td><td>${m.orders}</td><td>${m.pieces}</td><td>${formatPrice(m.cents)}</td></tr>`;
+    const m = byMonth[key] || { orders: 0, pieces: 0, cents: 0, cost: 0 };
+    return `<tr class="${m.orders ? '' : 'admin-muted'}"><td>${monthLabel(key)}</td><td>${m.orders}</td><td>${m.pieces}</td><td>${formatPrice(m.cents)}</td><td>${formatPrice(m.cost)}</td><td class="admin-profit">${formatPrice(m.cents - m.cost)}</td></tr>`;
   }).join('');
 
   const lowStockList = document.getElementById('lowStockList');

@@ -30,7 +30,12 @@
         <img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="admin-header-logo">
         <span>Panel admin</span>
       </a>
-      <div>
+      <div class="admin-header-right">
+        <button type="button" class="admin-bell" id="bellBtn" aria-label="Pedidos nuevos" title="Pedidos nuevos">
+          <svg class="admin-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21h4"/></svg>
+          <span class="admin-bell-count" id="bellCount" hidden>0</span>
+        </button>
+        <div class="admin-bell-menu" id="bellMenu" hidden></div>
         <a href="index.html" class="admin-link" target="_blank" rel="noopener">Ver tienda <svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5"/></svg></a>
         <button id="logoutBtn" class="btn btn-secondary admin-logout">Cerrar sesión</button>
       </div>
@@ -44,6 +49,7 @@
         <button class="admin-tab" data-tab="productos">Productos</button>
         <button class="admin-tab" data-tab="clientes">Clientes</button>
         <button class="admin-tab" data-tab="inventario">Inventario</button>
+        <button class="admin-tab" data-tab="reportes">Reportes</button>
         <button class="admin-tab" data-tab="configuracion">Configuración</button>
       </div>
 
@@ -57,6 +63,11 @@
           <div class="admin-stat-card">
             <p class="admin-stat-label">Ingresos este mes</p>
             <p class="admin-stat-value" id="statMonthSales">$0.00 MXN</p>
+          </div>
+          <div class="admin-stat-card admin-stat-card--profit">
+            <p class="admin-stat-label">Utilidad este mes</p>
+            <p class="admin-stat-value" id="statMonthProfit">$0.00 MXN</p>
+            <p class="admin-stat-note" id="statMonthMargin"></p>
           </div>
           <div class="admin-stat-card">
             <p class="admin-stat-label">Pedidos pendientes</p>
@@ -85,7 +96,7 @@
           <h3>Ventas por mes</h3>
           <div class="admin-table-wrap">
             <table class="admin-table">
-              <thead><tr><th>Mes</th><th>Pedidos</th><th>Piezas</th><th>Ingresos</th></tr></thead>
+              <thead><tr><th>Mes</th><th>Pedidos</th><th>Piezas</th><th>Ingresos</th><th>Costo</th><th>Utilidad</th></tr></thead>
               <tbody id="monthlySalesBody"></tbody>
             </table>
           </div>
@@ -200,9 +211,10 @@
 
       <div id="tabInventario" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
-          <h2>Movimientos de inventario</h2>
-          <p class="admin-help admin-help--inline">Cada entrada y salida de piezas: pedidos, cancelaciones, ediciones y ajustes manuales. Para ajustar stock, usa los botones + y − en la pestaña Productos.</p>
+          <h2>Inventario</h2>
+          <button type="button" id="newEntryBtn" class="btn btn-primary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Registrar entrada</button>
         </div>
+        <p class="admin-help">Cada entrada y salida de piezas: mercancía recibida, pedidos, cancelaciones, ediciones y ajustes. Para mover una pieza usa + y − en Productos; para mercancía nueva usa "Registrar entrada".</p>
         <div class="admin-table-wrap">
           <table class="admin-table">
             <thead>
@@ -213,10 +225,51 @@
                 <th>Cambio</th>
                 <th>Quedan</th>
                 <th>Motivo</th>
+                <th>Costo</th>
               </tr>
             </thead>
             <tbody id="inventoryTableBody"></tbody>
           </table>
+        </div>
+      </div>
+
+      <div id="tabReportes" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Reportes</h2>
+          <select id="reportPeriod" class="admin-filter">
+            <option value="month">Este mes</option>
+            <option value="30">Últimos 30 días</option>
+            <option value="90">Últimos 90 días</option>
+            <option value="year">Este año</option>
+            <option value="all">Todo</option>
+          </select>
+        </div>
+        <div class="admin-stats admin-stats--compact">
+          <div class="admin-stat-card"><p class="admin-stat-label">Ingresos</p><p class="admin-stat-value" id="repSales">$0.00</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Costo</p><p class="admin-stat-value" id="repCost">$0.00</p></div>
+          <div class="admin-stat-card admin-stat-card--profit"><p class="admin-stat-label">Utilidad</p><p class="admin-stat-value" id="repProfit">$0.00</p><p class="admin-stat-note" id="repMargin"></p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Piezas vendidas</p><p class="admin-stat-value" id="repPieces">0</p></div>
+        </div>
+        <div class="admin-dashboard-grid">
+          <div class="admin-panel-box">
+            <h3>Por producto</h3>
+            <div class="admin-table-wrap admin-table-wrap--flat">
+              <table class="admin-table">
+                <thead><tr><th>Producto</th><th>Piezas</th><th>Ingresos</th><th>Utilidad</th><th>Stock</th></tr></thead>
+                <tbody id="repProductsBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="admin-panel-box">
+            <h3>Tallas más vendidas</h3>
+            <p class="admin-help">Piezas vendidas por talla en el periodo, y cuántas quedan. Sirve para saber qué reponer.</p>
+            <div class="admin-table-wrap admin-table-wrap--flat">
+              <table class="admin-table">
+                <thead><tr><th>Producto</th><th>Talla</th><th>Vendidas</th><th>Quedan</th></tr></thead>
+                <tbody id="repSizesBody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -294,8 +347,16 @@
       <label for="fieldCategory">Categoría</label>
       <input type="text" id="fieldCategory" name="category" placeholder="Camisas / Pantalones" required>
 
-      <label for="fieldPrice">Precio (MXN)</label>
-      <input type="number" id="fieldPrice" name="priceMxn" step="0.01" min="0" required>
+      <div class="admin-field-grid">
+        <div>
+          <label for="fieldPrice">Precio de venta (MXN)</label>
+          <input type="number" id="fieldPrice" name="priceMxn" step="0.01" min="0" required>
+        </div>
+        <div>
+          <label for="fieldCost">Costo por pieza (MXN)</label>
+          <input type="number" id="fieldCost" name="costMxn" step="0.01" min="0" placeholder="Lo que te cuesta">
+        </div>
+      </div>
 
       <div class="admin-field-grid">
         <div>
@@ -370,6 +431,42 @@
         <button type="submit" class="btn btn-primary">Guardar pedido</button>
       </div>
       <p class="admin-error" id="orderFormError"></p>
+    </form>
+  </div>
+
+  <div class="admin-overlay" id="entryOverlay" hidden>
+    <form id="entryForm" class="admin-form">
+      <h2>Registrar entrada de mercancía</h2>
+
+      <label for="entryProduct">Producto</label>
+      <select id="entryProduct" class="admin-filter"></select>
+
+      <div class="admin-field-grid">
+        <div>
+          <label for="entrySupplier">Proveedor</label>
+          <input type="text" id="entrySupplier" list="suppliersList" placeholder="Opcional">
+          <datalist id="suppliersList"></datalist>
+        </div>
+        <div>
+          <label for="entryCost">Costo por pieza (MXN)</label>
+          <input type="number" id="entryCost" step="0.01" min="0" placeholder="Opcional">
+        </div>
+      </div>
+      <label class="admin-check"><input type="checkbox" id="entryUpdateCost" checked> Actualizar el costo del producto con este</label>
+
+      <label>Piezas recibidas por talla</label>
+      <div id="entrySizes" class="admin-stock-grid admin-entry-grid"></div>
+
+      <label for="entryNote">Nota</label>
+      <input type="text" id="entryNote" placeholder="Factura, remisión, comentario… (opcional)">
+
+      <p class="admin-order-total">Total: <span id="entryTotal">0 piezas</span></p>
+
+      <div class="admin-form-actions">
+        <button type="button" id="cancelEntryBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar entrada</button>
+      </div>
+      <p class="admin-error" id="entryError"></p>
     </form>
   </div>
 
