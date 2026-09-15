@@ -49,10 +49,6 @@ async function loadSettings() {
     if (resenasLink) resenasLink.href = placeUrl;
     const mapsEmbed = document.getElementById('mapsEmbed');
     if (mapsEmbed && !mapsEmbed.src && !mapsEmbed.dataset.src) mapsEmbed.dataset.src = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
-    const footerMapsLink = document.getElementById('footerMapsLink');
-    if (footerMapsLink) footerMapsLink.href = placeUrl;
-    const footerMapsEmbed = document.getElementById('footerMapsEmbed');
-    if (footerMapsEmbed && !footerMapsEmbed.src && !footerMapsEmbed.dataset.src) footerMapsEmbed.dataset.src = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
 
     const waLinks = {
       announcementWhatsapp: 'Hola, me interesa la ropa de trabajo de Works Jeans.',
