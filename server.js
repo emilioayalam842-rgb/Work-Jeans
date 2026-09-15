@@ -1134,7 +1134,14 @@ if (USES_EXTERNAL_DATA) {
   app.use('/assets/products', express.static(PRODUCTS_IMG_DIR, { maxAge: '30d' }));
 }
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '30d', dotfiles: 'deny' }));
-app.use(express.static(__dirname, { dotfiles: 'deny', extensions: ['html'] }));
+app.use(express.static(__dirname, {
+  dotfiles: 'deny',
+  extensions: ['html'],
+  // HTML, CSS y JS cambian con cada deploy: el navegador y Cloudflare deben revalidar (ETag) en vez de guardar copias por horas.
+  setHeaders: (res, filePath) => {
+    if (/\.(html|css|js|xml|txt)$/i.test(filePath)) res.set('Cache-Control', 'public, max-age=0, must-revalidate');
+  },
+}));
 
 const upload = multer({
   storage: multer.diskStorage({

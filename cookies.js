@@ -37,23 +37,38 @@
     if (document.getElementById('cookieBanner')) return;
     const el = document.createElement('div');
     el.id = 'cookieBanner';
-    el.className = 'cookie-banner';
-    el.setAttribute('role', 'dialog');
-    el.setAttribute('aria-label', 'Aviso de cookies');
+    el.className = 'cookie-overlay';
     el.innerHTML = `
-      <p>Usamos almacenamiento técnico para guardar tu carrito y, si aceptas, cookies de Google Maps para mostrarte cómo llegar. Sin rastreo publicitario. <a href="aviso-de-privacidad.html#cookies">Más información</a></p>
-      <div class="cookie-banner-actions">
-        <button type="button" class="btn btn-secondary" data-choice="essential">Solo necesarias</button>
-        <button type="button" class="btn btn-primary" data-choice="all">Aceptar todo</button>
+      <div class="cookie-modal" role="dialog" aria-modal="true" aria-labelledby="cookieTitle" aria-describedby="cookieText">
+        <div class="cookie-stripe" aria-hidden="true"></div>
+        <span class="cookie-kicker">Cookies · Works Jeans</span>
+        <h2 id="cookieTitle">Tu privacidad, sin letras chiquitas.</h2>
+        <p id="cookieText">Usamos almacenamiento técnico para guardar tu carrito. Si aceptas, también cargamos el mapa de Google Maps para mostrarte cómo llegar a la tienda. Nada de rastreo publicitario.</p>
+        <div class="cookie-actions">
+          <button type="button" class="btn btn-primary" data-choice="all">Aceptar todo</button>
+          <button type="button" class="btn btn-secondary" data-choice="essential">Solo necesarias</button>
+        </div>
+        <a class="cookie-more" href="aviso-de-privacidad.html#cookies">Más información</a>
       </div>`;
     el.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-choice]');
       if (!btn) return;
       write(btn.dataset.choice);
       apply(btn.dataset.choice);
-      el.remove();
+      close();
     });
+    const onKey = (e) => { if (e.key === 'Escape') { write('essential'); apply('essential'); close(); } };
+    function close() {
+      el.classList.add('is-closing');
+      document.removeEventListener('keydown', onKey);
+      document.body.classList.remove('cookie-open');
+      setTimeout(() => el.remove(), 220);
+    }
+    document.addEventListener('keydown', onKey);
     document.body.appendChild(el);
+    document.body.classList.add('cookie-open');
+    requestAnimationFrame(() => el.classList.add('is-open'));
+    setTimeout(() => el.querySelector('[data-choice="all"]').focus(), 250);
   }
 
   function init() {
