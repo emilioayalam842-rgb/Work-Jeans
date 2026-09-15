@@ -55,6 +55,15 @@ if (USES_EXTERNAL_DATA) {
 
 const LOW_STOCK_THRESHOLD = 5;
 
+function lowStockThreshold() {
+  try {
+    const n = parseInt(getSettings().lowStockThreshold, 10);
+    return Number.isFinite(n) && n >= 0 ? n : LOW_STOCK_THRESHOLD;
+  } catch {
+    return LOW_STOCK_THRESHOLD;
+  }
+}
+
 function getProducts() {
   return JSON.parse(fs.readFileSync(PRODUCTS_PATH, 'utf-8'));
 }
@@ -130,6 +139,8 @@ initAdminAuth();
 // --- Stock helpers ---
 
 function decrementStock(products, items, { strict }) {
+  const threshold = lowStockThreshold();
+  const alerts = [];
   for (const item of items) {
     const product = products.find((p) => p.id === item.id);
     if (!product || !item.size) continue;
@@ -139,8 +150,13 @@ function decrementStock(products, items, { strict }) {
     if (strict && sizeEntry.stock < item.quantity) {
       throw new Error(`Sin stock suficiente de ${product.name} talla ${item.size} (disponible: ${sizeEntry.stock}).`);
     }
+    const before = sizeEntry.stock;
     sizeEntry.stock = Math.max(0, sizeEntry.stock - item.quantity);
+    if (before > threshold && sizeEntry.stock <= threshold) {
+      alerts.push({ productName: product.name, size: sizeEntry.size, stock: sizeEntry.stock });
+    }
   }
+  if (alerts.length) notifyLowStock(alerts, threshold);
   return products;
 }
 
@@ -398,13 +414,37 @@ app.put('/api/admin/settings', requireAdmin, (req, res) => {
   res.json(updated);
 });
 
+app.post('/api/admin/test-email', requireAdmin, async (req, res) => {
+  if (!process.env.RESEND_API_KEY) {
+    res.status(503).json({ error: 'Falta RESEND_API_KEY en las variables de Railway.' });
+    return;
+  }
+  if (!notifyTarget()) {
+    res.status(400).json({ error: 'Guarda primero un correo para avisos.' });
+    return;
+  }
+  const ok = await sendEmail({ subject: 'Prueba de avisos · Works Jeans', html: '<p>Los avisos del panel de Works Jeans están funcionando.</p>' });
+  if (!ok) {
+    res.status(502).json({ error: 'Resend rechazó el envío. Revisa la llave y que el correo sea el de tu cuenta de Resend (o verifica tu dominio).' });
+    return;
+  }
+  res.json({ ok: true });
+});
+
 // --- Product management (protected) ---
 
 app.get('/api/admin/products', requireAdmin, (req, res) => {
   res.json(getProducts());
 });
 
-app.post('/api/admin/products', requireAdmin, upload.single('image'), (req, res) => {
+const productUpload = upload.fields([{ name: 'image', maxCount: 1 }, { name: 'images', maxCount: 8 }]);
+
+function uploadedImages(req) {
+  const files = [...(req.files?.image || []), ...(req.files?.images || [])];
+  return files.map((f) => `assets/products/${f.filename}`);
+}
+
+app.post('/api/admin/products', requireAdmin, productUpload, (req, res) => {
   try {
     const { name, category, priceMxn, description, sizes } = req.body;
     if (!name || !category || !priceMxn || !description || !sizes) {
@@ -419,14 +459,15 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), (req, res)
       id = `${slugify(name)}-${suffix++}`;
     }
 
-    const imagePath = req.file ? `assets/products/${req.file.filename}` : 'assets/img/works-jeans-logo.png';
+    const images = uploadedImages(req);
+    if (images.length === 0) images.push('assets/img/works-jeans-logo.png');
     const product = {
       id,
       name,
       category,
       priceCents: Math.round(parseFloat(priceMxn) * 100),
-      image: imagePath,
-      images: [imagePath],
+      image: images[0],
+      images,
       description,
       sizes: JSON.parse(sizes),
     };
@@ -439,7 +480,7 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), (req, res)
   }
 });
 
-app.put('/api/admin/products/:id', requireAdmin, upload.single('image'), (req, res) => {
+app.put('/api/admin/products/:id', requireAdmin, productUpload, (req, res) => {
   try {
     const products = getProducts();
     const product = products.find((p) => p.id === req.params.id);
@@ -454,11 +495,17 @@ app.put('/api/admin/products/:id', requireAdmin, upload.single('image'), (req, r
     if (priceMxn) product.priceCents = Math.round(parseFloat(priceMxn) * 100);
     if (description) product.description = description;
     if (sizes) product.sizes = JSON.parse(sizes);
-    if (req.file) {
-      const imagePath = `assets/products/${req.file.filename}`;
-      product.image = imagePath;
-      product.images = [imagePath];
+    // keepImages: lista ordenada de las fotos existentes que se conservan (la primera es la principal).
+    // Las fotos nuevas se agregan al final.
+    let images = Array.isArray(product.images) && product.images.length ? product.images : [product.image];
+    if (req.body.keepImages) {
+      const keep = JSON.parse(req.body.keepImages);
+      images = keep.filter((img) => typeof img === 'string' && images.includes(img));
     }
+    images = [...images, ...uploadedImages(req)];
+    if (images.length === 0) images.push('assets/img/works-jeans-logo.png');
+    product.images = images;
+    product.image = images[0];
 
     saveProducts(products);
     res.json(product);
@@ -565,11 +612,46 @@ function formatMxn(cents) {
   return (cents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 }
 
-async function notifyNewOrder(order) {
+function notifyTarget() {
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.NOTIFY_EMAIL;
-  if (!apiKey || !to) return;
-  const from = process.env.NOTIFY_FROM || 'Works Jeans <onboarding@resend.dev>';
+  let to = process.env.NOTIFY_EMAIL || '';
+  if (!to) {
+    try {
+      to = getSettings().notifyEmail || '';
+    } catch {
+      to = '';
+    }
+  }
+  return apiKey && to ? { apiKey, to, from: process.env.NOTIFY_FROM || 'Works Jeans <onboarding@resend.dev>' } : null;
+}
+
+async function sendEmail({ subject, html }) {
+  const target = notifyTarget();
+  if (!target) return false;
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${target.apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: target.from, to: target.to, subject, html }),
+    });
+    if (!r.ok) console.error('Correo no enviado:', r.status, await r.text());
+    return r.ok;
+  } catch (err) {
+    console.error('Correo no enviado:', err.message);
+    return false;
+  }
+}
+
+async function notifyLowStock(alerts, threshold) {
+  const rows = alerts.map((a) => `<li><b>${a.productName}</b> — talla ${a.size}: quedan ${a.stock} pzas</li>`).join('');
+  await sendEmail({
+    subject: `Stock bajo: ${alerts.length === 1 ? `${alerts[0].productName} talla ${alerts[0].size}` : `${alerts.length} tallas`}`,
+    html: `<h2>Tallas con ${threshold} piezas o menos</h2><ul>${rows}</ul><p>Revisa el inventario en el panel: https://www.workjeans.mx/workmapadmin.html</p>`,
+  });
+}
+
+async function notifyNewOrder(order) {
+  if (!notifyTarget()) return;
   const rows = order.items.map((i) => `<tr><td>${i.name}</td><td>${i.size || '—'}</td><td>${i.quantity}</td><td>${formatMxn(i.priceCents * i.quantity)}</td></tr>`).join('');
   const ship = order.shipping ? `<p><b>Envío:</b> ${[order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', ')}</p>` : '';
   const html = `
@@ -580,16 +662,7 @@ async function notifyNewOrder(order) {
     <table border="1" cellpadding="6" style="border-collapse:collapse"><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>Subtotal</th></tr>${rows}</table>
     <p><b>Total:</b> ${formatMxn(order.totalCents)}</p>
     <p>Revísalo en el panel: https://www.workjeans.mx/workmapadmin.html</p>`;
-  try {
-    const r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to, subject: `Nuevo pedido ${order.id} · ${formatMxn(order.totalCents)}`, html }),
-    });
-    if (!r.ok) console.error('Aviso de pedido no enviado:', r.status, await r.text());
-  } catch (err) {
-    console.error('Aviso de pedido no enviado:', err.message);
-  }
+  await sendEmail({ subject: `Nuevo pedido ${order.id} · ${formatMxn(order.totalCents)}`, html });
 }
 
 // Crea (si no existe) el pedido a partir de una sesión de Stripe pagada. Devuelve el pedido.

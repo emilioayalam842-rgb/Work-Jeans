@@ -65,6 +65,16 @@
           </div>
         </div>
 
+        <div class="admin-panel-box admin-monthly">
+          <h3>Ventas por mes</h3>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Mes</th><th>Pedidos</th><th>Piezas</th><th>Ingresos</th></tr></thead>
+              <tbody id="monthlySalesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="admin-dashboard-grid">
           <div class="admin-panel-box">
             <h3>Productos más vendidos</h3>
@@ -103,7 +113,11 @@
       <div id="tabPedidos" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
           <h2>Pedidos</h2>
-          <button id="newOrderBtn" class="btn btn-primary">+ Agregar pedido de WhatsApp</button>
+          <div class="admin-toolbar-actions">
+            <select id="ordersMonthFilter" class="admin-filter" aria-label="Filtrar por mes"><option value="">Todos los meses</option></select>
+            <button id="exportOrdersBtn" class="btn btn-secondary">Exportar a Excel</button>
+            <button id="newOrderBtn" class="btn btn-primary">+ Agregar pedido de WhatsApp</button>
+          </div>
         </div>
 
         <div class="admin-table-wrap">
@@ -148,6 +162,13 @@
           <label for="settingReviewCount">Número de opiniones</label>
           <input type="text" id="settingReviewCount" name="googleReviewCount" placeholder="1">
 
+          <label for="settingNotifyEmail">Correo para avisos de pedidos y stock bajo</label>
+          <input type="email" id="settingNotifyEmail" name="notifyEmail" placeholder="tucorreo@ejemplo.com">
+          <p class="admin-help">Requiere la llave RESEND_API_KEY en Railway. <button type="button" id="testEmailBtn" class="admin-inline-btn">Enviar correo de prueba</button> <span id="testEmailStatus"></span></p>
+
+          <label for="settingLowStock">Avisar cuando una talla tenga estas piezas o menos</label>
+          <input type="number" id="settingLowStock" name="lowStockThreshold" min="0" step="1" placeholder="5">
+
           <button type="submit" class="btn btn-primary">Guardar configuración</button>
           <p class="admin-error" id="settingsError"></p>
           <p class="admin-success" id="settingsSuccess"></p>
@@ -190,9 +211,11 @@
       <label for="fieldDescription">Descripción</label>
       <textarea id="fieldDescription" name="description" rows="3" required></textarea>
 
-      <label for="fieldImage">Foto del producto</label>
-      <input type="file" id="fieldImage" name="image" accept="image/jpeg,image/png,image/webp">
-      <img id="imagePreview" class="admin-image-preview" hidden>
+      <label>Fotos del producto</label>
+      <p class="admin-help">La primera es la que se muestra en el catálogo. Puedes subir hasta 8 (frente, espalda, detalles).</p>
+      <div id="imageList" class="admin-image-list"></div>
+      <input type="file" id="fieldImages" name="images" accept="image/jpeg,image/png,image/webp" multiple>
+      <div id="newImagePreviews" class="admin-image-list"></div>
 
       <div class="admin-form-actions">
         <button type="button" id="cancelFormBtn" class="btn btn-secondary">Cancelar</button>

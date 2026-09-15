@@ -473,3 +473,59 @@
 .admin-form-actions .btn {
   flex: 1;
 }
+
+/* Mejoras: fotos múltiples, exportar, ventas por mes ------------------- */
+
+.admin-toolbar-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.admin-filter {
+  font-family: var(--label);
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 1.5px solid var(--black);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--black);
+}
+
+.admin-help { font-size: 0.85rem; color: var(--muted); margin: -4px 0 10px; line-height: 1.5; }
+
+.admin-inline-btn {
+  background: transparent;
+  border: 1.5px solid var(--black);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  font-family: var(--label);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--black);
+}
+.admin-inline-btn:hover { background: var(--yellow); }
+
+.admin-image-list { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 12px; }
+.admin-image-list:empty { margin: 0; }
+
+.admin-image-item {
+  position: relative;
+  width: 104px;
+  border: 1.5px solid var(--line);
+  background: var(--gray);
+  padding: 6px 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+.admin-image-item.is-main { border-color: var(--black); box-shadow: 0 0 0 2px var(--yellow); }
+.admin-image-item.is-new { border-style: dashed; }
+.admin-image-item img { width: 88px; height: 110px; object-fit: contain; background: var(--paper); }
+.admin-image-tag { font-family: var(--label); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.admin-image-item.is-main .admin-image-tag { color: var(--black); font-weight: 600; }
+.admin-image-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.admin-image-actions .admin-inline-btn { font-size: 0.64rem; padding: 3px 6px; }
+
+.admin-monthly { margin-bottom: 24px; }
+.admin-monthly h3 { margin-bottom: 12px; }
+.admin-monthly tr.admin-muted td { color: var(--muted); }

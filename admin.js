@@ -7,7 +7,6 @@ const formOverlay = document.getElementById('formOverlay');
 const productForm = document.getElementById('productForm');
 const formError = document.getElementById('formError');
 const formTitle = document.getElementById('formTitle');
-const imagePreview = document.getElementById('imagePreview');
 const sizeRowsContainer = document.getElementById('sizeRows');
 const ordersTableBody = document.getElementById('ordersTableBody');
 const orderFormOverlay = document.getElementById('orderFormOverlay');
@@ -22,6 +21,35 @@ const orderDetailNotes = document.getElementById('orderDetailNotes');
 let productsCache = [];
 let ordersCache = [];
 let activeOrderId = null;
+let settingsCache = {};
+let formImages = []; // fotos existentes del producto que se está editando, en orden
+let ordersMonth = ''; // filtro de mes en Pedidos ('' = todos, 'YYYY-MM')
+
+const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+function monthKey(date) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthLabel(key) {
+  const [y, m] = key.split('-');
+  return `${MONTHS_ES[parseInt(m, 10) - 1]} ${y}`;
+}
+
+async function loadSettingsCache() {
+  try {
+    const res = await fetch('/api/settings');
+    settingsCache = await res.json();
+  } catch {
+    settingsCache = {};
+  }
+}
+
+function lowStockLimit() {
+  const n = parseInt(settingsCache.lowStockThreshold, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 5;
+}
 
 function formatPrice(cents) {
   return (cents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
@@ -30,7 +58,7 @@ function formatPrice(cents) {
 function showAdmin() {
   loginScreen.hidden = true;
   adminScreen.hidden = false;
-  loadProducts().then(loadOrders).then(renderDashboard);
+  loadSettingsCache().then(loadProducts).then(loadOrders).then(renderDashboard);
 }
 
 function showLogin() {
@@ -116,7 +144,7 @@ function renderProductsTable(products) {
         <td>${p.name}</td>
         <td>${p.category}</td>
         <td>${formatPrice(p.priceCents)}</td>
-        <td class="${stock <= 5 ? 'admin-stock-low' : ''}">${stock} pzas</td>
+        <td class="${p.sizes.some((s) => s.stock <= lowStockLimit()) ? 'admin-stock-low' : ''}">${stock} pzas</td>
         <td class="admin-table-actions">
           <button class="admin-icon-btn" data-action="edit" title="Editar">✏️</button>
           <button class="admin-icon-btn" data-action="delete" title="Eliminar">🗑️</button>
@@ -140,10 +168,48 @@ function addSizeRow(size = '', stock = 0) {
 
 document.getElementById('addSizeRowBtn').addEventListener('click', () => addSizeRow());
 
+function renderImageList() {
+  const list = document.getElementById('imageList');
+  list.innerHTML = formImages.map((img, i) => `
+    <div class="admin-image-item ${i === 0 ? 'is-main' : ''}">
+      <img src="${img}" alt="">
+      <span class="admin-image-tag">${i === 0 ? 'Principal' : `#${i + 1}`}</span>
+      <div class="admin-image-actions">
+        ${i > 0 ? `<button type="button" class="admin-inline-btn" data-action="main" data-index="${i}">Hacer principal</button>` : ''}
+        <button type="button" class="admin-icon-btn" data-action="remove-image" data-index="${i}" title="Quitar">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('imageList').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const i = parseInt(btn.dataset.index, 10);
+  if (btn.dataset.action === 'main') {
+    const [img] = formImages.splice(i, 1);
+    formImages.unshift(img);
+  }
+  if (btn.dataset.action === 'remove-image') formImages.splice(i, 1);
+  renderImageList();
+});
+
+document.getElementById('fieldImages').addEventListener('change', (e) => {
+  const previews = document.getElementById('newImagePreviews');
+  previews.innerHTML = Array.from(e.target.files).map((file) => `
+    <div class="admin-image-item is-new">
+      <img src="${URL.createObjectURL(file)}" alt="">
+      <span class="admin-image-tag">Nueva</span>
+    </div>
+  `).join('');
+});
+
 function openForm(product) {
   formError.textContent = '';
   productForm.reset();
-  imagePreview.hidden = true;
+  document.getElementById('newImagePreviews').innerHTML = '';
+  formImages = product ? [...(product.images && product.images.length ? product.images : [product.image])] : [];
+  renderImageList();
   sizeRowsContainer.innerHTML = '';
 
   if (product) {
@@ -154,8 +220,6 @@ function openForm(product) {
     document.getElementById('fieldPrice').value = (product.priceCents / 100).toFixed(2);
     document.getElementById('fieldDescription').value = product.description;
     product.sizes.forEach((s) => addSizeRow(s.size, s.stock));
-    imagePreview.src = product.image;
-    imagePreview.hidden = false;
   } else {
     formTitle.textContent = 'Nuevo producto';
     document.getElementById('productId').value = '';
@@ -171,13 +235,6 @@ function closeForm() {
 
 document.getElementById('newProductBtn').addEventListener('click', () => openForm(null));
 document.getElementById('cancelFormBtn').addEventListener('click', closeForm);
-
-document.getElementById('fieldImage').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  imagePreview.src = URL.createObjectURL(file);
-  imagePreview.hidden = false;
-});
 
 productsTableBody.addEventListener('click', async (e) => {
   const btn = e.target.closest('.admin-icon-btn');
@@ -215,6 +272,11 @@ productForm.addEventListener('submit', async (e) => {
   const id = document.getElementById('productId').value;
   const formData = new FormData(productForm);
   formData.set('sizes', JSON.stringify(sizes));
+  if (id) formData.set('keepImages', JSON.stringify(formImages));
+  if (!id && document.getElementById('fieldImages').files.length === 0) {
+    formError.textContent = 'Sube al menos una foto del producto.';
+    return;
+  }
 
   const url = id ? `/api/admin/products/${id}` : '/api/admin/products';
   const method = id ? 'PUT' : 'POST';
@@ -241,12 +303,68 @@ async function loadOrders() {
   }
   const orders = await res.json();
   ordersCache = orders;
-  renderOrders(orders);
+  renderMonthFilter();
+  renderOrders(filteredOrders());
 }
+
+function filteredOrders() {
+  return ordersMonth ? ordersCache.filter((o) => monthKey(o.createdAt) === ordersMonth) : ordersCache;
+}
+
+function renderMonthFilter() {
+  const select = document.getElementById('ordersMonthFilter');
+  const months = [...new Set(ordersCache.map((o) => monthKey(o.createdAt)))].sort().reverse();
+  select.innerHTML = `<option value="">Todos los meses</option>${months.map((m) => `<option value="${m}">${monthLabel(m)}</option>`).join('')}`;
+  select.value = months.includes(ordersMonth) ? ordersMonth : '';
+  ordersMonth = select.value;
+}
+
+document.getElementById('ordersMonthFilter').addEventListener('change', (e) => {
+  ordersMonth = e.target.value;
+  renderOrders(filteredOrders());
+});
+
+function csvCell(value) {
+  const text = String(value ?? '');
+  return /[";\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+document.getElementById('exportOrdersBtn').addEventListener('click', () => {
+  const orders = filteredOrders();
+  if (orders.length === 0) {
+    alert('No hay pedidos para exportar.');
+    return;
+  }
+  const header = ['Pedido', 'Fecha', 'Origen', 'Estado', 'Cliente', 'Teléfono', 'Correo', 'Dirección de envío', 'Productos', 'Piezas', 'Total MXN', 'Notas'];
+  const rows = orders.map((o) => [
+    o.id,
+    new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }),
+    o.source === 'stripe' ? 'Tarjeta' : 'WhatsApp',
+    o.status,
+    o.customerName || '',
+    o.customerPhone || '',
+    o.customerEmail || '',
+    o.shipping ? [o.shipping.line1, o.shipping.line2, o.shipping.city, o.shipping.state, o.shipping.postalCode].filter(Boolean).join(', ') : '',
+    o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join('; '),
+    o.items.reduce((sum, i) => sum + i.quantity, 0),
+    (o.totalCents / 100).toFixed(2),
+    o.notes || '',
+  ]);
+  // Separador ";" y BOM para que Excel en español lo abra en columnas y con acentos.
+  const csv = '\ufeff' + [header, ...rows].map((r) => r.map(csvCell).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `pedidos-works-jeans${ordersMonth ? `-${ordersMonth}` : ''}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+});
 
 function renderOrders(orders) {
   if (orders.length === 0) {
-    ordersTableBody.innerHTML = '<tr><td colspan="7">No hay pedidos todavía.</td></tr>';
+    ordersTableBody.innerHTML = `<tr><td colspan="7">${ordersMonth ? 'No hay pedidos en ese mes.' : 'No hay pedidos todavía.'}</td></tr>`;
     return;
   }
 
@@ -486,11 +604,30 @@ function renderDashboard() {
     ? topProducts.map(([name, qty]) => `<li>${name} <span class="admin-rank-value">${qty} vendidos</span></li>`).join('')
     : '<li class="admin-muted">Todavía no hay ventas.</li>';
 
+  // Ventas por mes: últimos 6 meses, incluyendo los que no tuvieron ventas.
+  const byMonth = {};
+  ordersCache.forEach((o) => {
+    const key = monthKey(o.createdAt);
+    byMonth[key] = byMonth[key] || { orders: 0, pieces: 0, cents: 0 };
+    byMonth[key].orders += 1;
+    byMonth[key].pieces += o.items.reduce((sum, i) => sum + i.quantity, 0);
+    byMonth[key].cents += o.totalCents;
+  });
+  const monthKeys = [];
+  for (let i = 0; i < 6; i += 1) {
+    monthKeys.push(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+  }
+  document.getElementById('monthlySalesBody').innerHTML = monthKeys.map((key) => {
+    const m = byMonth[key] || { orders: 0, pieces: 0, cents: 0 };
+    return `<tr class="${m.orders ? '' : 'admin-muted'}"><td>${monthLabel(key)}</td><td>${m.orders}</td><td>${m.pieces}</td><td>${formatPrice(m.cents)}</td></tr>`;
+  }).join('');
+
   const lowStockList = document.getElementById('lowStockList');
   const lowStockItems = [];
+  const limit = lowStockLimit();
   productsCache.forEach((p) => {
     p.sizes.forEach((s) => {
-      if (s.stock <= 5) lowStockItems.push(`${p.name} — talla ${s.size} <span class="admin-rank-value">${s.stock} pzas</span>`);
+      if (s.stock <= limit) lowStockItems.push(`${p.name} — talla ${s.size} <span class="admin-rank-value">${s.stock} pzas</span>`);
     });
   });
   lowStockList.innerHTML = lowStockItems.length
@@ -510,7 +647,17 @@ async function loadSettingsForm() {
   document.getElementById('settingHours').value = settings.hours || '';
   document.getElementById('settingRating').value = settings.googleRating || '';
   document.getElementById('settingReviewCount').value = settings.googleReviewCount || '';
+  document.getElementById('settingNotifyEmail').value = settings.notifyEmail || '';
+  document.getElementById('settingLowStock').value = settings.lowStockThreshold ?? 5;
 }
+
+document.getElementById('testEmailBtn').addEventListener('click', async () => {
+  const status = document.getElementById('testEmailStatus');
+  status.textContent = 'Enviando…';
+  const res = await fetch('/api/admin/test-email', { method: 'POST' });
+  const data = await res.json();
+  status.textContent = res.ok ? 'Correo enviado. Revisa tu bandeja.' : (data.error || 'No se pudo enviar.');
+});
 
 document.getElementById('settingsForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -527,7 +674,8 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     hours: document.getElementById('settingHours').value,
     googleRating: document.getElementById('settingRating').value,
     googleReviewCount: document.getElementById('settingReviewCount').value,
-    mapsQuery: document.getElementById('settingAddress').value,
+    notifyEmail: document.getElementById('settingNotifyEmail').value.trim(),
+    lowStockThreshold: Math.max(0, parseInt(document.getElementById('settingLowStock').value, 10) || 0),
   };
 
   const res = await fetch('/api/admin/settings', {
@@ -541,6 +689,8 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     return;
   }
   settingsSuccess.textContent = 'Configuración guardada.';
+  await loadSettingsCache();
+  renderProductsTable(productsCache);
 });
 
 document.getElementById('passwordForm').addEventListener('submit', async (e) => {
