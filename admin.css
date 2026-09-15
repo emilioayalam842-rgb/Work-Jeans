@@ -82,9 +82,11 @@
 }
 
 .admin-header-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: auto;
+  height: 34px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  padding: 4px 8px;
 }
 
 .admin-link {
@@ -350,8 +352,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
 }
+.admin-toolbar h2 { margin: 0; white-space: nowrap; }
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.admin-filters .admin-search { flex: 1 1 260px; }
+.admin-filters .admin-filter { min-height: 42px; }
+.admin-filters-end { margin-left: auto; }
+.admin-table tbody td[colspan] { text-align: center !important; color: var(--muted); padding: 28px 16px; }
 
 .admin-toolbar h2 {
   color: var(--denim-dark);
