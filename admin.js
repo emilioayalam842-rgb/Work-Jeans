@@ -123,24 +123,64 @@ async function checkSession() {
   else showLogin();
 }
 
+function setLoginError(message) {
+  loginError.textContent = message;
+  const field = document.getElementById('loginField');
+  field.classList.toggle('has-error', Boolean(message));
+  if (message) {
+    field.classList.remove('shake');
+    void field.offsetWidth;
+    field.classList.add('shake');
+  }
+}
+
+document.getElementById('togglePassword').addEventListener('click', (e) => {
+  const input = document.getElementById('loginPassword');
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  e.currentTarget.querySelector('.admin-eye-open').hidden = show;
+  e.currentTarget.querySelector('.admin-eye-closed').hidden = !show;
+  e.currentTarget.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  input.focus();
+});
+
+document.getElementById('loginPassword').addEventListener('input', () => {
+  if (loginError.textContent) setLoginError('');
+});
+
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  loginError.textContent = '';
-  const password = document.getElementById('loginPassword').value;
-
-  const res = await fetch('/api/admin/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
-  });
-  const data = await res.json();
-
-  if (!res.ok) {
-    loginError.textContent = data.error || 'No se pudo iniciar sesión.';
+  const input = document.getElementById('loginPassword');
+  const password = input.value;
+  if (!password.trim()) {
+    setLoginError('Escribe tu contraseña.');
+    input.focus();
     return;
   }
-  loginForm.reset();
-  showAdmin();
+  const btn = document.getElementById('loginBtn');
+  btn.classList.add('is-loading');
+  btn.disabled = true;
+  setLoginError('');
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setLoginError(data.error || 'No se pudo iniciar sesión.');
+      input.select();
+      return;
+    }
+    loginForm.reset();
+    showAdmin();
+  } catch {
+    setLoginError('Sin conexión con el servidor. Inténtalo de nuevo.');
+  } finally {
+    btn.classList.remove('is-loading');
+    btn.disabled = false;
+  }
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
