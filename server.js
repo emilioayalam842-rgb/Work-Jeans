@@ -222,12 +222,87 @@ function applyProductExtras(product, body) {
     if (cents && cents > product.priceCents) product.comparePriceCents = cents;
     else delete product.comparePriceCents;
   }
+  // Ficha técnica y contenido de la página del producto. Todo opcional: solo se muestra lo que esté lleno.
+  for (const [key, max] of [['longDescription', 3000], ['care', 800], ['customization', 600], ['seoTitle', 70], ['seoDescription', 170], ['videoUrl', 300]]) {
+    if (body[key] !== undefined) {
+      let value = String(body[key] || '').trim().slice(0, max);
+      if (key === 'videoUrl' && value && !/^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)[\w-]+|^https:\/\/[\w./-]+\.(mp4|webm)$/i.test(value)) value = '';
+      if (value) product[key] = value;
+      else delete product[key];
+    }
+  }
+  if (body.features !== undefined) {
+    const list = String(body.features || '').split(/\r?\n/).map((l) => l.trim().replace(/^[-•*]\s*/, '').slice(0, 160)).filter(Boolean).slice(0, 20);
+    if (list.length) product.features = list;
+    else delete product.features;
+  }
+  const specs = { ...(product.specs || {}) };
+  let touched = false;
+  for (const f of SPEC_FIELDS) {
+    if (body[`spec_${f.key}`] !== undefined) {
+      touched = true;
+      const value = String(body[`spec_${f.key}`] || '').trim().slice(0, 120);
+      if (value) specs[f.key] = value;
+      else delete specs[f.key];
+    }
+  }
+  if (touched) {
+    if (Object.keys(specs).length) product.specs = specs;
+    else delete product.specs;
+  }
+  if (body.certifications !== undefined) {
+    // Una por línea: Nombre | Número | Organismo | Fecha | Vigencia | Documento (URL)
+    const list = String(body.certifications || '').split(/\r?\n/).map((line) => {
+      const [name, number, body_, date, validUntil, document] = line.split('|').map((x) => (x || '').trim().slice(0, 160));
+      return name ? { name, number, body: body_, date, validUntil, document: /^https:\/\//.test(document || '') ? document : '' } : null;
+    }).filter(Boolean).slice(0, 10);
+    if (list.length) product.certifications = list;
+    else delete product.certifications;
+  }
   if (body.wholesaleMinQty !== undefined || body.wholesaleMxn !== undefined) {
     const minQty = parseInt(body.wholesaleMinQty, 10);
     const cents = parseMoney(body.wholesaleMxn);
     if (minQty > 1 && cents) product.wholesale = { minQty, priceCents: cents };
     else delete product.wholesale;
   }
+}
+
+// Especificaciones técnicas que puede tener una prenda. Solo se muestran las confirmadas en el panel.
+const SPEC_FIELDS = [
+  { key: 'material', label: 'Material' },
+  { key: 'composition', label: 'Composición' },
+  { key: 'weightOz', label: 'Peso de la mezclilla (oz/yd²)' },
+  { key: 'weightGsm', label: 'Gramaje (g/m²)' },
+  { key: 'fit', label: 'Tipo de corte' },
+  { key: 'rise', label: 'Tiro' },
+  { key: 'pockets', label: 'Bolsas' },
+  { key: 'closure', label: 'Cierre' },
+  { key: 'button', label: 'Botón' },
+  { key: 'rivets', label: 'Remaches' },
+  { key: 'seams', label: 'Tipo de costura' },
+  { key: 'reinforcedSeams', label: 'Costuras reforzadas' },
+  { key: 'thread', label: 'Hilo' },
+  { key: 'preshrunk', label: 'Preencogido' },
+  { key: 'shrinkage', label: 'Encogimiento estimado' },
+  { key: 'length', label: 'Largo' },
+  { key: 'color', label: 'Color' },
+  { key: 'reflective', label: 'Reflejante' },
+  { key: 'tapeWidth', label: 'Ancho de cinta reflejante' },
+  { key: 'tapeMaterial', label: 'Material de la cinta' },
+  { key: 'stretch', label: 'Elasticidad' },
+  { key: 'wash', label: 'Lavado' },
+  { key: 'madeIn', label: 'País de fabricación' },
+  { key: 'internalCode', label: 'Código interno' },
+];
+
+// Filas [etiqueta, valor] con las especificaciones confirmadas (specs.* o los atributos del catálogo).
+function productSpecRows(product) {
+  const rows = [];
+  for (const f of SPEC_FIELDS) {
+    const value = product.specs?.[f.key] ?? (['composition', 'fit', 'rise', 'wash', 'stretch'].includes(f.key) ? product[f.key] : undefined);
+    if (value) rows.push([f.label, String(value)]);
+  }
+  return rows;
 }
 
 // --- Variantes: cada entrada de `sizes` es una variante (talla, largo opcional, color opcional) ---
@@ -749,10 +824,11 @@ function productJsonLd(product, origin, url) {
         name: product.name,
         description: product.description,
         image: (product.images && product.images.length ? product.images : [product.image]).map((i) => `${origin}/${i}`),
-        sku: product.id,
+        sku: product.sku || product.id,
         brand: { '@type': 'Brand', name: 'Works Jeans' },
         category: product.category === 'Pantalones' ? 'Pantalones de trabajo' : 'Camisas de trabajo',
-        material: 'Mezclilla 100% algodón',
+        ...(product.specs?.material || product.composition ? { material: product.specs?.material || product.composition } : {}),
+        ...(product.specs?.color || product.wash ? { color: product.specs?.color || product.wash } : {}),
         audience: { '@type': 'PeopleAudience', suggestedGender: 'unisex' },
         offers: {
           '@type': 'Offer',
@@ -777,36 +853,184 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-// /producto/<id>: la misma portada, pero con título, descripción e imagen del producto para
-// compartir por WhatsApp y para Google. Al cargar, se abre la ficha del producto.
+const ASSET_V = '20260915d';
+
+function fill(template, map) {
+  return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
+}
+
+// El carrito lateral vive en index.html; se reutiliza tal cual en las páginas de producto.
+function cartDrawerHtml() {
+  const home = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
+  const a = home.indexOf('<div class="cart-overlay"');
+  const b = home.indexOf('</aside>', a);
+  return a >= 0 && b >= 0 ? home.slice(a, b + '</aside>'.length) : '';
+}
+
+function money(cents) {
+  return (cents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+}
+
+function categoryOf(product) {
+  const isPants = /pantal/i.test(product.category || '');
+  const custom = (() => { try { return (getSettings().categories || []).find((c) => c.name === product.category); } catch { return null; } })();
+  return {
+    isPants,
+    name: product.category === 'Pantalones' ? 'Pantalones de trabajo' : product.category === 'Camisas' ? 'Camisas de trabajo' : product.category,
+    url: product.category === 'Pantalones' ? '/pantalones-de-trabajo' : product.category === 'Camisas' ? '/camisas-de-trabajo' : (custom ? `/${custom.slug}` : '/#productos'),
+  };
+}
+
+function productImages(product) {
+  return product.images && product.images.length ? product.images : [product.image];
+}
+
+function pdpSection(id, title, bodyHtml) {
+  return `<section class="pdp-section" id="${id}"><h2>${title}</h2>${bodyHtml}</section>`;
+}
+
+function renderProductPage(product, req) {
+  const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
+  const url = `${origin}/producto/${product.id}`;
+  const cat = categoryOf(product);
+  const images = productImages(product);
+  const settings = getSettings();
+  const totalStock = product.sizes.reduce((sum, v) => sum + (v.stock || 0), 0);
+  const low = lowStockThreshold();
+  const simple = product.sizes.every((v) => !v.length && !v.color);
+  const title = product.seoTitle || `${product.name} | Works Jeans`;
+  const desc = product.seoDescription || `${product.description} ${money(product.priceCents)} MXN. Tallas ${product.sizes[0]?.size} a ${product.sizes[product.sizes.length - 1]?.size}. Hecho en Monterrey, envío a todo México.`.slice(0, 300);
+
+  const avail = totalStock <= 0
+    ? { cls: 'is-out', text: 'Agotado por ahora' }
+    : product.sizes.filter((v) => v.stock > 0).length <= 2 || totalStock <= low
+      ? { cls: 'is-low', text: 'Pocas piezas disponibles' }
+      : { cls: 'is-ok', text: 'En stock · se envía en 1 a 2 días hábiles' };
+
+  const sizePicker = simple
+    ? `<fieldset class="pdp-sizes"><legend class="size-label">Talla</legend><div class="pdp-pills" id="pdpSizePills" role="group" aria-label="Tallas">${product.sizes.map((v) => `<button type="button" class="pdp-pill" data-label="${escapeHtml(variantLabel(v))}" aria-pressed="false" ${v.stock > 0 ? '' : 'disabled title="Agotada"'}>${escapeHtml(v.size)}</button>`).join('')}</div></fieldset>`
+    : `<div class="pdp-select"><label class="size-label" for="pdpSize">Talla / largo / color</label><select class="size-select" id="pdpSize" ${totalStock <= 0 ? 'disabled' : ''}>${product.sizes.map((v) => `<option value="${escapeHtml(variantLabel(v))}" ${v.stock > 0 ? '' : 'disabled'}>${escapeHtml(variantLabel(v))}${v.stock > 0 ? '' : ' · agotada'}</option>`).join('')}</select></div>`;
+
+  const thumbs = images.length > 1 ? images.map((img, i) => `<button type="button" class="pdp-thumb ${i === 0 ? 'is-active' : ''}" data-large="/img/800/${img}" data-srcset="/img/480/${img} 480w, /img/800/${img} 800w, /img/1000/${img} 1000w" data-alt="${escapeHtml(product.name)} · foto ${i + 1}" aria-current="${i === 0}"><img src="/img/320/${img}" alt="${escapeHtml(product.name)} · miniatura ${i + 1}" width="64" height="80" loading="lazy"></button>`).join('') : '';
+
+  let video = '';
+  if (product.videoUrl) {
+    const yt = product.videoUrl.match(/(?:v=|youtu\.be\/|embed\/)([\w-]+)/);
+    video = yt
+      ? `<div class="pdp-video"><iframe src="https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0" title="Video de ${escapeHtml(product.name)}" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`
+      : `<div class="pdp-video"><video controls muted playsinline preload="none" poster="/img/800/${images[0]}"><source src="${escapeHtml(product.videoUrl)}"></video></div>`;
+  }
+
+  const priceHtml = `${product.comparePriceCents && product.comparePriceCents > product.priceCents ? `<s class="price-compare">${money(product.comparePriceCents)}</s>` : ''}${money(product.priceCents)} <small>MXN</small>`;
+  const wholesaleLine = product.wholesale ? `<p class="pdp-wholesale">Mayoreo: <b>${money(product.wholesale.priceCents)}</b> por pieza a partir de ${product.wholesale.minQty} piezas. <a href="/empresas">Cotizar para empresa</a></p>` : '';
+
+  // Secciones (solo con información real)
+  const sections = [];
+  sections.push(['descripcion', 'Descripción', `<p>${escapeHtml(product.longDescription || product.description).replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>')}</p>`]);
+  if (product.features?.length) sections.push(['caracteristicas', 'Características', `<ul class="pdp-list">${product.features.map((f) => `<li>${escapeHtml(f)}</li>`).join('')}</ul>`]);
+  const specRows = productSpecRows(product);
+  if (specRows.length) sections.push(['especificaciones', 'Especificaciones técnicas', `<div class="table-scroll"><table class="pdp-specs">${specRows.map(([k, v]) => `<tr><th scope="row">${escapeHtml(k)}</th><td>${escapeHtml(v)}</td></tr>`).join('')}</table></div>`]);
+  if (product.certifications?.length) sections.push(['certificaciones', 'Certificaciones', `<ul class="pdp-list">${product.certifications.map((c) => `<li><strong>${escapeHtml(c.name)}</strong>${c.number ? ` · No. ${escapeHtml(c.number)}` : ''}${c.body ? ` · ${escapeHtml(c.body)}` : ''}${c.validUntil ? ` · vigente hasta ${escapeHtml(c.validUntil)}` : ''}${c.document ? ` · <a href="${escapeHtml(c.document)}" target="_blank" rel="noopener">documento</a>` : ''}</li>`).join('')}</ul>`]);
+  const sizeList = [...new Set(product.sizes.map((v) => v.size))];
+  const table = cat.isPants ? CONTENT.tableHtml(CONTENT.SIZE_TABLES.pantalon) : CONTENT.tableHtml(CONTENT.SIZE_TABLES.camisas);
+  sections.push(['tallas', 'Tallas', `<p>Tallas disponibles en este modelo: <strong>${sizeList.map(escapeHtml).join(' · ')}</strong>.</p>${table}<p><a class="pdp-link" href="/guia-de-tallas">Ver la guía completa: cómo medir y elegir talla</a></p>`]);
+  sections.push(['cuidados', 'Cuidados', `<p>${escapeHtml(product.care || 'Lava al revés con agua fría, sin cloro, y seca a la sombra. Plancha a temperatura media si hace falta.')}</p>`]);
+  const ship = settings.shipping || {};
+  const shipText = ship.summary || 'Enviamos a todo México por paquetería. Preparamos tu pedido en 1 a 2 días hábiles y la entrega tarda de 3 a 7 días hábiles según el destino. También puedes recoger sin costo en la tienda de Monterrey.';
+  sections.push(['envios', 'Envíos', `<p>${escapeHtml(shipText)}</p><p><a class="pdp-link" href="/envios-y-devoluciones.html">Política completa de envíos</a></p>`]);
+  sections.push(['cambios', 'Cambios y devoluciones', `<p>Cambio de talla dentro de 15 días con la prenda sin usar, sin lavar y con etiquetas. En tienda no tiene costo; por paquetería el cliente cubre el envío de ida y vuelta. Las prendas personalizadas (bordado o DTF) no tienen cambio salvo defecto de fabricación.</p><p><a class="pdp-link" href="/envios-y-devoluciones.html#cambios">Cómo solicitar un cambio</a></p>`]);
+  sections.push(['facturacion', 'Facturación', '<p>Facturamos (CFDI). Al pagar marca <strong>Necesito factura</strong> en el carrito y captura RFC, razón social, código postal fiscal, régimen y uso de CFDI. La factura llega al correo que indiques.</p>']);
+  sections.push(['mayoreo', 'Mayoreo y empresas', `<p>${product.wholesale ? `Precio de mayoreo de <strong>${money(product.wholesale.priceCents)}</strong> por pieza a partir de ${product.wholesale.minQty} piezas. ` : ''}Cotizamos corridas de tallas para cuadrillas, plantas y talleres, con facturación y entrega a todo México.</p><p><a class="btn btn-primary" href="/empresas">Cotizar para empresa</a></p>`]);
+  sections.push(['personalizacion', 'Personalización', `<p>${escapeHtml(product.customization || 'Bordado o estampado DTF con el logotipo de tu empresa en pedidos de mayoreo. Cuéntanos qué necesitas y te cotizamos.')}</p>`]);
+
+  const related = publicProducts().filter((p) => p.id !== product.id && p.category === product.category).slice(0, 3);
+  const others = related.length ? related : publicProducts().filter((p) => p.id !== product.id).slice(0, 3);
+  const relatedHtml = others.length ? `<section class="pdp-related" id="relacionados"><h2>También te puede servir</h2><div class="products-grid products-grid--static">${others.map((p) => productCardStatic(p, origin)).join('')}</div></section>` : '';
+
+  const jsonld = productJsonLd(product, origin, url);
+  const template = fs.readFileSync(path.join(__dirname, 'producto.html'), 'utf-8');
+  return fill(template, {
+    TITLE: escapeHtml(title),
+    DESCRIPTION: escapeHtml(desc),
+    CANONICAL: url,
+    IMAGE: `${origin}/${images[0]}`,
+    LCP_IMAGE: `/img/800/${images[0]}`,
+    PRICE_PLAIN: (product.priceCents / 100).toFixed(2),
+    PRICE_PLAIN_MXN: money(product.priceCents),
+    ASSET_V,
+    JSONLD: JSON.stringify(jsonld),
+    CART_DRAWER: cartDrawerHtml(),
+    CATEGORY: escapeHtml(cat.name),
+    CATEGORY_URL: cat.url,
+    NAME: escapeHtml(product.name),
+    NAME_SHORT: escapeHtml(product.name.length > 34 ? `${product.name.slice(0, 32)}…` : product.name),
+    NAME_URL: encodeURIComponent(product.name),
+    ID: product.id,
+    TAG: product.tag === 'nuevo' ? '<span class="product-tag product-tag--nuevo">Nuevo</span>' : product.tag === 'oferta' ? '<span class="product-tag product-tag--oferta">Oferta</span>' : '',
+    MAIN_SRC: `/img/800/${images[0]}`,
+    MAIN_SRCSET: `/img/480/${images[0]} 480w, /img/800/${images[0]} 800w, /img/1000/${images[0]} 1000w`,
+    THUMBS: thumbs,
+    VIDEO: video,
+    SKU_KICKER: product.sku ? ` · ${escapeHtml(product.sku)}` : '',
+    PRICE_HTML: priceHtml,
+    WHOLESALE_LINE: wholesaleLine,
+    AVAIL_CLASS: avail.cls,
+    AVAIL_TEXT: avail.text,
+    SHORT_DESC: escapeHtml(product.description),
+    SIZE_PICKER: sizePicker,
+    DISABLED: totalStock <= 0 ? 'disabled' : '',
+    ADD_LABEL: totalStock <= 0 ? 'Agotado' : 'Agregar al carrito',
+    JUMP_LINKS: sections.map(([id, t]) => `<a href="#${id}">${t}</a>`).join(''),
+    SECTIONS: sections.map(([id, t, body]) => pdpSection(id, t, body)).join(''),
+    RELATED: relatedHtml,
+  });
+}
+
 app.get('/producto/:id', (req, res) => {
   const product = publicProducts().find((p) => p.id === req.params.id);
   if (!product) {
     res.status(404).sendFile(path.join(__dirname, '404.html'));
     return;
   }
-  const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
-  const url = `${origin}/producto/${product.id}`;
-  const title = `${product.name} | Works Jeans`;
-  const desc = `${product.description} Precio: ${(product.priceCents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })} MXN. Tallas ${product.sizes[0]?.size} a ${product.sizes[product.sizes.length - 1]?.size}.`;
-  const image = `${origin}/${product.image}`;
-  let html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
-  html = html
-    .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)}</title>`)
-    .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${escapeHtml(desc)}">`)
-    .replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${url}">`)
-    .replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${escapeHtml(title)}">`)
-    .replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${escapeHtml(desc)}">`)
-    .replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`)
-    .replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${image}">`)
-    .replace(/<meta name="twitter:title" content="[^"]*">/, `<meta name="twitter:title" content="${escapeHtml(title)}">`)
-    .replace(/<meta name="twitter:description" content="[^"]*">/, `<meta name="twitter:description" content="${escapeHtml(product.description)}">`)
-    .replace(/<meta name="twitter:image" content="[^"]*">/, `<meta name="twitter:image" content="${image}">`)
-    .replace('</head>', `  <script type="application/ld+json">${JSON.stringify(productJsonLd(product, origin, url))}</script>\n  <script>window.__openProduct = ${JSON.stringify(product.id)};</script>\n</head>`);
-  // Los recursos relativos deben resolverse desde la raíz aunque la URL tenga /producto/.
-  html = html.replace('<head>', '<head>\n  <base href="/">');
   res.set('Cache-Control', 'no-cache');
-  res.send(html);
+  res.send(renderProductPage(product, req));
+});
+
+// Ficha técnica imprimible (el navegador la guarda como PDF). Solo muestra datos confirmados.
+app.get('/producto/:id/ficha', (req, res) => {
+  const product = publicProducts().find((p) => p.id === req.params.id);
+  if (!product) {
+    res.status(404).sendFile(path.join(__dirname, '404.html'));
+    return;
+  }
+  const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
+  const settings = getSettings();
+  const images = productImages(product);
+  const specRows = productSpecRows(product);
+  const colors = [...new Set(product.sizes.map((v) => v.color).filter(Boolean))];
+  const template = fs.readFileSync(path.join(__dirname, 'ficha.html'), 'utf-8');
+  res.set('Cache-Control', 'no-cache');
+  res.send(fill(template, {
+    NAME: escapeHtml(product.name),
+    ID: product.id,
+    CANONICAL: `${origin}/producto/${product.id}`,
+    CATEGORY: escapeHtml(categoryOf(product).name),
+    SKU_LINE: [product.sku ? `SKU ${escapeHtml(product.sku)}` : '', product.specs?.internalCode ? `Código interno ${escapeHtml(product.specs.internalCode)}` : '', `workjeans.mx/producto/${product.id}`].filter(Boolean).join(' · '),
+    IMAGE: `/img/800/${images[0]}`,
+    EXTRA_PHOTOS: images.slice(1, 3).map((img) => `<img class="photo" style="margin-top:10px" src="/img/480/${img}" alt="" width="480" height="600">`).join(''),
+    DESCRIPTION: escapeHtml(product.longDescription || product.description),
+    FEATURES: product.features?.length ? `<h2>Características</h2><ul>${product.features.map((f) => `<li>${escapeHtml(f)}</li>`).join('')}</ul>` : '',
+    SPECS: specRows.length ? `<h2>Especificaciones</h2><table>${specRows.map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`).join('')}</table>` : '<h2>Especificaciones</h2><p class="pending">Especificaciones técnicas en proceso de confirmación.</p>',
+    SIZES: [...new Set(product.sizes.map((v) => v.size))].map((x) => `<span>${escapeHtml(x)}</span>`).join(''),
+    COLORS: colors.length ? `<h2>Colores</h2><p>${colors.map(escapeHtml).join(' · ')}</p>` : '',
+    CERTS: product.certifications?.length ? `<h2>Certificaciones</h2><ul>${product.certifications.map((c) => `<li>${escapeHtml(c.name)}${c.number ? ` · ${escapeHtml(c.number)}` : ''}${c.body ? ` · ${escapeHtml(c.body)}` : ''}${c.validUntil ? ` · vigente hasta ${escapeHtml(c.validUntil)}` : ''}</li>`).join('')}</ul>` : '',
+    CARE: `<h2>Cuidados</h2><p>${escapeHtml(product.care || 'Lava al revés con agua fría, sin cloro, y seca a la sombra.')}</p>`,
+    CUSTOMIZATION: `<h2>Personalización</h2><p>${escapeHtml(product.customization || 'Bordado o estampado DTF con logotipo en pedidos de mayoreo.')}</p>`,
+    PRICE_BLOCK: `<h2>Precio</h2><p>${money(product.priceCents)} MXN por pieza${product.wholesale ? ` · mayoreo ${money(product.wholesale.priceCents)} a partir de ${product.wholesale.minQty} piezas` : ''}. Precios sujetos a cambio sin previo aviso.</p>`,
+    ADDRESS: escapeHtml(settings.address || ''),
+    PHONE: escapeHtml(settings.phoneDisplay || ''),
+    DATE: new Date().toLocaleDateString('es-MX', { dateStyle: 'long' }),
+  }));
 });
 
 // --- Páginas de categoría (renderizadas en el servidor para SEO) ---

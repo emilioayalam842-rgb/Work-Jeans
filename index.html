@@ -611,48 +611,6 @@
     <span>WhatsApp</span>
   </a>
 
-  <div class="product-modal" id="productModal" hidden role="dialog" aria-modal="true" aria-labelledby="pmName">
-    <div class="product-modal-backdrop" id="pmBackdrop"></div>
-    <div class="product-modal-card">
-      <button type="button" class="product-modal-close" id="pmClose" aria-label="Cerrar">✕</button>
-      <div class="product-modal-gallery">
-        <img id="pmPhoto" alt="" width="800" height="1000">
-        <div class="product-thumbs" id="pmThumbs"></div>
-      </div>
-      <div class="product-modal-info">
-        <span class="kicker" id="pmCategory"></span>
-        <h2 id="pmName"></h2>
-        <p class="product-sizes" id="pmSizes"></p>
-        <p class="price" id="pmPrice"></p>
-        <div id="pmWholesale"></div>
-        <p class="product-desc" id="pmDesc"></p>
-        <div class="pm-row">
-          <div>
-            <label class="size-label" for="pmSize">Talla</label>
-            <select class="size-select" id="pmSize"></select>
-          </div>
-          <div>
-            <label class="size-label" for="pmQty">Cantidad</label>
-            <div class="qty-picker">
-              <button type="button" data-qty="-1" aria-label="Menos">−</button>
-              <input type="number" id="pmQty" value="1" min="1" max="200" inputmode="numeric">
-              <button type="button" data-qty="1" aria-label="Más">+</button>
-            </div>
-          </div>
-        </div>
-        <p class="stock-note" id="pmStock"></p>
-        <button type="button" class="btn btn-dark" id="pmAdd">Agregar al carrito</button>
-        <button type="button" class="pm-sizechart-toggle" id="pmSizechartToggle">Ver tabla de medidas y cómo medir</button>
-        <div class="pm-sizechart" id="pmSizechart" hidden></div>
-        <div class="product-modal-share">
-          <button type="button" class="btn btn-secondary" id="pmShare">Compartir por WhatsApp</button>
-          <button type="button" class="btn btn-secondary" id="pmCopy">Copiar enlace</button>
-        </div>
-        <p class="form-status" id="pmStatus"></p>
-      </div>
-    </div>
-  </div>
-
   <script src="cart.js?v=20260915c" defer></script>
   <script src="mayoreo.js?v=20260915c" defer></script>
   <script src="script.js?v=20260915c" defer></script>

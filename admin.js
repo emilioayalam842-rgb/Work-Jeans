@@ -563,12 +563,22 @@ function openForm(product) {
       if (el) el.value = product[k] || '';
     });
     document.querySelector('.admin-attrs').open = Boolean(product.fit || product.wash || product.gender);
+    ['longDescription', 'care', 'customization', 'videoUrl', 'seoTitle', 'seoDescription', 'certifications'].forEach((k) => {
+      const el = document.getElementById(`field${k.charAt(0).toUpperCase()}${k.slice(1)}`);
+      if (!el) return;
+      if (k === 'certifications') el.value = (product.certifications || []).map((c) => [c.name, c.number, c.body, c.date, c.validUntil, c.document].map((x) => x || '').join(' | ')).join('\n');
+      else el.value = product[k] || '';
+    });
+    document.getElementById('fieldFeatures').value = (product.features || []).join('\n');
+    document.querySelectorAll('.admin-specs-grid input').forEach((input) => { input.value = product.specs?.[input.name.replace('spec_', '')] || ''; });
+    document.querySelector('.admin-attrs--ficha').open = Boolean(product.longDescription || product.features?.length || product.specs);
     product.sizes.forEach((s) => addSizeRow(s));
   } else {
     formTitle.textContent = 'Nuevo producto';
     document.getElementById('productId').value = '';
     document.getElementById('fieldStatus').value = 'activo';
     document.querySelector('.admin-attrs').open = false;
+    document.querySelector('.admin-attrs--ficha').open = false;
     addSizeRow();
   }
 

@@ -1,0 +1,99 @@
+// Página de producto: selector de talla con existencias, cantidad, agregar / comprar ahora,
+// galería, barra fija en móvil y compartir. Usa las funciones del carrito (cart.js).
+
+(function () {
+  const addBtn = document.getElementById('pdpAdd');
+  if (!addBtn) return;
+  const id = addBtn.dataset.id;
+  const status = document.getElementById('pdpStatus');
+  const stockNote = document.getElementById('pdpStockNote');
+  const sizeSelect = document.getElementById('pdpSize');
+  const pills = document.getElementById('pdpSizePills');
+
+  function selectedLabel() {
+    if (sizeSelect) return sizeSelect.value;
+    const active = pills?.querySelector('.pdp-pill.is-active');
+    return active ? active.dataset.label : '';
+  }
+
+  function refreshStock() {
+    const label = selectedLabel();
+    if (!label) { stockNote.textContent = ''; return; }
+    if (typeof stockNoteText === 'function' && Array.isArray(PRODUCTS) && PRODUCTS.length) {
+      stockNote.textContent = stockNoteText(id, label);
+      const price = typeof variantPrice === 'function' ? variantPrice(id, label) : null;
+      if (price) {
+        const el = document.getElementById('pdpStickyPrice');
+        if (el) el.textContent = formatPrice(price);
+      }
+    }
+  }
+
+  function add({ openDrawer = false } = {}) {
+    const product = (PRODUCTS || []).find((p) => p.id === id);
+    if (!product) { status.textContent = 'Cargando existencias… inténtalo de nuevo.'; return; }
+    const label = selectedLabel();
+    if (!label) { status.textContent = 'Elige una talla antes de agregar.'; pills?.focus(); return; }
+    const stock = sizeStock(id, label);
+    if (stock <= 0) { status.textContent = 'Esa talla está agotada. Elige otra.'; return; }
+    const qty = clampQty(document.getElementById('pdpQty').value);
+    addToCart(product.id, product.name, variantPrice(id, label) || product.priceCents, label, qty);
+    status.textContent = openDrawer ? '' : 'Agregado al carrito.';
+    if (openDrawer && typeof openCart === 'function') openCart();
+    window.wjTrack?.('add_to_cart', { item: id, size: label, qty });
+  }
+
+  // Tallas en botones
+  pills?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.pdp-pill');
+    if (!btn || btn.disabled) return;
+    pills.querySelectorAll('.pdp-pill').forEach((p) => { p.classList.remove('is-active'); p.setAttribute('aria-pressed', 'false'); });
+    btn.classList.add('is-active');
+    btn.setAttribute('aria-pressed', 'true');
+    status.textContent = '';
+    refreshStock();
+    window.wjTrack?.('size_selected', { item: id, size: btn.dataset.label });
+  });
+  sizeSelect?.addEventListener('change', () => { status.textContent = ''; refreshStock(); window.wjTrack?.('size_selected', { item: id, size: sizeSelect.value }); });
+
+  addBtn.addEventListener('click', () => add());
+  document.getElementById('pdpBuy')?.addEventListener('click', () => add({ openDrawer: true }));
+  document.getElementById('pdpStickyAdd')?.addEventListener('click', () => { document.getElementById('pdpBuyBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); if (selectedLabel()) add(); });
+
+  // Galería
+  const photo = document.getElementById('pdpPhoto');
+  document.getElementById('pdpThumbs')?.addEventListener('click', (e) => {
+    const thumb = e.target.closest('.pdp-thumb');
+    if (!thumb) return;
+    photo.src = thumb.dataset.large;
+    photo.srcset = thumb.dataset.srcset;
+    photo.alt = thumb.dataset.alt || photo.alt;
+    document.querySelectorAll('.pdp-thumb').forEach((t) => { t.classList.remove('is-active'); t.setAttribute('aria-current', 'false'); });
+    thumb.classList.add('is-active');
+    thumb.setAttribute('aria-current', 'true');
+  });
+
+  // Barra fija en móvil cuando los botones de compra salen de la pantalla
+  const sticky = document.getElementById('pdpSticky');
+  const buyBox = document.getElementById('pdpBuyBox');
+  if (sticky && buyBox && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(([entry]) => {
+      sticky.hidden = entry.isIntersecting || entry.boundingClientRect.top < 0 && window.innerWidth > 860;
+      document.body.classList.toggle('has-pdp-sticky', !sticky.hidden);
+    }, { threshold: 0 });
+    io.observe(buyBox);
+  }
+
+  // Compartir
+  const url = window.location.origin + window.location.pathname;
+  document.getElementById('pdpShare')?.addEventListener('click', () => {
+    const name = document.querySelector('h1')?.textContent || 'este producto';
+    window.open(`https://wa.me/?text=${encodeURIComponent(`Mira ${name} de Works Jeans: ${url}`)}`, '_blank', 'noopener');
+  });
+  document.getElementById('pdpCopy')?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(url); status.textContent = 'Enlace copiado.'; } catch { status.textContent = url; }
+  });
+
+  window.onProductsLoaded = refreshStock;
+  window.wjTrack?.('product_view', { item: id });
+})();

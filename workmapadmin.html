@@ -708,6 +708,49 @@
         </div>
       </details>
 
+      <details class="admin-attrs admin-attrs--ficha">
+        <summary>Ficha técnica y página del producto (descripción larga, características, especificaciones, video, SEO)</summary>
+        <p class="admin-help">Llena solo lo que tengas confirmado: lo vacío no se muestra en la tienda ni en la ficha PDF.</p>
+        <label for="fieldLongDescription">Descripción larga (para la página del producto)</label>
+        <textarea id="fieldLongDescription" name="longDescription" rows="4" placeholder="Para qué sirve, cómo está hecho, para quién es. Deja una línea en blanco entre párrafos."></textarea>
+        <label for="fieldFeatures">Características (una por línea)</label>
+        <textarea id="fieldFeatures" name="features" rows="4" placeholder="Costura doble en tiro y entrepierna&#10;Cinco bolsas&#10;Botón metálico"></textarea>
+        <label>Especificaciones técnicas</label>
+        <div class="admin-field-grid admin-specs-grid">
+          <div><label for="spec_material">Material</label><input type="text" id="spec_material" name="spec_material" placeholder="Mezclilla"></div>
+          <div><label for="spec_weightOz">Peso (oz/yd²)</label><input type="text" id="spec_weightOz" name="spec_weightOz" placeholder="Ej. 12"></div>
+          <div><label for="spec_weightGsm">Gramaje (g/m²)</label><input type="text" id="spec_weightGsm" name="spec_weightGsm"></div>
+          <div><label for="spec_pockets">Bolsas</label><input type="text" id="spec_pockets" name="spec_pockets" placeholder="Ej. 5"></div>
+          <div><label for="spec_closure">Cierre</label><input type="text" id="spec_closure" name="spec_closure" placeholder="Cremallera metálica"></div>
+          <div><label for="spec_button">Botón</label><input type="text" id="spec_button" name="spec_button"></div>
+          <div><label for="spec_rivets">Remaches</label><input type="text" id="spec_rivets" name="spec_rivets"></div>
+          <div><label for="spec_seams">Tipo de costura</label><input type="text" id="spec_seams" name="spec_seams"></div>
+          <div><label for="spec_reinforcedSeams">Costuras reforzadas</label><input type="text" id="spec_reinforcedSeams" name="spec_reinforcedSeams" placeholder="Dónde"></div>
+          <div><label for="spec_thread">Hilo</label><input type="text" id="spec_thread" name="spec_thread"></div>
+          <div><label for="spec_preshrunk">Preencogido</label><input type="text" id="spec_preshrunk" name="spec_preshrunk" placeholder="Sí / No"></div>
+          <div><label for="spec_shrinkage">Encogimiento estimado</label><input type="text" id="spec_shrinkage" name="spec_shrinkage"></div>
+          <div><label for="spec_length">Largo</label><input type="text" id="spec_length" name="spec_length"></div>
+          <div><label for="spec_color">Color</label><input type="text" id="spec_color" name="spec_color"></div>
+          <div><label for="spec_reflective">Reflejante</label><input type="text" id="spec_reflective" name="spec_reflective" placeholder="Cinta en piernas, sin certificación"></div>
+          <div><label for="spec_tapeWidth">Ancho de cinta</label><input type="text" id="spec_tapeWidth" name="spec_tapeWidth"></div>
+          <div><label for="spec_tapeMaterial">Material de la cinta</label><input type="text" id="spec_tapeMaterial" name="spec_tapeMaterial"></div>
+          <div><label for="spec_madeIn">País de fabricación</label><input type="text" id="spec_madeIn" name="spec_madeIn" placeholder="México"></div>
+          <div><label for="spec_internalCode">Código interno</label><input type="text" id="spec_internalCode" name="spec_internalCode"></div>
+        </div>
+        <label for="fieldCertifications">Certificaciones (una por línea: Nombre | Número | Organismo | Fecha | Vigencia | URL del documento)</label>
+        <textarea id="fieldCertifications" name="certifications" rows="2" placeholder="Solo si tienes el documento. Sin certificación, déjalo vacío."></textarea>
+        <label for="fieldCare">Cuidados</label>
+        <textarea id="fieldCare" name="care" rows="2" placeholder="Lava al revés con agua fría, sin cloro…"></textarea>
+        <label for="fieldCustomization">Personalización</label>
+        <input type="text" id="fieldCustomization" name="customization" placeholder="Bordado o DTF con logotipo en pedidos de mayoreo">
+        <label for="fieldVideoUrl">Video (enlace de YouTube o archivo .mp4 https)</label>
+        <input type="url" id="fieldVideoUrl" name="videoUrl" placeholder="https://www.youtube.com/watch?v=…">
+        <div class="admin-field-grid">
+          <div><label for="fieldSeoTitle">Título SEO (máx. 70)</label><input type="text" id="fieldSeoTitle" name="seoTitle" maxlength="70"></div>
+          <div><label for="fieldSeoDescription">Descripción SEO (máx. 170)</label><input type="text" id="fieldSeoDescription" name="seoDescription" maxlength="170"></div>
+        </div>
+      </details>
+
       <div class="admin-field-grid">
         <div>
           <label for="fieldStatus">Estado</label>

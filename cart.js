@@ -398,7 +398,7 @@ function renderProductCard(product) {
       ${totalStock <= 0 ? '<span class="product-soldout">Agotado</span>' : ''}
       <img src="${imgSrc(product.image, 640)}" srcset="${imgSrcset(product.image)}" sizes="${CARD_SIZES}" alt="${product.name} · ropa de trabajo de mezclilla Works Jeans" class="product-photo" data-main-photo loading="lazy" decoding="async" width="800" height="1000">
       ${gallery}
-      <h3>${product.name}</h3>
+      <h3><a href="/producto/${product.id}">${product.name}</a></h3>
       <p class="product-sizes">Tallas ${sizeRange}</p>
       <p class="price">${priceHtml(product)}</p>
       ${wholesaleHtml(product)}
@@ -447,7 +447,7 @@ function injectProductSchema(products) {
           price: (p.priceCents / 100).toFixed(2),
           priceCurrency: 'MXN',
           availability: p.sizes.some((s) => s.stock > 0) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          url: origin + '#productos',
+          url: `${origin}producto/${p.id}`,
         },
       },
     })),
@@ -459,150 +459,18 @@ function injectProductSchema(products) {
 }
 
 let PRODUCTS = [];
-let modalPushedState = false;
 
 function productUrl(id) {
   return `${window.location.origin}/producto/${id}`;
 }
 
-function openProduct(id, { pushState = true } = {}) {
-  const product = PRODUCTS.find((p) => p.id === id);
-  if (!product) return;
-  const modal = document.getElementById('productModal');
-  const images = product.images && product.images.length ? product.images : [product.image];
-  const photo = document.getElementById('pmPhoto');
-  photo.src = imgSrc(images[0], 800);
-  photo.srcset = `${imgSrc(images[0], 480)} 480w, ${imgSrc(images[0], 800)} 800w, ${imgSrc(images[0], 1000)} 1000w`;
-  photo.sizes = '(max-width: 860px) 100vw, 480px';
-  photo.alt = product.name;
-  document.getElementById('pmThumbs').innerHTML = images.length > 1
-    ? images.map((img, i) => `<img src="${imgSrc(img, 320)}" alt="" class="product-thumb ${i === 0 ? 'active' : ''}" data-src="${img}" width="46" height="58">`).join('')
-    : '';
-  document.getElementById('pmCategory').textContent = product.category;
-  document.getElementById('pmName').textContent = product.name;
-  const first = product.sizes[0]?.size || '';
-  const last = product.sizes[product.sizes.length - 1]?.size || '';
-  document.getElementById('pmSizes').innerHTML = `Tallas <b>${first}</b>${last && last !== first ? ` / <b>${last}</b>` : ''}`;
-  document.getElementById('pmPrice').innerHTML = priceHtml(product);
-  document.getElementById('pmWholesale').innerHTML = wholesaleHtml(product);
-  document.getElementById('pmDesc').textContent = product.description;
-  const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
-  const select = document.getElementById('pmSize');
-  select.innerHTML = variantOptions(product);
-  select.disabled = totalStock <= 0;
-  const addBtn = document.getElementById('pmAdd');
-  addBtn.disabled = totalStock <= 0;
-  addBtn.textContent = totalStock <= 0 ? 'Agotado' : 'Agregar al carrito';
-  addBtn.dataset.id = product.id;
-  document.getElementById('pmStatus').textContent = '';
-  document.getElementById('pmQty').value = 1;
-  document.getElementById('pmStock').textContent = stockNoteText(product.id, select.value);
-  const chart = document.getElementById('pmSizechart');
-  chart.hidden = true;
-  chart.innerHTML = '';
-  document.getElementById('pmSizechartToggle').textContent = 'Ver tabla de medidas y cómo medir';
-  modal.hidden = false;
-  document.body.classList.add('modal-open');
-  document.title = `${product.name} | Works Jeans`;
-  if (pushState) {
-    history.pushState({ product: id }, '', `/producto/${id}`);
-    modalPushedState = true;
-  }
-}
-
-function closeProduct({ fromHistory = false } = {}) {
-  const modal = document.getElementById('productModal');
-  if (modal.hidden) return;
-  modal.hidden = true;
-  document.body.classList.remove('modal-open');
-  document.title = 'Works Jeans | Ropa de trabajo de mezclilla en Monterrey · Workwear industrial';
-  if (fromHistory) return;
-  if (modalPushedState) {
-    modalPushedState = false;
-    history.back();
-  } else if (window.location.pathname.startsWith('/producto/')) {
-    history.replaceState({}, '', '/#productos');
-  }
-}
-
-function setupProductModal() {
-  const modal = document.getElementById('productModal');
-  if (!modal) return;
-  document.getElementById('pmClose').addEventListener('click', () => closeProduct());
-  document.getElementById('pmBackdrop').addEventListener('click', () => closeProduct());
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeProduct();
-  });
-  document.getElementById('pmThumbs').addEventListener('click', (e) => {
-    const thumb = e.target.closest('.product-thumb');
-    if (!thumb) return;
-    const photo = document.getElementById('pmPhoto');
-    photo.src = imgSrc(thumb.dataset.src, 800);
-    photo.srcset = `${imgSrc(thumb.dataset.src, 480)} 480w, ${imgSrc(thumb.dataset.src, 800)} 800w, ${imgSrc(thumb.dataset.src, 1000)} 1000w`;
-    modal.querySelectorAll('.product-thumb').forEach((t) => t.classList.remove('active'));
-    thumb.classList.add('active');
-  });
-  document.getElementById('pmAdd').addEventListener('click', (e) => {
-    const product = PRODUCTS.find((p) => p.id === e.currentTarget.dataset.id);
-    if (!product) return;
-    const qty = clampQty(document.getElementById('pmQty').value);
-    const label = document.getElementById('pmSize').value;
-    closeProduct();
-    addToCart(product.id, product.name, variantPrice(product.id, label), label, qty);
-  });
-  document.getElementById('pmSize').addEventListener('change', (e) => {
-    document.getElementById('pmStock').textContent = stockNoteText(document.getElementById('pmAdd').dataset.id, e.target.value);
-  });
-  document.getElementById('pmSizechartToggle').addEventListener('click', (e) => {
-    const chart = document.getElementById('pmSizechart');
-    const product = PRODUCTS.find((p) => p.id === document.getElementById('pmAdd').dataset.id);
-    if (chart.hidden) {
-      const isPants = /pantal/i.test(product?.category || '');
-      const block = document.querySelectorAll('#medidas .size-block')[isPants ? 1 : 0];
-      const figure = document.querySelectorAll('#medidas .medidas-figura')[isPants ? 1 : 0];
-      chart.innerHTML = (figure ? `<div class="pm-figure">${figure.innerHTML}</div>` : '') + (block ? block.querySelector('.table-scroll').outerHTML : '');
-      chart.hidden = false;
-      e.currentTarget.textContent = 'Ocultar tabla de medidas';
-    } else {
-      chart.hidden = true;
-      e.currentTarget.textContent = 'Ver tabla de medidas y cómo medir';
-    }
-  });
-  // Botones + y − de cantidad (tarjetas y ficha).
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.qty-picker [data-qty]');
-    if (!btn) return;
-    const input = btn.parentElement.querySelector('input');
-    input.value = clampQty(clampQty(input.value) + parseInt(btn.dataset.qty, 10));
-  });
-  document.getElementById('pmShare').addEventListener('click', () => {
-    const id = document.getElementById('pmAdd').dataset.id;
-    const product = PRODUCTS.find((p) => p.id === id);
-    if (!product) return;
-    const text = `Mira ${product.name} de Works Jeans: ${productUrl(id)}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
-  });
-  document.getElementById('pmCopy').addEventListener('click', async () => {
-    const id = document.getElementById('pmAdd').dataset.id;
-    const status = document.getElementById('pmStatus');
-    try {
-      await navigator.clipboard.writeText(productUrl(id));
-      status.textContent = 'Enlace copiado.';
-    } catch {
-      status.textContent = productUrl(id);
-    }
-  });
-  window.addEventListener('popstate', (e) => {
-    const match = window.location.pathname.match(/^\/producto\/([^/]+)/);
-    if (match) {
-      modalPushedState = false;
-      openProduct(match[1], { pushState: false });
-    } else {
-      modalPushedState = false;
-      closeProduct({ fromHistory: true });
-    }
-  });
-}
+// Botones + y − de cantidad (tarjetas y ficha de producto).
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.qty-picker [data-qty]');
+  if (!btn) return;
+  const input = btn.parentElement.querySelector('input');
+  input.value = clampQty(clampQty(input.value) + parseInt(btn.dataset.qty, 10));
+});
 
 async function loadProducts() {
   const grid = document.getElementById('productsGrid');
@@ -610,6 +478,8 @@ async function loadProducts() {
     const res = await fetch('products.json');
     const products = await res.json();
     PRODUCTS = products;
+    window.onProductsLoaded?.();
+    if (!grid) return;
     grid.innerHTML = products.map(renderProductCard).join('');
     injectProductSchema(products);
 
@@ -628,31 +498,26 @@ async function loadProducts() {
       grid.querySelectorAll('.reveal').forEach((el) => window.revealObserver.observe(el));
     }
 
-    // Foto o nombre abren la ficha del producto.
-    grid.querySelectorAll('.product-photo, .product-card h3').forEach((el) => {
+    // La foto lleva a la página del producto (el nombre ya es un enlace).
+    grid.querySelectorAll('.product-photo').forEach((el) => {
       el.classList.add('product-open');
-      el.addEventListener('click', () => openProduct(el.closest('.product-card').dataset.id));
+      el.addEventListener('click', () => { window.location.href = `/producto/${el.closest('.product-card').dataset.id}`; });
     });
-
-    const fromUrl = window.location.pathname.match(/^\/producto\/([^/]+)/);
-    const initial = window.__openProduct || (fromUrl && fromUrl[1]);
-    if (initial) openProduct(initial, { pushState: false });
   } catch {
-    grid.innerHTML = '<p class="products-loading">No se pudieron cargar los productos.</p>';
+    if (grid) grid.innerHTML = '<p class="products-loading">No se pudieron cargar los productos.</p>';
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   renderCart();
-  setupProductModal();
   loadProducts();
   loadSettings();
 
-  document.getElementById('cartBtn').addEventListener('click', openCart);
-  document.getElementById('cartClose').addEventListener('click', closeCart);
-  document.getElementById('cartOverlay').addEventListener('click', closeCart);
+  document.getElementById('cartBtn')?.addEventListener('click', openCart);
+  document.getElementById('cartClose')?.addEventListener('click', closeCart);
+  document.getElementById('cartOverlay')?.addEventListener('click', closeCart);
 
-  document.getElementById('productsGrid').addEventListener('click', (e) => {
+  document.getElementById('productsGrid')?.addEventListener('click', (e) => {
     if (!e.target.classList.contains('add-to-cart')) return;
     const card = e.target.closest('.product-card');
     const { id, name, price } = card.dataset;
@@ -661,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addToCart(id, name, variantPrice(id, size) || parseInt(price, 10), size, qty);
   });
 
-  document.getElementById('productsGrid').addEventListener('change', (e) => {
+  document.getElementById('productsGrid')?.addEventListener('change', (e) => {
     if (!e.target.classList.contains('size-select')) return;
     const card = e.target.closest('.product-card');
     const note = card.querySelector('[data-stock-note]');
@@ -678,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ['invoiceRfc', 'invoiceName', 'invoiceEmail'].forEach((id) => document.getElementById(id)?.addEventListener('input', saveInvoiceDraft));
   document.getElementById('cartInvoice')?.addEventListener('toggle', saveInvoiceDraft);
 
-  document.getElementById('cartItems').addEventListener('click', (e) => {
+  document.getElementById('cartItems')?.addEventListener('click', (e) => {
     const itemEl = e.target.closest('.cart-item');
     if (!itemEl) return;
     const { id, size } = itemEl.dataset;
@@ -692,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (action === 'remove') updateQuantity(id, size, 0);
   });
 
-  document.getElementById('checkoutWhatsapp').addEventListener('click', () => {
+  document.getElementById('checkoutWhatsapp')?.addEventListener('click', () => {
     if (getCart().length === 0) {
       document.getElementById('cartMessage').textContent = 'Agrega productos antes de pedir.';
       return;
@@ -700,5 +565,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.open(buildWhatsappMessage(), '_blank');
   });
 
-  document.getElementById('checkoutStripe').addEventListener('click', startStripeCheckout);
+  document.getElementById('checkoutStripe')?.addEventListener('click', startStripeCheckout);
 });
