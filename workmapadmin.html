@@ -141,6 +141,10 @@
           <div id="dChart" class="admin-chart-wrap"></div>
         </div>
         <div class="admin-alerts admin-alerts--wide" id="dInsights"></div>
+        <div class="admin-dashboard-grid">
+          <div class="admin-panel-box"><h3>Embudo de la tienda · 30 días</h3><p class="admin-help">Medición propia, sin datos personales. Sesiones = visitas únicas por día.</p><ul class="admin-rank" id="dFunnel"></ul></div>
+          <div class="admin-panel-box"><h3>Embudo empresas · 30 días</h3><p class="admin-help">Desde la página /empresas hasta cotización ganada.</p><ul class="admin-rank" id="dFunnelB2b"></ul></div>
+        </div>
         <div class="admin-dashboard-grid admin-dashboard-grid--3">
           <div class="admin-panel-box"><h3>Modelos más vendidos</h3><ul class="admin-rank" id="dTopProducts"></ul></div>
           <div class="admin-panel-box"><h3>Tallas más vendidas</h3><ul class="admin-rank" id="dTopSizes"></ul></div>
@@ -600,6 +604,10 @@
           <label for="settingNotifyEmail">Correo para avisos de pedidos y stock bajo</label>
           <input type="email" id="settingNotifyEmail" name="notifyEmail" placeholder="tucorreo@ejemplo.com">
           <p class="admin-help">Requiere la llave RESEND_API_KEY en Railway. <button type="button" id="testEmailBtn" class="admin-inline-btn">Enviar correo de prueba</button> <span id="testEmailStatus"></span></p>
+
+          <label for="settingGa4">Google Analytics 4 (ID de medición, opcional)</label>
+          <input type="text" id="settingGa4" placeholder="G-XXXXXXXXXX">
+          <p class="admin-help">Solo se carga cuando el visitante acepta todas las cookies. La medición propia del embudo funciona sin esto.</p>
 
           <label for="settingLowStock">Avisar cuando una talla tenga estas piezas o menos</label>
           <input type="number" id="settingLowStock" name="lowStockThreshold" min="0" step="1" placeholder="5">

@@ -55,6 +55,7 @@
       if (!btn) return;
       write(btn.dataset.choice);
       apply(btn.dataset.choice);
+      window.dispatchEvent(new Event('wj-cookies-changed'));
       close();
     });
     const onKey = (e) => { if (e.key === 'Escape') { write('essential'); apply('essential'); close(); } };

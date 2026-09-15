@@ -40,7 +40,6 @@
     addToCart(product.id, product.name, variantPrice(id, label) || product.priceCents, label, qty);
     status.textContent = openDrawer ? '' : 'Agregado al carrito.';
     if (openDrawer && typeof openCart === 'function') openCart();
-    window.wjTrack?.('add_to_cart', { item: id, size: label, qty });
   }
 
   // Tallas en botones

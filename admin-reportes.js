@@ -176,6 +176,34 @@
     document.getElementById('dLowStock').innerHTML = low.length ? low.slice(0, 8).map((h) => `<li>${h}</li>`).join('') + (low.length > 8 ? `<li class="admin-muted">y ${low.length - 8} más…</li>` : '') : '<li class="admin-muted">Ninguna variante en stock bajo.</li>';
     document.getElementById('dOutStock').innerHTML = out.length ? out.slice(0, 8).map((h) => `<li>${h}</li>`).join('') + (out.length > 8 ? `<li class="admin-muted">y ${out.length - 8} más…</li>` : '') : '<li class="admin-muted">Nada agotado.</li>';
     renderInsights(document.getElementById('dInsights'), { limit: 3 });
+    renderFunnel();
+  }
+
+  async function renderFunnel() {
+    const el = document.getElementById('dFunnel');
+    const b2b = document.getElementById('dFunnelB2b');
+    if (!el) return;
+    let a;
+    try {
+      const res = await fetch('/api/admin/analytics?days=30');
+      if (!res.ok) return;
+      a = await res.json();
+    } catch { return; }
+    const ev = a.events || {};
+    const pct = (n, d) => (d ? `${((n / d) * 100).toFixed(1)}%` : '—');
+    const rows = [
+      ['Sesiones', a.sessions],
+      ['Vistas de producto', ev.product_view || 0],
+      ['Agregados al carrito', ev.add_to_cart || 0],
+      ['Checkout iniciado', ev.begin_checkout || 0],
+      ['Compras con tarjeta', ev.purchase || 0],
+      ['Conversión (compras / sesiones)', pct(ev.purchase || 0, a.sessions)],
+      ['Clics a WhatsApp', ev.whatsapp_click || 0],
+      ['Fichas técnicas abiertas', ev.technical_sheet_downloaded || 0],
+    ];
+    el.innerHTML = rows.map(([k, v]) => `<li class="admin-rank-row"><span class="admin-rank-name">${k}</span><span class="admin-rank-value">${v}</span></li>`).join('');
+    const f = a.b2b || {};
+    b2b.innerHTML = [['Visitas a /empresas', f.visits || 0], ['Cotizaciones iniciadas', f.started || 0], ['Cotizaciones enviadas', f.submitted || 0], ['Contactadas', f.contacted || 0], ['Ganadas', f.won || 0], ['Perdidas', f.lost || 0], ['Tasa enviada → ganada', pct(f.won || 0, f.submitted || 0)]].map(([k, v]) => `<li class="admin-rank-row"><span class="admin-rank-name">${k}</span><span class="admin-rank-value">${v}</span></li>`).join('');
   }
 
   const baseRenderDashboard = window.renderDashboard;

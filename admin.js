@@ -1717,6 +1717,7 @@ async function loadSettingsForm() {
   document.getElementById('settingReviewCount').value = settings.googleReviewCount || '';
   document.getElementById('settingNotifyEmail').value = settings.notifyEmail || '';
   document.getElementById('settingLowStock').value = settings.lowStockThreshold ?? 5;
+  document.getElementById('settingGa4').value = settings.ga4Id || '';
   const ship = settings.shipping || {};
   document.getElementById('settingFreeFrom').value = ship.freeFromCents ? (ship.freeFromCents / 100).toFixed(0) : '';
   document.getElementById('settingQuoteFromQty').value = ship.quoteFromQty || '';
@@ -1790,6 +1791,7 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     notifyEmail: document.getElementById('settingNotifyEmail').value.trim(),
     lowStockThreshold: Math.max(0, parseInt(document.getElementById('settingLowStock').value, 10) || 0),
     shipping: collectShipping(),
+    ga4Id: document.getElementById('settingGa4').value.trim().toUpperCase(),
   };
 
   const res = await fetch('/api/admin/settings', {

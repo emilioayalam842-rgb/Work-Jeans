@@ -138,6 +138,7 @@ function addToCart(id, name, priceCents, size, quantity = 1) {
   }
   saveCart(cart);
   openCart();
+  window.wjTrack?.('add_to_cart', { item: id, size });
 }
 
 function updateQuantity(id, size, quantity) {

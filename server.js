@@ -29,6 +29,7 @@ const PURCHASES_PATH = path.join(DATA_DIR, 'purchases.json');
 const RETURNS_PATH = path.join(DATA_DIR, 'returns.json');
 const PROMOTIONS_PATH = path.join(DATA_DIR, 'promotions.json');
 const LEADS_PATH = path.join(DATA_DIR, 'leads.json');
+const ANALYTICS_PATH = path.join(DATA_DIR, 'analytics.json');
 
 // Primer arranque con DATA_DIR externo: copiar los datos iniciales del proyecto.
 if (USES_EXTERNAL_DATA) {
@@ -1080,6 +1081,7 @@ app.get('/producto/:id/ficha', (req, res) => {
   const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
   const settings = getSettings();
   const images = productImages(product);
+  trackEvent('technical_sheet_downloaded', { item: product.id });
   const specRows = productSpecRows(product);
   const colors = [...new Set(product.sizes.map((v) => v.color).filter(Boolean))];
   const template = fs.readFileSync(path.join(__dirname, 'ficha.html'), 'utf-8');
@@ -2408,9 +2410,11 @@ async function notifyNewOrder(order) {
 
 // Crea (si no existe) el pedido a partir de una sesión de Stripe pagada. Devuelve el pedido.
 function recordStripeOrder(session) {
+  const before = getOrders().some((o) => o.stripeSessionId === session.id);
   const orders = getOrders();
   let order = orders.find((o) => o.stripeSessionId === session.id);
-  if (order) return order;
+  if (order) if (!before && order && order.totalCents) trackEvent('purchase', { cents: order.totalCents });
+  return order;
 
   let cartMeta = [];
   try {
@@ -2664,6 +2668,72 @@ app.post('/api/create-checkout-session', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// --- Medición propia (sin datos personales): contadores por día y evento ---
+const TRACK_EVENTS = new Set(['page_view', 'product_view', 'size_selected', 'add_to_cart', 'begin_checkout', 'shipping_calculated', 'whatsapp_click', 'b2b_quote_started', 'b2b_quote_submitted', 'technical_sheet_downloaded', 'purchase']);
+const seenSessions = new Map(); // día -> Set de sesiones (para contar visitas únicas del día)
+function readAnalytics() {
+  try { return JSON.parse(fs.readFileSync(ANALYTICS_PATH, 'utf-8')); } catch { return {}; }
+}
+let analyticsBuffer = null;
+let analyticsTimer = null;
+function trackEvent(event, { sid, path, item, cents } = {}) {
+  if (!TRACK_EVENTS.has(event)) return;
+  if (!analyticsBuffer) analyticsBuffer = readAnalytics();
+  const day = new Date().toISOString().slice(0, 10);
+  const d = analyticsBuffer[day] = analyticsBuffer[day] || { events: {}, items: {}, paths: {}, sessions: 0, revenueCents: 0 };
+  d.events[event] = (d.events[event] || 0) + 1;
+  if (item && ['product_view', 'add_to_cart'].includes(event)) {
+    d.items[event] = d.items[event] || {};
+    d.items[event][item] = (d.items[event][item] || 0) + 1;
+  }
+  if (event === 'page_view' && path) d.paths[path] = (d.paths[path] || 0) + 1;
+  if (event === 'purchase' && cents) d.revenueCents += cents;
+  if (sid && event === 'page_view') {
+    if (!seenSessions.has(day)) seenSessions.set(day, new Set());
+    const set = seenSessions.get(day);
+    if (!set.has(sid) && set.size < 50000) { set.add(sid); d.sessions += 1; }
+    for (const k of seenSessions.keys()) if (k !== day) seenSessions.delete(k);
+  }
+  // Se guarda en disco como mucho una vez por segundo.
+  clearTimeout(analyticsTimer);
+  analyticsTimer = setTimeout(() => {
+    try {
+      const keys = Object.keys(analyticsBuffer).sort();
+      for (const k of keys.slice(0, Math.max(0, keys.length - 400))) delete analyticsBuffer[k];
+      fs.writeFileSync(ANALYTICS_PATH, JSON.stringify(analyticsBuffer));
+    } catch { /* sin disco */ }
+  }, 1000);
+}
+
+app.post('/api/track', express.text({ type: '*/*', limit: '2kb' }), (req, res) => {
+  try {
+    const b = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const event = String(b.event || '');
+    if (event === 'purchase' || !TRACK_EVENTS.has(event)) { res.status(204).end(); return; }
+    trackEvent(event, { sid: String(b.sid || '').slice(0, 20), path: String(b.path || '').slice(0, 80), item: String(b.props?.item || '').slice(0, 80) });
+  } catch { /* cuerpo inválido: se ignora */ }
+  res.status(204).end();
+});
+
+app.get('/api/admin/analytics', requireAdmin, perm('reportes.ver'), (req, res) => {
+  const days = Math.min(365, Math.max(1, parseInt(req.query.days, 10) || 30));
+  const data = analyticsBuffer || readAnalytics();
+  const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  const totals = { days, sessions: 0, revenueCents: 0, events: {}, items: { product_view: {}, add_to_cart: {} }, paths: {}, byDay: [] };
+  for (const [day, d] of Object.entries(data).sort()) {
+    if (day < since) continue;
+    totals.sessions += d.sessions || 0;
+    totals.revenueCents += d.revenueCents || 0;
+    for (const [e, n] of Object.entries(d.events || {})) totals.events[e] = (totals.events[e] || 0) + n;
+    for (const e of ['product_view', 'add_to_cart']) for (const [id, n] of Object.entries(d.items?.[e] || {})) totals.items[e][id] = (totals.items[e][id] || 0) + n;
+    for (const [p, n] of Object.entries(d.paths || {})) totals.paths[p] = (totals.paths[p] || 0) + n;
+    totals.byDay.push({ day, sessions: d.sessions || 0, purchases: d.events?.purchase || 0 });
+  }
+  const leads = getLeads().filter((l) => l.createdAt.slice(0, 10) >= since);
+  totals.b2b = { visits: totals.paths['/empresas'] || 0, started: totals.events.b2b_quote_started || 0, submitted: leads.length, contacted: leads.filter((l) => l.status !== 'nuevo').length, won: leads.filter((l) => l.status === 'ganado').length, lost: leads.filter((l) => l.status === 'perdido').length };
+  res.json(totals);
 });
 
 // --- Cotizaciones de empresas (leads): quedan guardadas y avisan por correo ---
