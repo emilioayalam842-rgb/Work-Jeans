@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/">
+  <title>{{TITLE}}</title>
+  <meta name="description" content="{{DESCRIPTION}}">
+  <link rel="canonical" href="{{CANONICAL}}">
+  <meta property="og:type" content="{{OG_TYPE}}">
+  <meta property="og:locale" content="es_MX">
+  <meta property="og:site_name" content="Works Jeans">
+  <meta property="og:title" content="{{TITLE}}">
+  <meta property="og:description" content="{{DESCRIPTION}}">
+  <meta property="og:url" content="{{CANONICAL}}">
+  <meta property="og:image" content="{{IMAGE}}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ffd600">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">{{JSONLD}}</script>
+</head>
+<body>
+  <div class="hazard" aria-hidden="true"></div>
+  <header class="header">
+    <nav class="navbar" aria-label="Principal">
+      <a href="/" class="logo" aria-label="Works Jeans, inicio">
+        <img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="logo-img" width="98" height="46">
+      </a>
+      <div class="nav-right">
+        <ul class="nav-links nav-links--static">
+          <li><a href="/pantalones-de-trabajo">Pantalones</a></li>
+          <li><a href="/camisas-de-trabajo">Camisas</a></li>
+          <li><a href="/mayoreo-ropa-de-trabajo">Mayoreo</a></li>
+          <li><a href="/guia-de-tallas">Tallas</a></li>
+          <li><a href="/articulos">Artículos</a></li>
+        </ul>
+        <a class="btn btn-primary nav-cta" href="/#productos">Ver catálogo</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="category content-page">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Ruta">{{BREADCRUMBS}}</nav>
+      <div class="section-head">
+        <div>
+          <span class="kicker">{{KICKER}}</span>
+          <h1>{{H1_HTML}}</h1>
+        </div>
+        <p>{{INTRO}}</p>
+      </div>
+      <article class="content-body">
+        {{BODY}}
+      </article>
+      {{PRODUCTS_BLOCK}}
+      <section class="content-related">
+        <h2>También te puede interesar</h2>
+        <ul>{{RELATED}}</ul>
+      </section>
+      <div class="category-cta">
+        <a class="btn btn-primary" href="/#cotizador">Cotizar mayoreo</a>
+        <a class="btn btn-secondary" href="https://wa.me/528128613551?text=Hola%2C%20me%20interesa%20la%20ropa%20de%20trabajo%20de%20Works%20Jeans." target="_blank" rel="noopener">Escribir por WhatsApp</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer footer--simple">
+    <ul class="footer-links">
+      <li><a href="/">Inicio</a></li>
+      <li><a href="/pantalones-de-trabajo">Pantalones de trabajo</a></li>
+      <li><a href="/camisas-de-trabajo">Camisas de trabajo</a></li>
+      <li><a href="/ropa-de-trabajo-reflejante">Ropa reflejante</a></li>
+      <li><a href="/guia-de-tallas">Guía de tallas</a></li>
+      <li><a href="/articulos">Artículos</a></li>
+      <li><a href="aviso-de-privacidad.html">Aviso de privacidad</a></li>
+    </ul>
+    <p class="footer-copy">Monterrey · México · &copy; 2026 Works Jeans</p>
+  </footer>
+</body>
+</html>

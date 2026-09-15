@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const Stripe = require('stripe');
 const compression = require('compression');
 const sharp = require('sharp');
+const CONTENT = require('./contenido');
 
 // DATA_DIR: carpeta donde viven los datos que cambian desde el panel (productos, pedidos,
 // ajustes, contraseña, fotos subidas). En hosting se apunta a un volumen persistente
@@ -550,6 +551,105 @@ app.get('/:slug(pantalones-de-trabajo|camisas-de-trabajo)', (req, res) => {
   res.send(html);
 });
 
+// --- Landings y artículos de contenido (contenido.js) ---
+
+const ALL_PAGES = () => ({ ...CONTENT.LANDINGS, ...CONTENT.ARTICLES });
+
+function relatedLinks(currentSlug) {
+  const items = [
+    ['/pantalones-de-trabajo', 'Pantalones de trabajo'],
+    ['/camisas-de-trabajo', 'Camisas de trabajo'],
+    ...Object.entries(CONTENT.LANDINGS).map(([slug, p]) => [`/${slug}`, p.h1]),
+    ...Object.entries(CONTENT.ARTICLES).map(([slug, p]) => [`/articulos/${slug}`, p.h1]),
+  ];
+  return items.filter(([href]) => !href.endsWith(`/${currentSlug}`)).slice(0, 8).map(([href, label]) => `<li><a href="${href}">${escapeHtml(label)}</a></li>`).join('');
+}
+
+function renderContentPage(req, res, slug, page, { isArticle }) {
+  const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
+  const canonical = isArticle ? `${origin}/articulos/${slug}` : `${origin}/${slug}`;
+  const products = page.products ? publicProducts().filter(page.products) : [];
+  const image = products[0] ? `${origin}/${products[0].image}` : `${origin}/assets/img/og-works-jeans.jpg`;
+  const crumbs = [{ name: 'Inicio', item: `${origin}/` }];
+  if (isArticle) crumbs.push({ name: 'Artículos', item: `${origin}/articulos` });
+  crumbs.push({ name: page.h1, item: canonical });
+  const graph = [
+    {
+      '@type': isArticle ? 'Article' : 'WebPage',
+      '@id': `${canonical}#pagina`,
+      headline: page.h1,
+      name: page.h1,
+      description: page.description,
+      url: canonical,
+      inLanguage: 'es-MX',
+      isPartOf: { '@id': `${origin}/#sitio` },
+      ...(isArticle ? { datePublished: CONTENT.PUBLISHED, dateModified: CONTENT.PUBLISHED, author: { '@id': `${origin}/#negocio` }, publisher: { '@id': `${origin}/#negocio` }, image } : {}),
+    },
+    { '@type': 'BreadcrumbList', itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })) },
+  ];
+  if (page.faq) {
+    graph.push({ '@type': 'FAQPage', mainEntity: page.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) });
+  }
+  let body = page.body
+    .replace('{{TABLA_CAMISAS}}', CONTENT.tableHtml(CONTENT.SIZE_TABLES.camisas))
+    .replace('{{TABLA_PANTALON}}', CONTENT.tableHtml(CONTENT.SIZE_TABLES.pantalon));
+  if (page.faq) {
+    body += `<h2>Preguntas frecuentes</h2>${page.faq.map(([q, a]) => `<details class="faq-item"><summary>${escapeHtml(q)}</summary><p>${escapeHtml(a)}</p></details>`).join('')}`;
+  }
+  let html = fs.readFileSync(path.join(__dirname, 'pagina.html'), 'utf-8');
+  const fill = {
+    TITLE: escapeHtml(page.title),
+    DESCRIPTION: escapeHtml(page.description),
+    CANONICAL: canonical,
+    OG_TYPE: isArticle ? 'article' : 'website',
+    IMAGE: image,
+    JSONLD: JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }),
+    BREADCRUMBS: crumbs.map((c, i) => (i < crumbs.length - 1 ? `<a href="${c.item}">${escapeHtml(c.name)}</a> <span>/</span> ` : `<span aria-current="page">${escapeHtml(c.name)}</span>`)).join(''),
+    KICKER: escapeHtml(page.kicker),
+    H1_HTML: page.h1Html,
+    INTRO: escapeHtml(page.intro),
+    BODY: body,
+    PRODUCTS_BLOCK: products.length ? `<section class="content-products"><h2>Productos relacionados</h2><div class="products-grid products-grid--static">${products.map((p) => productCardStatic(p, origin)).join('')}</div></section>` : '',
+    RELATED: relatedLinks(slug),
+  };
+  for (const [key, value] of Object.entries(fill)) html = html.split(`{{${key}}}`).join(value);
+  res.set('Cache-Control', 'no-cache');
+  res.send(html);
+}
+
+app.get('/articulos', (req, res) => {
+  const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
+  const list = Object.entries(CONTENT.ARTICLES).map(([slug, a]) => `
+    <a class="article-card" href="/articulos/${slug}">
+      <span class="kicker">${escapeHtml(a.kicker)} · ${CONTENT.PUBLISHED}</span>
+      <h2>${escapeHtml(a.h1)}</h2>
+      <p>${escapeHtml(a.description)}</p>
+      <span class="article-more">Leer artículo</span>
+    </a>`).join('');
+  renderContentPage(req, res, 'articulos', {
+    kicker: 'Artículos',
+    h1: 'Artículos sobre ropa de trabajo',
+    h1Html: 'Artículos.',
+    title: 'Artículos sobre Ropa de Trabajo, Uniformes y Seguridad | Works Jeans',
+    description: 'Guías prácticas sobre pantalones de trabajo, work jeans, tallas de uniforme y normas de seguridad en México, escritas por Works Jeans, fabricante en Monterrey.',
+    intro: 'Guías cortas y prácticas para quien compra o usa ropa de trabajo.',
+    products: null,
+    body: `<div class="article-list">${list}</div>`,
+  }, { isArticle: false });
+});
+
+app.get('/articulos/:slug', (req, res, next) => {
+  const page = CONTENT.ARTICLES[req.params.slug];
+  if (!page) return next();
+  renderContentPage(req, res, req.params.slug, page, { isArticle: true });
+});
+
+app.get('/:slug', (req, res, next) => {
+  const page = CONTENT.LANDINGS[req.params.slug];
+  if (!page) return next();
+  renderContentPage(req, res, req.params.slug, page, { isArticle: false });
+});
+
 app.get('/sitemap.xml', (req, res) => {
   const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
   const today = new Date().toISOString().slice(0, 10);
@@ -557,6 +657,9 @@ app.get('/sitemap.xml', (req, res) => {
     { loc: `${origin}/`, priority: '1.0' },
     { loc: `${origin}/pantalones-de-trabajo`, priority: '0.9' },
     { loc: `${origin}/camisas-de-trabajo`, priority: '0.9' },
+    ...Object.keys(CONTENT.LANDINGS).map((slug) => ({ loc: `${origin}/${slug}`, priority: '0.8' })),
+    { loc: `${origin}/articulos`, priority: '0.6' },
+    ...Object.keys(CONTENT.ARTICLES).map((slug) => ({ loc: `${origin}/articulos/${slug}`, priority: '0.7' })),
     ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8' })),
     { loc: `${origin}/aviso-de-privacidad.html`, priority: '0.3' },
     { loc: `${origin}/envios-y-devoluciones.html`, priority: '0.3' },
