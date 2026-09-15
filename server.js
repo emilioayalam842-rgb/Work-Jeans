@@ -82,7 +82,7 @@ const PRODUCT_TEXT_MIGRATION = {
     ],
     "new": [
       "Camisa de Trabajo Reflejante Verde",
-      "Camisa de trabajo de mezclilla con cintas reflejantes verde de alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad."
+      "Camisa de trabajo de mezclilla con cintas reflejantes verde en pecho y mangas. Para entornos de poca luz y para que te vean."
     ]
   },
   "camisa-reflejante-naranja": {
@@ -92,7 +92,7 @@ const PRODUCT_TEXT_MIGRATION = {
     ],
     "new": [
       "Camisa de Trabajo Reflejante Naranja",
-      "Camisa de trabajo de mezclilla con cintas reflejantes naranja de alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad."
+      "Camisa de trabajo de mezclilla con cintas reflejantes naranja en pecho y mangas. Para entornos de poca luz y para que te vean."
     ]
   },
   "pantalon-mezclilla": {
@@ -112,7 +112,7 @@ const PRODUCT_TEXT_MIGRATION = {
     ],
     "new": [
       "Pantalón de Trabajo Reflejante Verde",
-      "Pantalón de trabajo de mezclilla con cintas reflejantes verde de alta visibilidad en piernas. Para vialidades, plantas y turnos con poca luz."
+      "Pantalón de trabajo de mezclilla con cintas reflejantes verde en piernas. Para vialidades, plantas y turnos con poca luz."
     ]
   },
   "pantalon-reflejante-naranja": {
@@ -122,7 +122,7 @@ const PRODUCT_TEXT_MIGRATION = {
     ],
     "new": [
       "Pantalón de Trabajo Reflejante Naranja",
-      "Pantalón de trabajo de mezclilla con cintas reflejantes naranja de alta visibilidad en piernas. Para vialidades, plantas y turnos con poca luz."
+      "Pantalón de trabajo de mezclilla con cintas reflejantes naranja en piernas. Para vialidades, plantas y turnos con poca luz."
     ]
   }
 };
@@ -138,6 +138,19 @@ try {
   if (changed) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
 } catch {
   // Sin productos aún; no pasa nada.
+}
+
+// Descripciones: "de alta visibilidad" sugiere certificación que no existe; se deja "reflejante".
+try {
+  const products = JSON.parse(fs.readFileSync(PRODUCTS_PATH, 'utf-8'));
+  let changed = false;
+  for (const p of products) {
+    const fixed = String(p.description || '').replace(/ de alta visibilidad/gi, '').replace(/ alta visibilidad/gi, '').replace(/y alta seguridad\./g, 'y para que te vean.');
+    if (fixed !== p.description) { p.description = fixed; changed = true; }
+  }
+  if (changed) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
+} catch {
+  // Sin productos aún.
 }
 
 // Variantes sin SKU (datos anteriores al catálogo con variantes): se les asigna uno automático.
@@ -1104,7 +1117,7 @@ const CATEGORY_PAGES = {
     intro: 'Work jeans hechos en Monterrey para obra, planta y taller: mezclilla pesada 100% algodón, cinco bolsas, costuras reforzadas y cintura ajustada. Tallas de la 28 a la 50.',
     faq: [
       ['¿Qué talla de pantalón de trabajo debo pedir?', 'La misma que usas en un jean normal. Si dudas entre dos, elige la mayor: la mezclilla no encoge y en el trabajo se agradece el espacio. Consulta la guía de tallas para medir un pantalón que te quede bien.'],
-      ['¿Aguanta el lavado diario?', 'Sí. Es mezclilla 100% algodón preencogida con costuras dobles. Lava al revés, sin cloro, y dura cientos de lavadas.'],
+      ['¿Aguanta el lavado diario?', 'Sí. Es mezclilla 100% algodón preencogida con costuras dobles. Lava al revés, con agua fría y sin cloro, para que conserve color y costuras por más tiempo.'],
       ['¿Hacen pantalones de trabajo con logotipo?', 'Sí, bordado o estampado DTF para pedidos de mayoreo. Cotízalo desde el cotizador o por WhatsApp.'],
       ['¿Envían a todo México?', 'Sí, por paquetería con número de guía. En Monterrey también puedes recoger en tienda.'],
     ],
@@ -1112,7 +1125,7 @@ const CATEGORY_PAGES = {
       <h2>Pantalones de mezclilla para trabajar, no para lucir</h2>
       <p>Un pantalón de trabajo tiene que aguantar jornadas completas de agacharse, cargar, arrodillarse y rozar contra superficies ásperas. Por eso nuestros work jeans se fabrican con mezclilla 100% algodón de mayor peso, costuras dobles reforzadas en tiro, entrepierna y bolsas, y acabado preencogido para que la talla que compras sea la talla que se queda después de lavarlos.</p>
       <h2>Pantalones de trabajo con reflejante</h2>
-      <p>Para vialidades, plantas industriales y turnos de noche ofrecemos el mismo pantalón con cintas reflejantes en verde o naranja de alta visibilidad, cosidas en las piernas. Cumplen la función de la ropa de seguridad sin perder la comodidad y resistencia de la mezclilla.</p>
+      <p>Para vialidades, plantas industriales y turnos de noche ofrecemos el mismo pantalón con cintas reflejantes en verde o naranja cosidas en las piernas, para que te vean con poca luz. No son prendas certificadas de alta visibilidad (ANSI/ISEA 107 o ISO 20471); si tu planta exige certificación, consúltanos antes. Conservan la comodidad y resistencia de la mezclilla.</p>
       <h2>Pantalones de trabajo por industria</h2>
       <ul>
         <li><strong>Construcción y obra:</strong> mezclilla pesada que aguanta concreto, varilla y arrodillarse; versión reflejante para trabajo junto a maquinaria.</li>
@@ -1142,13 +1155,13 @@ const CATEGORY_PAGES = {
     h1: 'Camisas de trabajo',
     h1Html: 'Camisas<br>de trabajo.',
     title: 'Camisas de Trabajo de Mezclilla con Reflejante | Works Jeans Monterrey',
-    description: 'Camisas de trabajo de mezclilla 100% algodón con botones reforzados y opción de cintas reflejantes de alta visibilidad. Tallas XCH a 5XG. Mayoreo con stock inmediato en Monterrey y envíos a todo México.',
+    description: 'Camisas de trabajo de mezclilla 100% algodón con botones reforzados y opción de cintas reflejantes. Tallas XCH a 5XG. Mayoreo con stock inmediato en Monterrey y envíos a todo México.',
     intro: 'Camisas de mezclilla para uso industrial: algodón 100%, bolsillo frontal, botones reforzados y acabado preencogido. De la XCH a la 5XG, con o sin reflejante.',
     seoText: `
       <h2>Camisas de mezclilla para uso industrial</h2>
       <p>La camisa de trabajo de mezclilla protege más que una playera y respira mejor que una tela sintética. Las nuestras llevan botones reforzados que no se desprenden, bolsillo frontal útil y un corte que permite mover los brazos con libertad. Van del XCH al 5XG para que toda tu cuadrilla uniforme igual.</p>
       <h2>Camisas con cintas reflejantes</h2>
-      <p>Las versiones de alta visibilidad tienen cintas reflejantes en pecho y mangas, en verde o naranja, para entornos de poca luz. Combinan con nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a> reflejantes para un uniforme completo.</p>
+      <p>Las versiones reflejantes tienen cintas cosidas en pecho y mangas, en verde o naranja, para entornos de poca luz. Combinan con nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a> reflejantes para un uniforme completo.</p>
       <h2>Personalización con tu logotipo</h2>
       <p>Bordamos o estampamos en DTF el logotipo de tu empresa. Pide tu cotización de mayoreo con corrida de tallas en el <a href="/#cotizador">cotizador</a> o escríbenos por WhatsApp desde Monterrey; enviamos a todo México.</p>
     `,

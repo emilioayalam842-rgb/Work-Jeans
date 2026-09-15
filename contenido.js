@@ -6,26 +6,30 @@ const PUBLISHED = '2026-09-15';
 
 const LANDINGS = {
   'ropa-de-trabajo-reflejante': {
-    kicker: 'Alta visibilidad',
+    kicker: 'Reflejante',
     h1: 'Ropa de trabajo reflejante',
     h1Html: 'Ropa de trabajo<br>reflejante.',
-    title: 'Ropa de Trabajo Reflejante: Pantalones y Camisas de Alta Visibilidad | Works Jeans',
+    title: 'Ropa de Trabajo Reflejante: Pantalones y Camisas con Cinta Reflejante | Works Jeans',
     description: 'Pantalones y camisas de mezclilla con cintas reflejantes verde o naranja para vialidades, plantas y turnos de noche. Tallas completas, mayoreo con stock en Monterrey y envíos a todo México.',
     intro: 'Mezclilla resistente con cintas reflejantes cosidas en pecho, mangas y piernas. Para que tu equipo se vea de lejos sin cambiar la ropa que ya aguanta el trabajo.',
     products: (p) => /reflejante/.test(p.id),
     body: `
-      <h2>Qué es la ropa de alta visibilidad y cuándo se necesita</h2>
-      <p>La ropa reflejante lleva cintas retrorreflectantes que devuelven la luz de faros y lámparas hacia su origen. Así, una persona que trabaja de noche, en vialidades, patios de maniobras, plantas con montacargas o zonas con poca luz se distingue a decenas de metros. En México, la NOM-017-STPS-2008 obliga a los centros de trabajo a dotar equipo de protección personal según el riesgo; en muchos giros la prenda de alta visibilidad forma parte de ese equipo.</p>
+      <h2>Qué es la ropa reflejante y cuándo ayuda</h2>
+      <p>La ropa reflejante lleva cintas retrorreflectantes que devuelven la luz de faros y lámparas hacia su origen. Así, una persona que trabaja de noche, en vialidades, patios de maniobras, plantas con montacargas o zonas con poca luz se distingue a decenas de metros. En México, la NOM-017-STPS-2024 (publicada en el DOF el 28 de marzo de 2025 y vigente desde el 28 de septiembre de 2025, en sustitución de la NOM-017-STPS-2008) obliga al patrón a seleccionar y entregar el equipo de protección personal según los riesgos de cada puesto; en muchos giros la ropa con reflejante forma parte de ese equipo.</p>
+      <p><strong>Importante:</strong> nuestras prendas llevan cinta reflejante cosida sobre mezclilla. No son prendas certificadas de alta visibilidad bajo ANSI/ISEA 107 ni ISO 20471. Si el reglamento de tu centro de trabajo exige una prenda certificada, consúltanos antes de comprar.</p>
       <h2>Reflejante sobre mezclilla, no sobre tela delgada</h2>
-      <p>Muchos chalecos y camisas de alta visibilidad son de malla o poliéster ligero que se rompe en semanas. Nosotros cosemos las cintas reflejantes sobre mezclilla 100% algodón: la misma tela y las mismas costuras reforzadas de nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a> y <a href="/camisas-de-trabajo">camisas de trabajo</a>. La prenda protege, dura y se lava como cualquier jean.</p>
+      <p>Muchos chalecos y camisas reflejantes son de malla o poliéster ligero que se rompe en semanas. Nosotros cosemos las cintas reflejantes sobre mezclilla 100% algodón: la misma tela y las mismas costuras reforzadas de nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a> y <a href="/camisas-de-trabajo">camisas de trabajo</a>. La prenda se lava y aguanta como cualquier jean.</p>
+      <h2>Dónde va la cinta</h2>
+      <p>Camisa: una cinta horizontal en pecho y espalda y una en cada manga. Pantalón: dos cintas horizontales en cada pierna, a la altura de la rodilla y la pantorrilla. El ancho de la cinta y su material se indican en la ficha técnica de cada producto cuando están confirmados.</p>
       <h2>Verde o naranja</h2>
       <p>Ofrecemos cintas en verde lima y naranja. El verde destaca más de día y en fondos oscuros; el naranja se usa mucho en construcción y vialidades. Si tu empresa ya tiene un color definido por su reglamento interno, respétalo; si no, elige el que contraste mejor con el entorno donde trabaja tu gente.</p>
       <h2>Uniformes reflejantes para empresas</h2>
-      <p>Surtimos corridas completas de tallas (28 a 50 en pantalón, XCH a 5XG en camisa) con stock inmediato desde Monterrey, y podemos bordar el logotipo de tu empresa. Arma tu pedido en el <a href="/#cotizador">cotizador de mayoreo</a> o escríbenos por WhatsApp.</p>
+      <p>Surtimos corridas completas de tallas (28 a 50 en pantalón, XCH a 5XG en camisa) con stock inmediato desde Monterrey, y podemos bordar el logotipo de tu empresa. Arma tu pedido en la <a href="/empresas">página para empresas</a> o escríbenos por WhatsApp.</p>
     `,
     faq: [
-      ['¿Las cintas reflejantes aguantan el lavado?', 'Sí. Son cintas cosidas, no pegadas, diseñadas para lavado doméstico frecuente. Recomendamos lavar al revés y no usar cloro para conservar el brillo.'],
-      ['¿Puedo combinar camisa y pantalón reflejantes?', 'Sí. Camisa y pantalón reflejantes forman un uniforme completo de alta visibilidad, con cintas en pecho, mangas y piernas.'],
+      ['¿Las cintas reflejantes aguantan el lavado?', 'Son cintas cosidas, no pegadas. Recomendamos lavar al revés, con agua fría y sin cloro para conservar el brillo por más tiempo.'],
+      ['¿Estas prendas están certificadas como alta visibilidad?', 'No. Llevan cinta reflejante cosida, pero no cuentan con certificación ANSI/ISEA 107 ni ISO 20471. Si tu empresa exige prenda certificada, consúltanos antes de comprar.'],
+      ['¿Puedo combinar camisa y pantalón reflejantes?', 'Sí. Camisa y pantalón reflejantes forman un uniforme completo con cintas en pecho, mangas y piernas.'],
     ],
   },
   'uniformes-industriales-monterrey': {
@@ -94,7 +98,7 @@ const LANDINGS = {
       <h2>Con o sin reflejante</h2>
       <p>El mismo pantalón está disponible con cintas reflejantes en las piernas para trabajos de noche o en vialidades. Mira la página de <a href="/ropa-de-trabajo-reflejante">ropa de trabajo reflejante</a>.</p>
       <h2>Cuidado</h2>
-      <p>Lava al revés con agua fría, sin cloro, y seca a la sombra. La mezclilla aguanta cientos de lavadas; el color se asienta con el uso y las costuras no se abren.</p>
+      <p>Lava al revés con agua fría, sin cloro, y seca a la sombra. Con esos cuidados la mezclilla conserva el color y las costuras por más tiempo.</p>
     `,
     faq: [
       ['¿El pantalón encoge al lavarlo?', 'No de forma apreciable: la mezclilla viene preencogida. La tolerancia de medidas es de una pulgada.'],
@@ -164,14 +168,15 @@ const ARTICLES = {
     h1: 'Ropa de trabajo y normas de seguridad en México: lo que debes saber',
     h1Html: 'Ropa de trabajo<br>y normas de<br>seguridad.',
     title: 'Ropa de Trabajo y Normas de Seguridad en México (NOM-017-STPS) | Works Jeans',
-    description: 'Qué exige la NOM-017-STPS-2008 sobre equipo de protección personal, cuándo se requiere ropa de alta visibilidad y cómo elegir uniformes que cumplan sin sacrificar comodidad.',
+    description: 'Qué exige la NOM-017-STPS-2024 sobre equipo de protección personal, cuándo conviene ropa con reflejante y cómo elegir uniformes que se usen de verdad. Actualizado a la norma vigente desde septiembre de 2025.',
     intro: 'Una guía práctica, sin lenguaje legal, para dueños de negocio y encargados de seguridad.',
     products: (p) => /reflejante/.test(p.id),
     body: `
-      <h2>La norma base: NOM-017-STPS-2008</h2>
-      <p>La Norma Oficial Mexicana NOM-017-STPS-2008 regula la selección, uso y manejo del equipo de protección personal (EPP) en los centros de trabajo. Obliga al patrón a identificar los riesgos de cada puesto, entregar el EPP adecuado sin costo para el trabajador y capacitarlo en su uso. La ropa de trabajo forma parte del EPP cuando protege contra un riesgo identificado: abrasión, salpicaduras, baja visibilidad, entre otros.</p>
-      <h2>¿Cuándo se necesita alta visibilidad?</h2>
-      <p>Siempre que la persona trabaje cerca de vehículos o maquinaria en movimiento, en vialidades, patios de maniobras, almacenes con montacargas o en turnos nocturnos. México no tiene una NOM específica de alta visibilidad; en la práctica se toman como referencia las normas internacionales ANSI/ISEA 107 y EN ISO 20471, que definen colores y cantidad de material reflejante. Nuestra <a href="/ropa-de-trabajo-reflejante">ropa reflejante</a> usa cintas retrorreflectantes cosidas en pecho, mangas y piernas.</p>
+      <h2>La norma vigente: NOM-017-STPS-2024</h2>
+      <p>La Norma Oficial Mexicana NOM-017-STPS-2024, <em>Equipo de protección personal. Selección, uso y manejo en los centros de trabajo</em>, se publicó en el Diario Oficial de la Federación el 28 de marzo de 2025 y entró en vigor el 28 de septiembre de 2025. Sustituye a la NOM-017-STPS-2008, que estuvo vigente desde diciembre de 2008. Obliga al patrón a identificar los riesgos de cada puesto, seleccionar y entregar el equipo de protección personal (EPP) adecuado sin costo para el trabajador, capacitarlo en su uso y llevar registro. La ropa de trabajo forma parte del EPP cuando protege contra un riesgo identificado: abrasión, salpicaduras, baja visibilidad, entre otros.</p>
+      <p>Si tu empresa todavía documenta sus procedimientos con la versión 2008, conviene actualizarlos: desde septiembre de 2025 la referencia obligatoria es la de 2024.</p>
+      <h2>¿Cuándo conviene ropa con reflejante?</h2>
+      <p>Siempre que la persona trabaje cerca de vehículos o maquinaria en movimiento, en vialidades, patios de maniobras, almacenes con montacargas o en turnos nocturnos. México no tiene una NOM específica de alta visibilidad; en la práctica se toman como referencia las normas internacionales ANSI/ISEA 107 y EN ISO 20471, que definen colores y cantidad de material reflejante. Nuestra <a href="/ropa-de-trabajo-reflejante">ropa reflejante</a> usa cintas retrorreflectantes cosidas en pecho, mangas y piernas; no está certificada bajo esas normas, así que si tu reglamento interno exige prenda certificada, revísalo con tu asesor antes de comprar.</p>
       <h2>Ropa de trabajo que sí se usa</h2>
       <p>La norma más estricta no sirve si el trabajador se quita la prenda porque es incómoda o se rompe. Por eso conviene elegir uniformes de algodón que respiren, con corte que deje moverse y que aguanten lavado frecuente. La mezclilla cumple las tres.</p>
       <h2>Lista rápida para el encargado de seguridad</h2>
@@ -179,9 +184,14 @@ const ARTICLES = {
         <li>Identifica por puesto qué riesgo cubre la ropa: abrasión, visibilidad, ambos.</li>
         <li>Entrega uniforme completo (camisa y pantalón) y registra la entrega.</li>
         <li>Define color de reflejante y logotipo para que todo el equipo sea identificable.</li>
-        <li>Programa reposición: una prenda de trabajo dura entre 8 y 14 meses de uso diario.</li>
+        <li>Programa la reposición según el desgaste real de cada puesto.</li>
       </ul>
       <p>Este artículo es orientativo; para el cumplimiento formal consulta el texto vigente de la norma y a tu asesor en seguridad e higiene.</p>
+      <h2>Fuentes</h2>
+      <ul>
+        <li><a href="https://dof.gob.mx/normasOficiales/9496/stps/stps.html" target="_blank" rel="noopener">DOF: NOM-017-STPS-2024, Equipo de protección personal. Selección, uso y manejo en los centros de trabajo</a></li>
+        <li><a href="https://platiica.economia.gob.mx/normalizacion/nom-017-stps-2024/" target="_blank" rel="noopener">Secretaría de Economía: ficha de la NOM-017-STPS-2024</a></li>
+      </ul>
     `,
   },
   'como-elegir-talla-de-uniforme-para-tu-cuadrilla': {
