@@ -260,7 +260,7 @@
     document.getElementById('retBySizeBody').innerHTML = stats.bySize.length ? stats.bySize.slice(0, 20).map((s) => `<tr><td>${s.productName}</td><td>${s.size || '—'}</td><td>${s.returned}</td><td>${s.sold}</td><td class="${s.rate >= 0.1 ? 'admin-stock-low' : ''}">${s.rate != null ? `${Math.round(s.rate * 100)}%` : '—'}</td><td>${Object.entries(s.reasons).map(([r, n]) => `${REASON_LABELS[r]} ${n}`).join(', ')}</td></tr>`).join('') : '<tr><td colspan="6">Sin devoluciones registradas.</td></tr>';
     document.getElementById('returnsTableBody').innerHTML = returnsList.length ? returnsList.map((r) => `<tr>
       <td><strong>${r.id}</strong><br><span class="admin-muted admin-small">${fmtDate(r.createdAt)}</span></td>
-      <td>${r.customerName || '—'}<br><span class="admin-muted admin-small">${r.orderId}</span></td>
+      <td>${esc(r.customerName) || '—'}<br><span class="admin-muted admin-small">${esc(r.orderId)}</span></td>
       <td>${r.type === 'cambio' ? 'Cambio' : 'Devolución'}</td>
       <td class="admin-order-items-cell">${r.items.map((i) => `${i.productName} (${i.size || '—'}) ×${i.qty} · ${REASON_LABELS[i.reason]}`).join('<br>')}${r.exchangeItems?.length ? `<br><span class="admin-muted">Se entregó: ${r.exchangeItems.map((e) => `${e.productName} (${e.size}) ×${e.qty}`).join(', ')}</span>` : ''}</td>
       <td>${r.refundCents ? formatPrice(r.refundCents) : '—'}</td>
@@ -273,7 +273,7 @@
     const order = ordersCache.find((o) => o.id === document.getElementById('returnOrder').value);
     document.getElementById('returnItems').innerHTML = order ? order.items.map((i, idx) => `
       <div class="admin-return-line" data-index="${idx}">
-        <span>${i.name}${i.size ? ` · ${i.size}` : ''} <span class="admin-muted admin-small">(${i.quantity} compradas)</span></span>
+        <span>${esc(i.name)}${i.size ? ` · ${esc(i.size)}` : ''} <span class="admin-muted admin-small">(${i.quantity} compradas)</span></span>
         <input type="number" class="ret-qty" min="0" max="${i.quantity}" value="0" placeholder="0">
         <select class="ret-reason admin-filter">${Object.entries(REASON_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
       </div>`).join('') : '';
@@ -287,7 +287,7 @@
     document.getElementById('returnError').textContent = '';
     document.getElementById('returnForm').reset();
     const candidates = [...ordersCache].filter((o) => !['cancelado'].includes(o.status)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 200);
-    document.getElementById('returnOrder').innerHTML = candidates.map((o) => `<option value="${o.id}">${new Date(o.createdAt).toLocaleDateString('es-MX')} · ${o.customerName || 'Sin nombre'} · ${formatPrice(o.totalCents)}</option>`).join('');
+    document.getElementById('returnOrder').innerHTML = candidates.map((o) => `<option value="${o.id}">${new Date(o.createdAt).toLocaleDateString('es-MX')} · ${esc(o.customerName) || 'Sin nombre'} · ${formatPrice(o.totalCents)}</option>`).join('');
     document.getElementById('exchangeProduct').innerHTML = productsCache.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
     const names = warehouseList();
     document.getElementById('returnWarehouse').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');

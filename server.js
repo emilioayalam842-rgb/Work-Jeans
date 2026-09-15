@@ -175,7 +175,16 @@ function getProducts() {
 function publicProducts() {
   return getProducts()
     .filter((p) => (p.status ? p.status === 'activo' : p.active !== false))
-    .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+    .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER))
+    .map((p) => {
+      const { costCents, ...rest } = p;
+      return { ...rest, sizes: (p.sizes || []).map(({ costCents: c, warehouses, barcode, ...v }) => v) };
+    });
+}
+
+function publicSettings() {
+  const { notifyEmail, warehouses, ...rest } = getSettings();
+  return rest;
 }
 
 function parseMoney(value) {
@@ -507,6 +516,11 @@ function makeOrderId() {
   return `ord_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
 }
 
+// Texto que viene de clientes (Stripe, WhatsApp, formularios): sin etiquetas HTML ni caracteres de control.
+function cleanText(value, max = 200) {
+  return String(value ?? '').replace(/[<>]/g, '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max);
+}
+
 function slugify(text) {
   return text
     .toString()
@@ -647,7 +661,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   res.json({ received: true });
 });
 
-app.use(express.json({ limit: '20mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'works-jeans-dev-secret-change-me',
   resave: false,
@@ -661,12 +675,18 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/admin-auth.json', '/server.js', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/admin-auth.json', '/server.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
-  const p = decodeURIComponent(req.path);
-  if (PRIVATE_FILES.has(p) || p.startsWith('/node_modules') || p.startsWith('/.git') || p.startsWith('/.claude')) {
+  let p;
+  try {
+    p = path.posix.normalize(decodeURIComponent(req.path));
+  } catch {
+    res.status(400).send('Bad request');
+    return;
+  }
+  if (p.includes('..') || req.path.includes('..') || PRIVATE_FILES.has(p) || /^\/(node_modules|\.git|\.claude|img-cache)(\/|$)/.test(p) || /\.(json|md|lock|log)$/i.test(p) && !['/products.json', '/settings.json'].includes(p)) {
     res.status(404).send('Not found');
     return;
   }
@@ -1125,7 +1145,7 @@ app.get('/products.json', (req, res) => {
 });
 app.get('/settings.json', (req, res) => {
   res.set('Cache-Control', 'no-cache');
-  res.sendFile(SETTINGS_PATH);
+  res.json(publicSettings());
 });
 if (USES_EXTERNAL_DATA) {
   app.use('/assets/products', express.static(PRODUCTS_IMG_DIR, { maxAge: '30d' }));
@@ -1137,7 +1157,7 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, PRODUCTS_IMG_DIR),
     filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      const ext = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[file.mimetype] || '.jpg';
       cb(null, `${Date.now()}-${crypto.randomBytes(4).toString('hex')}${ext}`);
     },
   }),
@@ -1224,7 +1244,7 @@ app.post('/api/admin/change-password', requireAdmin, (req, res) => {
 // --- Settings ---
 
 app.get('/api/settings', (req, res) => {
-  res.json(getSettings());
+  res.json(req.session?.isAdmin ? getSettings() : publicSettings());
 });
 
 app.put('/api/admin/settings', requireAdmin, (req, res) => {
@@ -1434,12 +1454,15 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
       if (!product) {
         throw new Error(`Producto inválido: ${item.id}`);
       }
-      const quantity = Math.max(1, Math.min(50, parseInt(item.quantity, 10) || 1));
+      const quantity = parseInt(item.quantity, 10);
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 500) {
+        throw new Error(`Cantidad inválida para ${product.name}.`);
+      }
       const variant = findVariant(product, item.size);
       return {
         id: product.id,
         name: product.name,
-        size: variant ? variantLabel(variant) : (item.size || null),
+        size: variant ? variantLabel(variant) : (cleanText(item.size, 60) || null),
         sku: variant?.sku || product.sku || null,
         quantity,
         priceCents: productPrice(product, variant),
@@ -1468,11 +1491,11 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
       source: 'whatsapp',
       status: 'pendiente',
       createdAt: new Date().toISOString(),
-      customerName: customerName || '',
-      customerPhone: customerPhone || '',
-      notes: notes || '',
+      customerName: cleanText(customerName, 120),
+      customerPhone: cleanText(customerPhone, 40),
+      notes: cleanText(notes, 1000),
       invoice: invoice && (invoice.rfc || invoice.name || invoice.email)
-        ? { requested: true, issued: false, rfc: String(invoice.rfc || '').toUpperCase(), name: String(invoice.name || ''), email: String(invoice.email || '') }
+        ? { requested: true, issued: false, rfc: cleanText(invoice.rfc, 13).toUpperCase(), name: cleanText(invoice.name, 120), email: cleanText(invoice.email, 120) }
         : null,
       discount,
       items: orderItems,
@@ -1526,16 +1549,16 @@ app.put('/api/admin/orders/:id', requireAdmin, (req, res) => {
     if (status === 'entregado' && order.status !== 'entregado') order.deliveredAt = new Date().toISOString();
     order.status = status;
   }
-  if (notes !== undefined) order.notes = String(notes);
+  if (notes !== undefined) order.notes = cleanText(notes, 1000);
   if (req.body.invoice !== undefined) {
     const inv = req.body.invoice;
     order.invoice = inv && (inv.rfc || inv.name || inv.email || inv.requested)
-      ? { requested: true, issued: Boolean(inv.issued), rfc: String(inv.rfc || '').toUpperCase(), name: String(inv.name || ''), email: String(inv.email || '') }
+      ? { requested: true, issued: Boolean(inv.issued), rfc: cleanText(inv.rfc, 13).toUpperCase(), name: cleanText(inv.name, 120), email: cleanText(inv.email, 120) }
       : null;
   }
   if (tracking !== undefined) {
     order.tracking = tracking && (tracking.carrier || tracking.number)
-      ? { carrier: String(tracking.carrier || '').trim(), number: String(tracking.number || '').trim(), url: String(tracking.url || '').trim() }
+      ? { carrier: cleanText(tracking.carrier, 60), number: cleanText(tracking.number, 80), url: cleanText(tracking.url, 300) }
       : null;
   }
   saveOrders(orders);
@@ -1780,23 +1803,23 @@ function recordStripeOrder(session) {
     source: 'stripe',
     status: 'pagado',
     createdAt: new Date().toISOString(),
-    customerName: session.shipping_details?.name || session.customer_details?.name || '',
-    customerPhone: session.customer_details?.phone || '',
-    customerEmail: session.customer_details?.email || '',
+    customerName: cleanText(session.shipping_details?.name || session.customer_details?.name, 120),
+    customerPhone: cleanText(session.customer_details?.phone, 40),
+    customerEmail: cleanText(session.customer_details?.email, 120),
     shipping: addr ? {
-      name: session.shipping_details?.name || '',
-      line1: addr.line1 || '',
-      line2: addr.line2 || '',
-      city: addr.city || '',
-      state: addr.state || '',
-      postalCode: addr.postal_code || '',
-      country: addr.country || '',
+      name: cleanText(session.shipping_details?.name, 120),
+      line1: cleanText(addr.line1, 200),
+      line2: cleanText(addr.line2, 200),
+      city: cleanText(addr.city, 80),
+      state: cleanText(addr.state, 80),
+      postalCode: cleanText(addr.postal_code, 12),
+      country: cleanText(addr.country, 4),
     } : null,
     notes: '',
     invoice: (() => {
       try {
         const inv = session.metadata?.invoice ? JSON.parse(session.metadata.invoice) : null;
-        return inv ? { requested: true, issued: false, ...inv } : null;
+        return inv ? { requested: true, issued: false, rfc: cleanText(inv.rfc, 13).toUpperCase(), name: cleanText(inv.name, 120), email: cleanText(inv.email, 120) } : null;
       } catch {
         return null;
       }
@@ -1936,7 +1959,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     return;
   }
   const invoiceMeta = invoice && typeof invoice === 'object'
-    ? { rfc: String(invoice.rfc || '').slice(0, 13).toUpperCase(), name: String(invoice.name || '').slice(0, 120), email: String(invoice.email || '').slice(0, 120) }
+    ? { rfc: cleanText(invoice.rfc, 13).toUpperCase(), name: cleanText(invoice.name, 120), email: cleanText(invoice.email, 120) }
     : null;
 
   try {
@@ -1962,6 +1985,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
         amount_off: quote.discountCents,
         currency: 'mxn',
         duration: 'once',
+        max_redemptions: 1,
         name: quote.discounts.map((d) => d.name).join(' + ').slice(0, 40),
       });
       discountsOpt.push({ coupon: coupon.id });
@@ -2038,9 +2062,10 @@ app.get('/api/verify-session', async (req, res) => {
     }
 
     const order = recordStripeOrder(session);
-    res.json(order);
+    // Solo lo necesario para la página de gracias: nada de datos personales.
+    res.json({ id: order.id, status: order.status, totalCents: order.totalCents, items: order.items.map((i) => ({ name: i.name, size: i.size, quantity: i.quantity })) });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ error: 'No se pudo verificar el pago.' });
   }
 });
 
@@ -2057,12 +2082,12 @@ app.post('/api/admin/suppliers', requireAdmin, (req, res) => {
   const list = getSuppliers();
   const supplier = {
     id: `sup_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`,
-    name,
-    contact: String(req.body.contact || '').trim().slice(0, 120),
-    phone: String(req.body.phone || '').trim().slice(0, 40),
-    email: String(req.body.email || '').trim().slice(0, 120),
-    products: String(req.body.products || '').trim().slice(0, 300),
-    notes: String(req.body.notes || '').trim().slice(0, 500),
+    name: cleanText(name, 120),
+    contact: cleanText(req.body.contact, 120),
+    phone: cleanText(req.body.phone, 40),
+    email: cleanText(req.body.email, 120),
+    products: cleanText(req.body.products, 300),
+    notes: cleanText(req.body.notes, 500),
     createdAt: new Date().toISOString(),
   };
   list.push(supplier);
@@ -2078,7 +2103,7 @@ app.put('/api/admin/suppliers/:id', requireAdmin, (req, res) => {
     return;
   }
   for (const k of ['name', 'contact', 'phone', 'email', 'products', 'notes']) {
-    if (req.body[k] !== undefined) s[k] = String(req.body[k] || '').trim().slice(0, k === 'notes' ? 500 : 300);
+    if (req.body[k] !== undefined) s[k] = cleanText(req.body[k], k === 'notes' ? 500 : 300);
   }
   saveSuppliers(list);
   res.json(s);
@@ -2297,7 +2322,7 @@ app.post('/api/admin/returns', requireAdmin, (req, res) => {
     exchangeItems: exchange,
     refundCents: parseMoney(refundMxn) || 0,
     restocked: restock !== false,
-    notes: String(notes || '').trim().slice(0, 500),
+    notes: cleanText(notes, 500),
   };
   list.push(ret);
   saveReturns(list);
@@ -2390,7 +2415,7 @@ app.get('/api/admin/backup', requireAdmin, (req, res) => {
   res.json(backup);
 });
 
-app.post('/api/admin/restore', requireAdmin, (req, res) => {
+app.post('/api/admin/restore', requireAdmin, express.json({ limit: '25mb' }), (req, res) => {
   const b = req.body;
   if (!b || b.app !== 'works-jeans' || !Array.isArray(b.products) || !Array.isArray(b.orders) || typeof b.settings !== 'object') {
     res.status(400).json({ error: 'El archivo no es un respaldo válido de Works Jeans.' });

@@ -102,6 +102,11 @@ function lowStockLimit() {
   return Number.isFinite(n) && n >= 0 ? n : 5;
 }
 
+// Escapa texto para meterlo en HTML (nombres de clientes, notas, etc.).
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function formatPrice(cents) {
   return (cents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 }
@@ -817,12 +822,12 @@ function renderOrders(orders) {
       <tr data-id="${o.id}">
         <td class="admin-clickable" data-action="view">${date}</td>
         <td class="admin-clickable" data-action="view">${sourceLabel}</td>
-        <td class="admin-clickable" data-action="view">${o.customerName || '—'}${o.customerPhone ? `<br><span class="admin-muted">${o.customerPhone}</span>` : ''}</td>
-        <td class="admin-order-items-cell admin-clickable" data-action="view">${itemsSummary}</td>
+        <td class="admin-clickable" data-action="view">${esc(o.customerName) || '—'}${o.customerPhone ? `<br><span class="admin-muted">${esc(o.customerPhone)}</span>` : ''}</td>
+        <td class="admin-order-items-cell admin-clickable" data-action="view">${esc(itemsSummary)}</td>
         <td class="admin-clickable" data-action="view">${formatPrice(o.totalCents)}</td>
         <td>
           <select class="admin-status-select status-${o.status}" data-action="status">${statusOptions(o.status)}</select>
-          ${o.tracking?.number ? `<span class="admin-muted admin-tracking-tag">${o.tracking.carrier ? `${o.tracking.carrier} · ` : ''}${o.tracking.number}</span>` : ''}
+          ${o.tracking?.number ? `<span class="admin-muted admin-tracking-tag">${o.tracking.carrier ? `${esc(o.tracking.carrier)} · ` : ''}${esc(o.tracking.number)}</span>` : ''}
           ${o.invoice ? `<span class="admin-tracking-tag ${o.invoice.issued ? 'admin-muted' : 'admin-invoice-pending'}">${o.invoice.issued ? 'Facturado' : 'Pide factura'}</span>` : ''}
         </td>
         <td class="admin-table-actions">
@@ -899,15 +904,15 @@ function openOrderDetail(id) {
   orderDetailContent.innerHTML = `
     <p><strong>${sourceLabel}</strong></p>
     <p class="admin-muted">${date}</p>
-    <p>${order.customerName || 'Cliente sin nombre'}${order.customerPhone ? ` · ${order.customerPhone}` : ''}${order.customerEmail ? ` · ${order.customerEmail}` : ''}</p>
-    ${order.shipping ? `<p><strong>Envío a:</strong> ${[order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', ')}</p>` : ''}
+    <p>${esc(order.customerName) || 'Cliente sin nombre'}${order.customerPhone ? ` · ${esc(order.customerPhone)}` : ''}${order.customerEmail ? ` · ${esc(order.customerEmail)}` : ''}</p>
+    ${order.shipping ? `<p><strong>Envío a:</strong> ${esc([order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', '))}</p>` : ''}
     <table class="admin-table admin-detail-table">
       <thead><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
       <tbody>
         ${order.items.map((i) => `
           <tr>
-            <td>${i.name}</td>
-            <td>${i.size || '—'}</td>
+            <td>${esc(i.name)}</td>
+            <td>${esc(i.size) || '—'}</td>
             <td>${i.quantity}</td>
             <td>${formatPrice(i.priceCents)}</td>
             <td>${formatPrice(i.priceCents * i.quantity)}</td>
@@ -1010,11 +1015,11 @@ function orderCard(o) {
         <span class="admin-card-date">${date}</span>
         <span class="admin-card-source">${o.source === 'stripe' ? icon('card', 14) : icon('chat', 14)}</span>
       </header>
-      <strong>${o.customerName || 'Sin nombre'}</strong>
-      <p>${items}</p>
+      <strong>${esc(o.customerName) || 'Sin nombre'}</strong>
+      <p>${esc(items)}</p>
       <footer>
         <b>${formatPrice(o.totalCents)}</b>
-        ${o.tracking?.number ? `<span class="admin-muted admin-small">${o.tracking.carrier || 'Guía'} ${o.tracking.number}</span>` : ''}
+        ${o.tracking?.number ? `<span class="admin-muted admin-small">${esc(o.tracking.carrier || 'Guía')} ${esc(o.tracking.number)}</span>` : ''}
       </footer>
     </article>
   `;
@@ -1104,9 +1109,9 @@ async function loadCustomers() {
     return;
   }
   body.innerHTML = customers.map((c) => `
-    <tr data-key="${c.key}" data-search="${c.phone || c.email || c.name}">
-      <td><strong>${c.name || 'Sin nombre'}</strong></td>
-      <td>${[c.phone, c.email].filter(Boolean).join('<br>') || '—'}</td>
+    <tr data-key="${esc(c.key)}" data-search="${esc(c.phone || c.email || c.name)}">
+      <td><strong>${esc(c.name) || 'Sin nombre'}</strong></td>
+      <td>${[c.phone, c.email].filter(Boolean).map(esc).join('<br>') || '—'}</td>
       <td>${c.orders}</td>
       <td>${c.pieces}</td>
       <td>${formatPrice(c.totalCents)}</td>
@@ -1356,7 +1361,7 @@ function renderBell() {
   menu.innerHTML = newOrdersQueue.length
     ? newOrdersQueue.map((o) => `
       <button type="button" class="admin-bell-item" data-order="${o.id}">
-        <span class="admin-bell-title"><strong>${o.customerName || 'Sin nombre'}</strong> · ${formatPrice(o.totalCents)}</span>
+        <span class="admin-bell-title"><strong>${esc(o.customerName) || 'Sin nombre'}</strong> · ${formatPrice(o.totalCents)}</span>
         <span>${o.source === 'stripe' ? 'Pago con tarjeta' : 'WhatsApp'} · ${new Date(o.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
       </button>`).join('') + '<button type="button" class="admin-bell-clear" data-action="clear-bell">Marcar como vistos</button>'
     : '<p class="admin-bell-empty">Sin pedidos nuevos.</p>';
@@ -1564,8 +1569,8 @@ function renderDashboard() {
     ? active.map((o) => `
       <tr class="admin-clickable-row" data-order="${o.id}">
         <td>${new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td>
-        <td>${o.customerName || '—'}${o.customerPhone ? `<br><span class="admin-muted">${o.customerPhone}</span>` : ''}</td>
-        <td class="admin-order-items-cell">${o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join(', ')}</td>
+        <td>${esc(o.customerName) || '—'}${o.customerPhone ? `<br><span class="admin-muted">${esc(o.customerPhone)}</span>` : ''}</td>
+        <td class="admin-order-items-cell">${esc(o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join(', '))}</td>
         <td>${formatPrice(o.totalCents)}</td>
         <td><span class="admin-badge status-${o.status}">${STATUS_LABELS[o.status]}</span></td>
       </tr>`).join('')

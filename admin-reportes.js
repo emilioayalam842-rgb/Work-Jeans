@@ -63,7 +63,7 @@
     const max = Math.max(1, ...rows.map((r) => r.value));
     el.innerHTML = rows.length ? rows.map((r) => `
       <li class="admin-rank-row">
-        <span class="admin-rank-name">${r.label}</span>
+        <span class="admin-rank-name">${esc(r.label)}</span>
         <span class="admin-rank-bar"><i style="width:${Math.round((r.value / max) * 100)}%"></i></span>
         <span class="admin-rank-value">${money ? formatPrice(r.value) : r.value}${suffix}</span>
       </li>`).join('') : '<li class="admin-muted">Sin datos todavía.</li>';
