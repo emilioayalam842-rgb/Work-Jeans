@@ -4,3 +4,6 @@ admin-auth.json
 .DS_Store
 inventory.json
 img-cache/
+suppliers.json
+purchases.json
+returns.json

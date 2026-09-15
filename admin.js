@@ -60,6 +60,7 @@ const STATUS_LABELS = {
   enviado: 'Enviado',
   entregado: 'Entregado',
   cancelado: 'Cancelado',
+  devuelto: 'Devuelto',
 };
 let ordersSearch = '';
 let ordersStatus = '';
@@ -225,6 +226,9 @@ function showTab(name) {
   if (name === 'colecciones') window.renderCollections?.();
   if (name === 'existencias') window.loadStock?.();
   if (name === 'almacenes') window.renderWarehouses?.();
+  if (name === 'proveedores') window.loadPurchases?.().then(() => window.loadSuppliers?.());
+  if (name === 'compras') window.loadPurchases?.();
+  if (name === 'devoluciones') window.loadReturns?.();
   if (name === 'reportes') loadOrders().then(renderReports);
   if (name === 'configuracion') loadSettingsForm();
 }
@@ -640,7 +644,7 @@ function filteredOrders() {
   const q = ordersSearch.trim().toLowerCase();
   return ordersCache.filter((o) => {
     if (ordersMonth && monthKey(o.createdAt) !== ordersMonth) return false;
-    if (ordersStatus === 'activos' && (o.status === 'entregado' || o.status === 'cancelado')) return false;
+    if (ordersStatus === 'activos' && ['entregado', 'cancelado', 'devuelto'].includes(o.status)) return false;
     if (ordersStatus && ordersStatus !== 'activos' && o.status !== ordersStatus) return false;
     if (!q) return true;
     const haystack = [o.id, o.customerName, o.customerPhone, o.customerEmail, o.tracking?.number, ...o.items.map((i) => i.name)].filter(Boolean).join(' ').toLowerCase();
@@ -662,6 +666,7 @@ const CHIP_FILTERS = [
   ['enviado', 'Enviado'],
   ['entregado', 'Entregado'],
   ['cancelado', 'Cancelado'],
+  ['devuelto', 'Devuelto'],
 ];
 
 function chipCount(value) {
@@ -1491,7 +1496,7 @@ orderForm.addEventListener('submit', async (e) => {
 // --- Dashboard ---
 
 function renderDashboard() {
-  const valid = ordersCache.filter((o) => o.status !== 'cancelado');
+  const valid = ordersCache.filter((o) => !['cancelado', 'devuelto'].includes(o.status));
   const totalSales = valid.reduce((sum, o) => sum + o.totalCents, 0);
 
   const now = new Date();

@@ -22,15 +22,18 @@ const ORDERS_PATH = path.join(DATA_DIR, 'orders.json');
 const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
 const ADMIN_AUTH_PATH = path.join(DATA_DIR, 'admin-auth.json');
 const INVENTORY_PATH = path.join(DATA_DIR, 'inventory.json');
+const SUPPLIERS_PATH = path.join(DATA_DIR, 'suppliers.json');
+const PURCHASES_PATH = path.join(DATA_DIR, 'purchases.json');
+const RETURNS_PATH = path.join(DATA_DIR, 'returns.json');
 
 // Primer arranque con DATA_DIR externo: copiar los datos iniciales del proyecto.
 if (USES_EXTERNAL_DATA) {
   fs.mkdirSync(PRODUCTS_IMG_DIR, { recursive: true });
-  for (const name of ['products.json', 'settings.json', 'orders.json', 'inventory.json']) {
+  for (const name of ['products.json', 'settings.json', 'orders.json', 'inventory.json', 'suppliers.json', 'purchases.json', 'returns.json']) {
     const target = path.join(DATA_DIR, name);
     if (!fs.existsSync(target)) {
       const seed = path.join(__dirname, name);
-      fs.writeFileSync(target, fs.existsSync(seed) ? fs.readFileSync(seed) : (name === 'orders.json' || name === 'inventory.json' ? '[]\n' : '{}\n'));
+      fs.writeFileSync(target, fs.existsSync(seed) ? fs.readFileSync(seed) : (name === 'settings.json' ? '{}\n' : '[]\n'));
     }
   }
 }
@@ -343,7 +346,35 @@ function logInventory(entries) {
   fs.writeFileSync(INVENTORY_PATH, JSON.stringify(log.slice(-2000), null, 2) + '\n');
 }
 
-const ORDER_STATUSES = ['pendiente', 'pagado', 'preparacion', 'enviado', 'entregado', 'cancelado'];
+const ORDER_STATUSES = ['pendiente', 'pagado', 'preparacion', 'enviado', 'entregado', 'cancelado', 'devuelto'];
+
+// Colecciones JSON genéricas (proveedores, órdenes de compra, devoluciones).
+function readJsonList(file) {
+  if (!fs.existsSync(file)) return [];
+  try {
+    const data = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+function writeJsonList(file, list) {
+  fs.writeFileSync(file, JSON.stringify(list, null, 2) + '\n');
+}
+const getSuppliers = () => readJsonList(SUPPLIERS_PATH);
+const saveSuppliers = (l) => writeJsonList(SUPPLIERS_PATH, l);
+const getPurchases = () => readJsonList(PURCHASES_PATH);
+const savePurchases = (l) => writeJsonList(PURCHASES_PATH, l);
+const getReturns = () => readJsonList(RETURNS_PATH);
+const saveReturns = (l) => writeJsonList(RETURNS_PATH, l);
+
+function nextFolio(list, prefix) {
+  const max = list.reduce((m, x) => {
+    const n = parseInt(String(x.id || '').replace(`${prefix}-`, ''), 10);
+    return Number.isFinite(n) && n > m ? n : m;
+  }, 0);
+  return `${prefix}-${String(max + 1).padStart(5, '0')}`;
+}
 
 function getSettings() {
   return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
@@ -511,7 +542,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/admin-auth.json', '/server.js', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/admin-auth.json', '/server.js', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -1786,6 +1817,309 @@ app.get('/api/verify-session', async (req, res) => {
   }
 });
 
+// --- Proveedores ---
+
+app.get('/api/admin/suppliers', requireAdmin, (req, res) => res.json(getSuppliers()));
+
+app.post('/api/admin/suppliers', requireAdmin, (req, res) => {
+  const name = String(req.body.name || '').trim().slice(0, 120);
+  if (!name) {
+    res.status(400).json({ error: 'El proveedor necesita nombre.' });
+    return;
+  }
+  const list = getSuppliers();
+  const supplier = {
+    id: `sup_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`,
+    name,
+    contact: String(req.body.contact || '').trim().slice(0, 120),
+    phone: String(req.body.phone || '').trim().slice(0, 40),
+    email: String(req.body.email || '').trim().slice(0, 120),
+    products: String(req.body.products || '').trim().slice(0, 300),
+    notes: String(req.body.notes || '').trim().slice(0, 500),
+    createdAt: new Date().toISOString(),
+  };
+  list.push(supplier);
+  saveSuppliers(list);
+  res.status(201).json(supplier);
+});
+
+app.put('/api/admin/suppliers/:id', requireAdmin, (req, res) => {
+  const list = getSuppliers();
+  const s = list.find((x) => x.id === req.params.id);
+  if (!s) {
+    res.status(404).json({ error: 'Proveedor no encontrado.' });
+    return;
+  }
+  for (const k of ['name', 'contact', 'phone', 'email', 'products', 'notes']) {
+    if (req.body[k] !== undefined) s[k] = String(req.body[k] || '').trim().slice(0, k === 'notes' ? 500 : 300);
+  }
+  saveSuppliers(list);
+  res.json(s);
+});
+
+app.delete('/api/admin/suppliers/:id', requireAdmin, (req, res) => {
+  const list = getSuppliers();
+  const next = list.filter((x) => x.id !== req.params.id);
+  if (next.length === list.length) {
+    res.status(404).json({ error: 'Proveedor no encontrado.' });
+    return;
+  }
+  saveSuppliers(next);
+  res.json({ ok: true });
+});
+
+// --- Órdenes de compra ---
+
+function purchaseTotals(po) {
+  const ordered = po.items.reduce((s, i) => s + i.qty, 0);
+  const received = po.items.reduce((s, i) => s + (i.received || 0), 0);
+  const totalCents = po.items.reduce((s, i) => s + i.qty * i.costCents, 0);
+  const paidCents = (po.payments || []).reduce((s, p) => s + p.amountCents, 0);
+  return { ordered, received, totalCents, paidCents, dueCents: Math.max(0, totalCents - paidCents) };
+}
+
+app.get('/api/admin/purchases', requireAdmin, (req, res) => {
+  const list = getPurchases().map((po) => ({ ...po, totals: purchaseTotals(po) })).sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1));
+  res.json(list);
+});
+
+app.post('/api/admin/purchases', requireAdmin, (req, res) => {
+  const { supplierId, supplierName, items, eta, notes, invoice, status } = req.body;
+  if (!Array.isArray(items) || items.length === 0) {
+    res.status(400).json({ error: 'Agrega al menos una partida a la orden.' });
+    return;
+  }
+  const products = getProducts();
+  const lines = [];
+  for (const it of items) {
+    const product = products.find((p) => p.id === it.productId);
+    const qty = parseInt(it.qty, 10);
+    const cost = parseMoney(it.costMxn ?? (it.costCents != null ? it.costCents / 100 : ''));
+    if (!product || !(qty > 0) || cost == null) continue;
+    const variant = it.size ? findVariant(product, it.size) : null;
+    lines.push({ productId: product.id, productName: product.name, size: variant ? variantLabel(variant) : (String(it.size || '').trim() || null), sku: variant?.sku || product.sku || null, qty, costCents: cost, received: 0 });
+  }
+  if (lines.length === 0) {
+    res.status(400).json({ error: 'Las partidas necesitan producto, cantidad y costo válidos.' });
+    return;
+  }
+  const suppliers = getSuppliers();
+  const supplier = suppliers.find((s) => s.id === supplierId);
+  const list = getPurchases();
+  const po = {
+    id: nextFolio(list, 'OC'),
+    supplierId: supplier?.id || null,
+    supplierName: supplier?.name || String(supplierName || '').trim().slice(0, 120) || 'Sin proveedor',
+    status: status === 'borrador' ? 'borrador' : 'enviada',
+    createdAt: new Date().toISOString(),
+    eta: eta ? String(eta).slice(0, 10) : null,
+    invoice: String(invoice || '').trim().slice(0, 80),
+    notes: String(notes || '').trim().slice(0, 500),
+    items: lines,
+    payments: [],
+  };
+  list.push(po);
+  savePurchases(list);
+  res.status(201).json({ ...po, totals: purchaseTotals(po) });
+});
+
+app.put('/api/admin/purchases/:id', requireAdmin, (req, res) => {
+  const list = getPurchases();
+  const po = list.find((x) => x.id === req.params.id);
+  if (!po) {
+    res.status(404).json({ error: 'Orden no encontrada.' });
+    return;
+  }
+  const { status, eta, invoice, notes, payment } = req.body;
+  if (status !== undefined) {
+    if (!['borrador', 'enviada', 'parcial', 'recibida', 'cancelada'].includes(status)) {
+      res.status(400).json({ error: 'Estado no válido.' });
+      return;
+    }
+    po.status = status;
+  }
+  if (eta !== undefined) po.eta = eta ? String(eta).slice(0, 10) : null;
+  if (invoice !== undefined) po.invoice = String(invoice || '').trim().slice(0, 80);
+  if (notes !== undefined) po.notes = String(notes || '').trim().slice(0, 500);
+  if (payment && parseMoney(payment.amountMxn)) {
+    po.payments = po.payments || [];
+    po.payments.push({ date: payment.date ? String(payment.date).slice(0, 10) : new Date().toISOString().slice(0, 10), amountCents: parseMoney(payment.amountMxn), note: String(payment.note || '').slice(0, 120) });
+  }
+  savePurchases(list);
+  res.json({ ...po, totals: purchaseTotals(po) });
+});
+
+// Recepción de mercancía de una orden: suma al inventario y registra los movimientos.
+app.post('/api/admin/purchases/:id/receive', requireAdmin, (req, res) => {
+  const list = getPurchases();
+  const po = list.find((x) => x.id === req.params.id);
+  if (!po) {
+    res.status(404).json({ error: 'Orden no encontrada.' });
+    return;
+  }
+  if (['cancelada'].includes(po.status)) {
+    res.status(400).json({ error: 'La orden está cancelada.' });
+    return;
+  }
+  const warehouse = String(req.body.warehouse || '').trim();
+  const updateCost = req.body.updateCost !== false;
+  const products = getProducts();
+  const movements = [];
+  let receivedNow = 0;
+  const wanted = Array.isArray(req.body.items) ? req.body.items : po.items.map((i, idx) => ({ index: idx, qty: i.qty - (i.received || 0) }));
+  for (const w of wanted) {
+    const line = po.items[w.index];
+    const qty = parseInt(w.qty, 10);
+    if (!line || !(qty > 0)) continue;
+    const product = products.find((p) => p.id === line.productId);
+    if (!product) continue;
+    let variant = line.size ? findVariant(product, line.size) : product.sizes[0];
+    if (!variant && line.size) {
+      variant = { size: line.size, stock: 0 };
+      variant.sku = autoSku(product, variant);
+      product.sizes.push(variant);
+    }
+    if (!variant) continue;
+    applyStockDelta(variant, qty, warehouse);
+    if (updateCost) variant.costCents = line.costCents;
+    line.received = (line.received || 0) + qty;
+    receivedNow += qty;
+    movements.push({ productId: product.id, productName: product.name, size: variantLabel(variant), sku: variant.sku, delta: qty, stockAfter: variant.stock, reason: `Recepción ${po.id} · ${po.supplierName}`, orderId: null, supplier: po.supplierName, costCents: line.costCents, type: 'entrada', warehouse: warehouse || warehouseNames()[0], purchaseId: po.id });
+  }
+  if (receivedNow === 0) {
+    res.status(400).json({ error: 'No hay piezas por recibir.' });
+    return;
+  }
+  saveProducts(products);
+  logInventory(movements);
+  const t = purchaseTotals(po);
+  po.status = t.received >= t.ordered ? 'recibida' : 'parcial';
+  po.receivedAt = new Date().toISOString();
+  savePurchases(list);
+  res.json({ ...po, totals: purchaseTotals(po), receivedNow });
+});
+
+// --- Devoluciones y cambios ---
+
+const RETURN_REASONS = ['quedo-grande', 'quedo-chico', 'defecto', 'cambio-modelo', 'cambio-color', 'otro'];
+const RETURN_REASON_LABELS = { 'quedo-grande': 'Le quedó grande', 'quedo-chico': 'Le quedó chico', defecto: 'Defecto', 'cambio-modelo': 'Cambio de modelo', 'cambio-color': 'Cambio de color', otro: 'Otro' };
+
+app.get('/api/admin/returns', requireAdmin, (req, res) => {
+  res.json(getReturns().sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1)));
+});
+
+app.post('/api/admin/returns', requireAdmin, (req, res) => {
+  const { orderId, items, type, refundMxn, restock, warehouse, notes, exchangeItems } = req.body;
+  const orders = getOrders();
+  const order = orders.find((o) => o.id === orderId);
+  if (!order) {
+    res.status(404).json({ error: 'Pedido no encontrado.' });
+    return;
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    res.status(400).json({ error: 'Indica qué piezas regresan.' });
+    return;
+  }
+  const products = getProducts();
+  const lines = [];
+  const movements = [];
+  for (const it of items) {
+    const sold = order.items.find((i) => i.id === it.productId && (i.size || null) === (it.size || null));
+    const qty = parseInt(it.qty, 10);
+    if (!sold || !(qty > 0)) continue;
+    const reason = RETURN_REASONS.includes(it.reason) ? it.reason : 'otro';
+    lines.push({ productId: sold.id, productName: sold.name, size: sold.size || null, sku: sold.sku || null, qty, reason, priceCents: sold.priceCents });
+    if (restock !== false) {
+      const product = products.find((p) => p.id === sold.id);
+      const variant = product ? findVariant(product, sold.size) : null;
+      if (variant) {
+        applyStockDelta(variant, qty, warehouse);
+        movements.push({ productId: product.id, productName: product.name, size: variantLabel(variant), sku: variant.sku, delta: qty, stockAfter: variant.stock, reason: `Devolución de ${order.id} · ${RETURN_REASON_LABELS[reason]}`, orderId: order.id, warehouse: warehouse || warehouseNames()[0], type: 'devolucion' });
+      }
+    }
+  }
+  if (lines.length === 0) {
+    res.status(400).json({ error: 'Las piezas indicadas no coinciden con el pedido.' });
+    return;
+  }
+  // Cambio: las piezas nuevas que se entregan salen del inventario.
+  const exchange = [];
+  if (type === 'cambio' && Array.isArray(exchangeItems)) {
+    for (const ex of exchangeItems) {
+      const product = products.find((p) => p.id === ex.productId);
+      const variant = product ? findVariant(product, ex.size) : null;
+      const qty = parseInt(ex.qty, 10);
+      if (!variant || !(qty > 0)) continue;
+      applyStockDelta(variant, -qty, warehouse);
+      exchange.push({ productId: product.id, productName: product.name, size: variantLabel(variant), sku: variant.sku, qty });
+      movements.push({ productId: product.id, productName: product.name, size: variantLabel(variant), sku: variant.sku, delta: -qty, stockAfter: variant.stock, reason: `Cambio por ${order.id}`, orderId: order.id, warehouse: warehouse || warehouseNames()[0], type: 'cambio' });
+    }
+  }
+  if (movements.length) {
+    saveProducts(products);
+    logInventory(movements);
+  }
+  const list = getReturns();
+  const ret = {
+    id: nextFolio(list, 'DEV'),
+    orderId: order.id,
+    customerName: order.customerName || '',
+    type: type === 'cambio' ? 'cambio' : 'devolucion',
+    createdAt: new Date().toISOString(),
+    items: lines,
+    exchangeItems: exchange,
+    refundCents: parseMoney(refundMxn) || 0,
+    restocked: restock !== false,
+    notes: String(notes || '').trim().slice(0, 500),
+  };
+  list.push(ret);
+  saveReturns(list);
+  const returnedQty = lines.reduce((s, l) => s + l.qty, 0);
+  const soldQty = order.items.reduce((s, i) => s + i.quantity, 0);
+  const alreadyReturned = getReturns().filter((r) => r.orderId === order.id && r.type === 'devolucion').reduce((s, r) => s + r.items.reduce((a, l) => a + l.qty, 0), 0);
+  order.returns = (order.returns || 0) + returnedQty;
+  if (ret.type === 'devolucion' && alreadyReturned >= soldQty) order.status = 'devuelto';
+  saveOrders(orders);
+  res.status(201).json(ret);
+});
+
+// Estadísticas de devoluciones: por talla y motivo, con tasa sobre lo vendido.
+app.get('/api/admin/returns/stats', requireAdmin, (req, res) => {
+  const soldBySize = {};
+  const soldByProduct = {};
+  for (const o of getOrders()) {
+    if (o.status === 'cancelado') continue;
+    for (const i of o.items) {
+      const key = `${i.id}|${i.size || ''}`;
+      soldBySize[key] = (soldBySize[key] || 0) + i.quantity;
+      soldByProduct[i.id] = (soldByProduct[i.id] || 0) + i.quantity;
+    }
+  }
+  const bySize = {};
+  const byReason = {};
+  const byProduct = {};
+  let total = 0;
+  for (const r of getReturns()) {
+    for (const l of r.items) {
+      total += l.qty;
+      const key = `${l.productId}|${l.size || ''}`;
+      bySize[key] = bySize[key] || { productId: l.productId, productName: l.productName, size: l.size, returned: 0, reasons: {} };
+      bySize[key].returned += l.qty;
+      bySize[key].reasons[l.reason] = (bySize[key].reasons[l.reason] || 0) + l.qty;
+      byReason[l.reason] = (byReason[l.reason] || 0) + l.qty;
+      byProduct[l.productId] = byProduct[l.productId] || { productId: l.productId, productName: l.productName, returned: 0 };
+      byProduct[l.productId].returned += l.qty;
+    }
+  }
+  res.json({
+    total,
+    reasons: RETURN_REASON_LABELS,
+    byReason,
+    bySize: Object.entries(bySize).map(([key, v]) => ({ ...v, sold: soldBySize[key] || 0, rate: soldBySize[key] ? v.returned / soldBySize[key] : null })).sort((a, b) => b.returned - a.returned),
+    byProduct: Object.values(byProduct).map((v) => ({ ...v, sold: soldByProduct[v.productId] || 0, rate: soldByProduct[v.productId] ? v.returned / soldByProduct[v.productId] : null })).sort((a, b) => b.returned - a.returned),
+  });
+});
+
 // --- Clientes: se arman a partir de los pedidos (sin tabla aparte) ---
 
 app.get('/api/admin/customers', requireAdmin, (req, res) => {
@@ -1820,6 +2154,9 @@ app.get('/api/admin/backup', requireAdmin, (req, res) => {
     orders: getOrders(),
     settings: getSettings(),
     inventory: getInventoryLog(),
+    suppliers: getSuppliers(),
+    purchases: getPurchases(),
+    returns: getReturns(),
   };
   res.set('Content-Disposition', `attachment; filename="respaldo-works-jeans-${backup.exportedAt.slice(0, 10)}.json"`);
   res.json(backup);
@@ -1840,6 +2177,9 @@ app.post('/api/admin/restore', requireAdmin, (req, res) => {
   saveOrders(b.orders);
   saveSettings(b.settings);
   fs.writeFileSync(INVENTORY_PATH, JSON.stringify(Array.isArray(b.inventory) ? b.inventory : [], null, 2) + '\n');
+  if (Array.isArray(b.suppliers)) saveSuppliers(b.suppliers);
+  if (Array.isArray(b.purchases)) savePurchases(b.purchases);
+  if (Array.isArray(b.returns)) saveReturns(b.returns);
   res.json({ ok: true, products: b.products.length, orders: b.orders.length });
 });
 

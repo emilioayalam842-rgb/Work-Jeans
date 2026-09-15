@@ -961,3 +961,26 @@ input.admin-filter { background-image: none; padding-right: 14px; cursor: text; 
 /* Filas de variantes dentro de la tabla (anula el grid de la versión anterior) */
 .admin-variants-table .admin-size-row { display: table-row; gap: 0; }
 .admin-form .admin-table-wrap { flex: none; max-height: 340px; overflow: auto; }
+
+/* Compras y devoluciones ---------------------------------------------- */
+.admin-badge.po-borrador { border-color: #999; background: #eee; }
+.admin-badge.po-enviada { border-color: #1565c0; background: #e5eefb; }
+.admin-badge.po-parcial { border-color: #c9a400; background: #fff7cc; }
+.admin-badge.po-recibida { border-color: #2e7d32; background: #e6f4e8; }
+.admin-badge.po-cancelada { border-color: #b00020; background: #fbe6e9; }
+.admin-status-select.status-devuelto, .admin-badge.status-devuelto { border-color: #6a1b9a; background: #f0e6f7; }
+.admin-chip.chip-devuelto:not(.is-active) span { background: #f0e6f7; color: #6a1b9a; }
+.admin-po-lines { display: flex; flex-direction: column; gap: 8px; }
+.admin-po-line { display: grid; grid-template-columns: 1.4fr 1fr 80px 110px auto; gap: 8px; align-items: center; }
+.admin-po-line input { padding: 9px 10px; border: 1.5px solid #d6d6d6; border-radius: 8px; font: inherit; min-width: 0; }
+.admin-po-receive { border: 1.5px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; margin: 6px 0; }
+.admin-po-pay { margin-top: 6px; }
+.admin-return-lines { display: flex; flex-direction: column; gap: 8px; }
+.admin-return-line { display: grid; grid-template-columns: 1.6fr 80px 1fr; gap: 8px; align-items: center; font-size: 0.9rem; }
+.admin-return-line input { padding: 8px 10px; border: 1.5px solid #d6d6d6; border-radius: 8px; font: inherit; }
+.admin-exchange { border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 6px 0; }
+.admin-exchange-row { display: grid; grid-template-columns: 1.3fr 1fr 80px; gap: 8px; }
+.admin-exchange-row input { padding: 9px 10px; border: 1.5px solid #d6d6d6; border-radius: 8px; font: inherit; }
+.admin-stat-value--sm { font-size: 1.1rem; }
+@media (max-width: 860px) { .admin-po-line, .admin-return-line, .admin-exchange-row { grid-template-columns: 1fr 1fr; } }
+#tabDevoluciones .admin-dashboard-grid { grid-template-columns: 1fr; }

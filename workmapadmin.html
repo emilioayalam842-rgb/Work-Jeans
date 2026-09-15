@@ -65,6 +65,7 @@
         <div class="admin-side-group"><span>Ventas</span>
           <button class="admin-tab" data-tab="tablero">Tablero</button>
           <button class="admin-tab" data-tab="pedidos">Pedidos</button>
+          <button class="admin-tab" data-tab="devoluciones">Devoluciones</button>
           <button class="admin-tab" data-tab="clientes">Clientes</button>
         </div>
         <div class="admin-side-group"><span>Catálogo</span>
@@ -77,6 +78,10 @@
           <button class="admin-tab" data-tab="existencias">Existencias</button>
           <button class="admin-tab" data-tab="inventario">Movimientos</button>
           <button class="admin-tab" data-tab="almacenes">Almacenes</button>
+        </div>
+        <div class="admin-side-group"><span>Compras</span>
+          <button class="admin-tab" data-tab="proveedores">Proveedores</button>
+          <button class="admin-tab" data-tab="compras">Órdenes de compra</button>
         </div>
         <div class="admin-side-group"><span>Análisis</span>
           <button class="admin-tab" data-tab="reportes">Reportes</button>
@@ -333,6 +338,68 @@
             <input type="text" id="warehouseName" placeholder="Nuevo almacén (ej. Bodega)" required>
             <button type="submit" class="btn btn-primary">Agregar</button>
           </form>
+        </div>
+      </div>
+
+      <div id="tabProveedores" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Proveedores</h2>
+          <button type="button" id="newSupplierBtn" class="btn btn-primary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nuevo proveedor</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Proveedor</th><th>Contacto</th><th>Órdenes</th><th>Saldo pendiente</th><th></th></tr></thead>
+            <tbody id="suppliersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabCompras" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Órdenes de compra</h2>
+          <button type="button" id="newPoBtn" class="btn btn-primary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nueva orden</button>
+        </div>
+        <div class="admin-stats admin-stats--compact">
+          <div class="admin-stat-card"><p class="admin-stat-label">Órdenes abiertas</p><p class="admin-stat-value" id="poOpen">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Piezas por llegar</p><p class="admin-stat-value" id="poPending">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Saldo por pagar</p><p class="admin-stat-value" id="poDue">$0.00</p></div>
+        </div>
+        <div class="admin-filters">
+          <select id="poStatusFilter" class="admin-filter"><option value="">Todas</option><option value="abiertas">Abiertas</option><option value="borrador">Borrador</option><option value="enviada">Enviada</option><option value="parcial">Recibida parcial</option><option value="recibida">Recibida</option><option value="cancelada">Cancelada</option></select>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Orden</th><th>Proveedor</th><th>Partidas</th><th>Recibido</th><th>Total</th><th>Llega</th><th>Estado</th></tr></thead>
+            <tbody id="purchasesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabDevoluciones" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Devoluciones y cambios</h2>
+          <button type="button" id="newReturnBtn" class="btn btn-primary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Registrar devolución</button>
+        </div>
+        <div class="admin-stats admin-stats--compact">
+          <div class="admin-stat-card"><p class="admin-stat-label">Piezas devueltas</p><p class="admin-stat-value" id="retTotal">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Tasa de devolución</p><p class="admin-stat-value" id="retRate">—</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Motivo más común</p><p class="admin-stat-value admin-stat-value--sm" id="retTopReason">—</p></div>
+        </div>
+        <div class="admin-alerts" id="retInsights"></div>
+        <div class="admin-dashboard-grid">
+          <div class="admin-panel-box">
+            <h3>Por talla</h3>
+            <p class="admin-help">Tasa = piezas devueltas entre piezas vendidas de esa talla. Arriba de 10% con varias ventas, conviene revisar el patronaje.</p>
+            <div class="admin-table-wrap admin-table-wrap--flat">
+              <table class="admin-table"><thead><tr><th>Producto</th><th>Talla</th><th>Devueltas</th><th>Vendidas</th><th>Tasa</th><th>Motivos</th></tr></thead><tbody id="retBySizeBody"></tbody></table>
+            </div>
+          </div>
+          <div class="admin-panel-box">
+            <h3>Registro</h3>
+            <div class="admin-table-wrap admin-table-wrap--flat">
+              <table class="admin-table"><thead><tr><th>Folio</th><th>Cliente</th><th>Tipo</th><th>Piezas</th><th>Reembolso</th><th>Regresó a stock</th></tr></thead><tbody id="returnsTableBody"></tbody></table>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -647,6 +714,110 @@
     </form>
   </div>
 
+  <div class="admin-overlay" id="supplierOverlay" hidden>
+    <form id="supplierForm" class="admin-form">
+      <h2 id="supplierFormTitle">Nuevo proveedor</h2>
+      <input type="hidden" id="supplierId">
+      <label for="supplierName">Nombre</label>
+      <input type="text" id="supplierName" required>
+      <div class="admin-field-grid">
+        <div><label for="supplierContact">Contacto</label><input type="text" id="supplierContact" placeholder="Persona"></div>
+        <div><label for="supplierPhone">Teléfono</label><input type="text" id="supplierPhone"></div>
+      </div>
+      <label for="supplierEmail">Correo</label>
+      <input type="email" id="supplierEmail">
+      <label for="supplierProducts">Qué suministra</label>
+      <input type="text" id="supplierProducts" placeholder="Mezclilla 14 oz, botones, etiquetas…">
+      <label for="supplierNotes">Notas</label>
+      <textarea id="supplierNotes" rows="2"></textarea>
+      <div class="admin-form-actions">
+        <button type="button" id="cancelSupplierBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+      <p class="admin-error" id="supplierError"></p>
+    </form>
+  </div>
+
+  <div class="admin-overlay" id="poOverlay" hidden>
+    <form id="poForm" class="admin-form admin-form--wide">
+      <h2>Nueva orden de compra</h2>
+      <div class="admin-field-grid">
+        <div><label for="poSupplier">Proveedor</label><select id="poSupplier" class="admin-filter"></select></div>
+        <div><label for="poSupplierName">O escribe el nombre</label><input type="text" id="poSupplierName" placeholder="Si no está en la lista"></div>
+      </div>
+      <div class="admin-field-grid">
+        <div><label for="poEta">Fecha estimada de llegada</label><input type="date" id="poEta"></div>
+        <div><label for="poInvoice">Factura / referencia</label><input type="text" id="poInvoice" placeholder="Opcional"></div>
+      </div>
+      <label>Partidas</label>
+      <div id="poLines" class="admin-po-lines"></div>
+      <button type="button" id="addPoLineBtn" class="btn btn-secondary admin-add-item-btn admin-btn-icon"><svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Agregar partida</button>
+      <p class="admin-order-total" id="poTotal">0 piezas</p>
+      <label for="poNotes">Notas</label>
+      <input type="text" id="poNotes" placeholder="Opcional">
+      <label class="admin-check"><input type="checkbox" id="poDraft"> Guardar como borrador (todavía no se envía al proveedor)</label>
+      <div class="admin-form-actions">
+        <button type="button" id="cancelPoBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Crear orden</button>
+      </div>
+      <p class="admin-error" id="poError"></p>
+    </form>
+  </div>
+
+  <div class="admin-overlay" id="poDetailOverlay" hidden>
+    <div class="admin-form admin-form--wide">
+      <h2 id="poDetailTitle">Orden</h2>
+      <p id="poDetailMeta"></p>
+      <div id="poDetailItems"></div>
+      <div id="poReceiveWrap" class="admin-po-receive">
+        <div id="poReceiveWarehouseWrap"><label for="poReceiveWarehouse">Almacén que recibe</label><select id="poReceiveWarehouse" class="admin-filter"></select></div>
+        <label class="admin-check"><input type="checkbox" id="poReceiveUpdateCost" checked> Actualizar el costo de las variantes con el de esta orden</label>
+        <button type="button" id="poReceiveBtn" class="btn btn-primary">Recibir mercancía</button>
+      </div>
+      <div class="admin-field-grid admin-po-pay">
+        <div><label for="poPayAmount">Registrar pago (MXN)</label><input type="number" id="poPayAmount" step="0.01" min="0"></div>
+        <div><label for="poPayNote">Nota del pago</label><input type="text" id="poPayNote" placeholder="Anticipo, transferencia…"></div>
+      </div>
+      <button type="button" id="poPayBtn" class="btn btn-secondary">Guardar pago</button>
+      <label for="poStatusSelect">Estado</label>
+      <select id="poStatusSelect" class="admin-filter"><option value="borrador">Borrador</option><option value="enviada">Enviada</option><option value="parcial">Recibida parcial</option><option value="recibida">Recibida</option><option value="cancelada">Cancelada</option></select>
+      <div class="admin-form-actions">
+        <button type="button" id="closePoDetailBtn" class="btn btn-secondary">Cerrar</button>
+      </div>
+      <p class="admin-error" id="poDetailError"></p>
+    </div>
+  </div>
+
+  <div class="admin-overlay" id="returnOverlay" hidden>
+    <form id="returnForm" class="admin-form admin-form--wide">
+      <h2>Registrar devolución o cambio</h2>
+      <label for="returnOrder">Pedido</label>
+      <select id="returnOrder" class="admin-filter"></select>
+      <label for="returnType">Tipo</label>
+      <select id="returnType" class="admin-filter"><option value="devolucion">Devolución (regresa dinero o crédito)</option><option value="cambio">Cambio por otra talla, color o modelo</option></select>
+      <label>Piezas que regresan y motivo</label>
+      <div id="returnItems" class="admin-return-lines"></div>
+      <div id="exchangeWrap" class="admin-exchange">
+        <label>Pieza que se entrega a cambio</label>
+        <div class="admin-exchange-row">
+          <select id="exchangeProduct" class="admin-filter"></select>
+          <select id="exchangeVariant" class="admin-filter"></select>
+          <input type="number" id="exchangeQty" min="0" value="1" placeholder="Cant.">
+        </div>
+      </div>
+      <div id="refundWrap"><label for="returnRefund">Reembolso (MXN)</label><input type="number" id="returnRefund" step="0.01" min="0" placeholder="0 si es crédito o nota"></div>
+      <label class="admin-check"><input type="checkbox" id="returnRestock" checked> Las piezas regresan al inventario (desmarca si vienen dañadas)</label>
+      <div id="returnWarehouseWrap"><label for="returnWarehouse">Almacén que recibe</label><select id="returnWarehouse" class="admin-filter"></select></div>
+      <label for="returnNotes">Notas</label>
+      <input type="text" id="returnNotes" placeholder="Opcional">
+      <div class="admin-form-actions">
+        <button type="button" id="cancelReturnBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Registrar</button>
+      </div>
+      <p class="admin-error" id="returnError"></p>
+    </form>
+  </div>
+
   <div class="admin-overlay" id="transferOverlay" hidden>
     <form id="transferForm" class="admin-form">
       <h2>Traspaso entre almacenes</h2>
@@ -682,6 +853,7 @@
         <option value="enviado">Enviado</option>
         <option value="entregado">Entregado</option>
         <option value="cancelado">Cancelado (devuelve las piezas al inventario)</option>
+        <option value="devuelto">Devuelto</option>
       </select>
 
       <div class="admin-tracking">
@@ -720,5 +892,6 @@
 
   <script src="admin.js"></script>
   <script src="admin-catalogo.js"></script>
+  <script src="admin-compras.js"></script>
 </body>
 </html>
