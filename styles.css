@@ -1964,3 +1964,10 @@ html { overflow-x: clip; }
 
 .pdp-from { font-family: var(--label); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .pdp-price-sizes { margin: -2px 0 10px; font-size: 0.85rem; color: #333; line-height: 1.7; }
+
+.mayoreo-note { font-size: 0.92rem !important; color: #e6e6e6 !important; margin-top: 12px !important; }
+.mayoreo-note strong { color: var(--yellow); }
+.b2b-pricing { margin: 28px 0 0; padding: 26px 28px; border: 1.5px solid var(--black); background: var(--yellow); display: grid; gap: 10px; }
+.b2b-pricing .kicker { color: var(--black); }
+.b2b-pricing p { margin: 0; max-width: 720px; line-height: 1.6; }
+.b2b-pricing .btn { justify-self: start; }

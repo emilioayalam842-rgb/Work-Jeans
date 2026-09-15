@@ -64,3 +64,10 @@ Para cada modelo (Pantalón de trabajo, Pantalón reflejante verde/naranja, Cami
 
 - [ ] Términos y condiciones de venta (no existe página; hoy solo hay política de envíos y devoluciones).
 - [ ] Plazo de respuesta a solicitudes ARCO conforme a la ley de 2025 (el aviso dice 20 días hábiles, heredado de la ley anterior).
+
+## Lista de precios (02-abr-2025) aplicada el 15 de septiembre de 2026
+
+- Precios de cliente final **con IVA (16 %)** por grupo de tallas en camisa, camisa reflejante, pantalón y pantalón reflejante. Los precios de socio y distribuidor quedaron guardados en cada producto (no se muestran al público).
+- [ ] **Yompa de Mezclilla FR** aparece en la lista pero no existe como producto en el sitio (falta foto y descripción). Precios cliente final con IVA: XCH–XG $276.17 · 2XG–4XG $303.79 · 5XG $331.41. Crear el producto en el panel cuando haya foto y capturar estos precios por talla.
+- [ ] La lista llama a la camisa reflejante "Mezclilla **Mezcla**": confirmar la composición real (el sitio dice 100 % algodón en las camisas) y corregir descripción y ficha técnica si no es 100 % algodón.
+- [ ] Confirmar si la lista está vigente (fecha abril 2025) y si los precios en tienda deben llevar IVA incluido (así se aplicó).
