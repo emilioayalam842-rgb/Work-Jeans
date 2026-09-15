@@ -56,6 +56,84 @@ if (USES_EXTERNAL_DATA) {
   }
 }
 
+// Migración de nombres/descripciones con palabra clave (SEO). Solo cambia los que siguen
+// exactamente como venían de fábrica; si el panel ya los editó, se respetan.
+const PRODUCT_TEXT_MIGRATION = {
+  "camisa-mezclilla": {
+    "old": [
+      "Camisa de Mezclilla",
+      "Camisa de mezclilla 100% algodón con bolsillo frontal y botones reforzados. Acabado preencogido. Uso industrial."
+    ],
+    "new": [
+      "Camisa de Trabajo de Mezclilla",
+      "Camisa de trabajo de mezclilla 100% algodón con bolsillo frontal y botones reforzados. Acabado preencogido. Uso industrial."
+    ]
+  },
+  "camisa-reflejante-verde": {
+    "old": [
+      "Camisa Reflejante Verde",
+      "Camisa de mezclilla con cintas reflejantes verde alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad."
+    ],
+    "new": [
+      "Camisa de Trabajo Reflejante Verde",
+      "Camisa de trabajo de mezclilla con cintas reflejantes verde de alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad."
+    ]
+  },
+  "camisa-reflejante-naranja": {
+    "old": [
+      "Camisa Reflejante Naranja",
+      "Camisa de mezclilla con cintas reflejantes naranja alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad."
+    ],
+    "new": [
+      "Camisa de Trabajo Reflejante Naranja",
+      "Camisa de trabajo de mezclilla con cintas reflejantes naranja de alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad."
+    ]
+  },
+  "pantalon-mezclilla": {
+    "old": [
+      "Pantalón de Mezclilla",
+      "Pantalón de mezclilla 100% algodón corte recto. Cinco bolsas, costuras reforzadas y cintura ajustada. Resistente al uso intensivo."
+    ],
+    "new": [
+      "Pantalón de Trabajo de Mezclilla",
+      "Pantalón de trabajo de mezclilla 100% algodón, corte recto. Cinco bolsas, costuras reforzadas y cintura ajustada. Work jean resistente al uso intensivo en obra, planta y taller."
+    ]
+  },
+  "pantalon-reflejante-verde": {
+    "old": [
+      "Pantalón Reflejante Verde",
+      "Pantalón de mezclilla con cintas reflejantes verde alta visibilidad en piernas. Para entornos de poca luz y alta seguridad."
+    ],
+    "new": [
+      "Pantalón de Trabajo Reflejante Verde",
+      "Pantalón de trabajo de mezclilla con cintas reflejantes verde de alta visibilidad en piernas. Para vialidades, plantas y turnos con poca luz."
+    ]
+  },
+  "pantalon-reflejante-naranja": {
+    "old": [
+      "Pantalón Reflejante Naranja",
+      "Pantalón de mezclilla con cintas reflejantes naranja alta visibilidad en piernas. Para entornos de poca luz y alta seguridad."
+    ],
+    "new": [
+      "Pantalón de Trabajo Reflejante Naranja",
+      "Pantalón de trabajo de mezclilla con cintas reflejantes naranja de alta visibilidad en piernas. Para vialidades, plantas y turnos con poca luz."
+    ]
+  }
+};
+try {
+  const products = JSON.parse(fs.readFileSync(PRODUCTS_PATH, 'utf-8'));
+  let changed = false;
+  for (const p of products) {
+    const m = PRODUCT_TEXT_MIGRATION[p.id];
+    if (!m) continue;
+    if (p.name === m.old[0]) { p.name = m.new[0]; changed = true; }
+    if (p.description === m.old[1]) { p.description = m.new[1]; changed = true; }
+  }
+  if (changed) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
+} catch {
+  // Sin productos aún; no pasa nada.
+}
+
 const LOW_STOCK_THRESHOLD = 5;
 
 function lowStockThreshold() {
@@ -459,13 +537,38 @@ const CATEGORY_PAGES = {
     title: 'Pantalones de Trabajo de Mezclilla (Work Jeans) | Works Jeans Monterrey',
     description: 'Pantalones de trabajo de mezclilla 100% algodón, corte recto y costuras reforzadas. Con opción de cintas reflejantes. Tallas 28 a 50. Mayoreo con stock inmediato en Monterrey y envíos a todo México.',
     intro: 'Work jeans hechos en Monterrey para obra, planta y taller: mezclilla pesada 100% algodón, cinco bolsas, costuras reforzadas y cintura ajustada. Tallas de la 28 a la 50.',
+    faq: [
+      ['¿Qué talla de pantalón de trabajo debo pedir?', 'La misma que usas en un jean normal. Si dudas entre dos, elige la mayor: la mezclilla no encoge y en el trabajo se agradece el espacio. Consulta la guía de tallas para medir un pantalón que te quede bien.'],
+      ['¿Aguanta el lavado diario?', 'Sí. Es mezclilla 100% algodón preencogida con costuras dobles. Lava al revés, sin cloro, y dura cientos de lavadas.'],
+      ['¿Hacen pantalones de trabajo con logotipo?', 'Sí, bordado o estampado DTF para pedidos de mayoreo. Cotízalo desde el cotizador o por WhatsApp.'],
+      ['¿Envían a todo México?', 'Sí, por paquetería con número de guía. En Monterrey también puedes recoger en tienda.'],
+    ],
     seoText: `
       <h2>Pantalones de mezclilla para trabajar, no para lucir</h2>
       <p>Un pantalón de trabajo tiene que aguantar jornadas completas de agacharse, cargar, arrodillarse y rozar contra superficies ásperas. Por eso nuestros work jeans se fabrican con mezclilla 100% algodón de mayor peso, costuras dobles reforzadas en tiro, entrepierna y bolsas, y acabado preencogido para que la talla que compras sea la talla que se queda después de lavarlos.</p>
       <h2>Pantalones de trabajo con reflejante</h2>
       <p>Para vialidades, plantas industriales y turnos de noche ofrecemos el mismo pantalón con cintas reflejantes en verde o naranja de alta visibilidad, cosidas en las piernas. Cumplen la función de la ropa de seguridad sin perder la comodidad y resistencia de la mezclilla.</p>
+      <h2>Pantalones de trabajo por industria</h2>
+      <ul>
+        <li><strong>Construcción y obra:</strong> mezclilla pesada que aguanta concreto, varilla y arrodillarse; versión reflejante para trabajo junto a maquinaria.</li>
+        <li><strong>Manufactura y planta:</strong> corte recto sin partes sueltas, cinco bolsas útiles y tallas hasta la 50 para uniformar a toda la línea.</li>
+        <li><strong>Mantenimiento y talleres:</strong> resistente a grasa y lavado frecuente; el color se asienta, no se destiñe a manchones.</li>
+        <li><strong>Logística y patios:</strong> reflejante naranja o verde para estar visible entre montacargas y tráileres.</li>
+      </ul>
+      <h2>Normal o reflejante: cuál elegir</h2>
+      <div class="table-scroll"><table class="content-table">
+        <thead><tr><th></th><th>Pantalón de trabajo</th><th>Pantalón reflejante</th></tr></thead>
+        <tbody>
+          <tr><td>Tela</td><td>Mezclilla 100% algodón</td><td>Mezclilla 100% algodón</td></tr>
+          <tr><td>Costuras</td><td>Dobles, reforzadas</td><td>Dobles, reforzadas</td></tr>
+          <tr><td>Cintas reflejantes</td><td>No</td><td>Sí, en ambas piernas (verde o naranja)</td></tr>
+          <tr><td>Uso recomendado</td><td>Obra, planta, taller, campo</td><td>Vialidades, patios, turnos de noche</td></tr>
+          <tr><td>Tallas</td><td>28 a 50</td><td>28 a 50</td></tr>
+        </tbody>
+      </table></div>
       <h2>Uniformes de trabajo por mayoreo en Monterrey</h2>
       <p>Surtimos empresas, contratistas y distribuidores con stock inmediato y corridas completas de tallas. Podemos bordar o estampar el logotipo de tu empresa. Arma tu pedido por talla en el <a href="/#cotizador">cotizador de mayoreo</a> y recibe la cotización por WhatsApp. Enviamos a todo México desde nuestra tienda en Monterrey.</p>
+      <p>Lee también: <a href="/articulos/work-jeans-vs-pantalon-de-mezclilla-normal">work jeans vs. pantalón de mezclilla normal</a> y la <a href="/guia-de-tallas">guía de tallas</a>.</p>
     `,
   },
   'camisas-de-trabajo': {
@@ -530,8 +633,10 @@ app.get('/:slug(pantalones-de-trabajo|camisas-de-trabajo)', (req, res) => {
         '@type': 'ItemList',
         itemListElement: products.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${origin}/producto/${p.id}` })),
       },
+      ...(page.faq ? [{ '@type': 'FAQPage', mainEntity: page.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }] : []),
     ],
   };
+  const faqHtml = page.faq ? `<h2>Preguntas frecuentes sobre ${page.h1.toLowerCase()}</h2>${page.faq.map(([q, a]) => `<details class="faq-item"><summary>${escapeHtml(q)}</summary><p>${escapeHtml(a)}</p></details>`).join('')}` : '';
   let html = fs.readFileSync(path.join(__dirname, 'categoria.html'), 'utf-8');
   const fill = {
     TITLE: escapeHtml(page.title),
@@ -544,11 +649,53 @@ app.get('/:slug(pantalones-de-trabajo|camisas-de-trabajo)', (req, res) => {
     H1_HTML: page.h1Html,
     INTRO: escapeHtml(page.intro),
     CARDS: products.map((p) => productCardStatic(p, origin)).join('') || '<p class="products-loading">Pronto tendremos productos en esta categoría.</p>',
-    SEO_TEXT: page.seoText,
+    SEO_TEXT: page.seoText + faqHtml,
   };
   for (const [key, value] of Object.entries(fill)) html = html.split(`{{${key}}}`).join(value);
   res.set('Cache-Control', 'no-cache');
   res.send(html);
+});
+
+// --- Feed de productos para Google Merchant Center (RSS 2.0 con espacio de nombres g:) ---
+app.get('/feed/google-merchant.xml', (req, res) => {
+  const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
+  const x = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+  const items = [];
+  for (const p of publicProducts()) {
+    const images = (p.images && p.images.length ? p.images : [p.image]).map((i) => `${origin}/${i}`);
+    for (const s of p.sizes) {
+      items.push(`
+    <item>
+      <g:id>${x(`${p.id}-${s.size}`)}</g:id>
+      <g:item_group_id>${x(p.id)}</g:item_group_id>
+      <g:title>${x(`${p.name} talla ${s.size}`)}</g:title>
+      <g:description>${x(p.description)}</g:description>
+      <g:link>${origin}/producto/${x(p.id)}</g:link>
+      <g:image_link>${x(images[0])}</g:image_link>
+      ${images.slice(1).map((i) => `<g:additional_image_link>${x(i)}</g:additional_image_link>`).join('')}
+      <g:availability>${s.stock > 0 ? 'in_stock' : 'out_of_stock'}</g:availability>
+      <g:price>${(p.priceCents / 100).toFixed(2)} MXN</g:price>
+      <g:brand>Works Jeans</g:brand>
+      <g:condition>new</g:condition>
+      <g:size>${x(s.size)}</g:size>
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+      <g:material>Mezclilla 100% algodón</g:material>
+      <g:google_product_category>${p.category === 'Pantalones' ? '204' : '212'}</g:google_product_category>
+      <g:product_type>${x(p.category === 'Pantalones' ? 'Ropa de trabajo > Pantalones de trabajo' : 'Ropa de trabajo > Camisas de trabajo')}</g:product_type>
+    </item>`);
+    }
+  }
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>Works Jeans</title>
+    <link>${origin}/</link>
+    <description>Pantalones y camisas de trabajo de mezclilla</description>${items.join('')}
+  </channel>
+</rss>
+`;
+  res.type('application/xml').send(xml);
 });
 
 // --- Landings y artículos de contenido (contenido.js) ---

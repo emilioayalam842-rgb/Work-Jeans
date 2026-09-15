@@ -1,14 +1,14 @@
 [
   {
     "id": "camisa-mezclilla",
-    "name": "Camisa de Mezclilla",
+    "name": "Camisa de Trabajo de Mezclilla",
     "category": "Camisas",
     "priceCents": 45000,
     "image": "assets/products/camisa-mezclilla.jpg",
     "images": [
       "assets/products/camisa-mezclilla.jpg"
     ],
-    "description": "Camisa de mezclilla 100% algodón con bolsillo frontal y botones reforzados. Acabado preencogido. Uso industrial.",
+    "description": "Camisa de trabajo de mezclilla 100% algodón con bolsillo frontal y botones reforzados. Acabado preencogido. Uso industrial.",
     "sizes": [
       {
         "size": "XCH",
@@ -50,7 +50,7 @@
   },
   {
     "id": "camisa-reflejante-verde",
-    "name": "Camisa Reflejante Verde",
+    "name": "Camisa de Trabajo Reflejante Verde",
     "category": "Camisas",
     "priceCents": 52000,
     "image": "assets/products/camisa-reflejante-verde-front.jpg",
@@ -58,7 +58,7 @@
       "assets/products/camisa-reflejante-verde-front.jpg",
       "assets/products/camisa-reflejante-verde-back.jpg"
     ],
-    "description": "Camisa de mezclilla con cintas reflejantes verde alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad.",
+    "description": "Camisa de trabajo de mezclilla con cintas reflejantes verde de alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad.",
     "sizes": [
       {
         "size": "XCH",
@@ -100,7 +100,7 @@
   },
   {
     "id": "camisa-reflejante-naranja",
-    "name": "Camisa Reflejante Naranja",
+    "name": "Camisa de Trabajo Reflejante Naranja",
     "category": "Camisas",
     "priceCents": 52000,
     "image": "assets/products/camisa-reflejante-naranja-front.jpg",
@@ -108,7 +108,7 @@
       "assets/products/camisa-reflejante-naranja-front.jpg",
       "assets/products/camisa-reflejante-naranja-back.jpg"
     ],
-    "description": "Camisa de mezclilla con cintas reflejantes naranja alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad.",
+    "description": "Camisa de trabajo de mezclilla con cintas reflejantes naranja de alta visibilidad en pecho y mangas. Para entornos de poca luz y alta seguridad.",
     "sizes": [
       {
         "size": "XCH",
@@ -150,14 +150,14 @@
   },
   {
     "id": "pantalon-mezclilla",
-    "name": "Pantalón de Mezclilla",
+    "name": "Pantalón de Trabajo de Mezclilla",
     "category": "Pantalones",
     "priceCents": 55000,
     "image": "assets/products/pantalon-mezclilla.jpg",
     "images": [
       "assets/products/pantalon-mezclilla.jpg"
     ],
-    "description": "Pantalón de mezclilla 100% algodón corte recto. Cinco bolsas, costuras reforzadas y cintura ajustada. Resistente al uso intensivo.",
+    "description": "Pantalón de trabajo de mezclilla 100% algodón, corte recto. Cinco bolsas, costuras reforzadas y cintura ajustada. Work jean resistente al uso intensivo en obra, planta y taller.",
     "sizes": [
       {
         "size": "28",
@@ -219,7 +219,7 @@
   },
   {
     "id": "pantalon-reflejante-verde",
-    "name": "Pantalón Reflejante Verde",
+    "name": "Pantalón de Trabajo Reflejante Verde",
     "category": "Pantalones",
     "priceCents": 62000,
     "image": "assets/products/pantalon-reflejante-verde-front.jpg",
@@ -227,7 +227,7 @@
       "assets/products/pantalon-reflejante-verde-front.jpg",
       "assets/products/pantalon-reflejante-verde-back.jpg"
     ],
-    "description": "Pantalón de mezclilla con cintas reflejantes verde alta visibilidad en piernas. Para entornos de poca luz y alta seguridad.",
+    "description": "Pantalón de trabajo de mezclilla con cintas reflejantes verde de alta visibilidad en piernas. Para vialidades, plantas y turnos con poca luz.",
     "sizes": [
       {
         "size": "28",
@@ -289,7 +289,7 @@
   },
   {
     "id": "pantalon-reflejante-naranja",
-    "name": "Pantalón Reflejante Naranja",
+    "name": "Pantalón de Trabajo Reflejante Naranja",
     "category": "Pantalones",
     "priceCents": 62000,
     "image": "assets/products/pantalon-reflejante-naranja-front.jpg",
@@ -297,7 +297,7 @@
       "assets/products/pantalon-reflejante-naranja-front.jpg",
       "assets/products/pantalon-reflejante-naranja-back.jpg"
     ],
-    "description": "Pantalón de mezclilla con cintas reflejantes naranja alta visibilidad en piernas. Para entornos de poca luz y alta seguridad.",
+    "description": "Pantalón de trabajo de mezclilla con cintas reflejantes naranja de alta visibilidad en piernas. Para vialidades, plantas y turnos con poca luz.",
     "sizes": [
       {
         "size": "28",
