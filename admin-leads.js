@@ -13,12 +13,12 @@
     document.getElementById('leadsTableBody').innerHTML = rows.length ? rows.map((l) => `
       <tr data-id="${l.id}">
         <td class="admin-nowrap">${fmtDate(l.createdAt)}</td>
-        <td><strong>${esc(l.company) || '—'}</strong><br><span class="admin-muted admin-small">${esc(l.name)}${l.city || l.state ? ` · ${esc([l.city, l.state].filter(Boolean).join(', '))}` : ''}</span></td>
+        <td><strong>${esc(l.company) || '—'}</strong><br><span class="admin-muted admin-small">${esc(l.name)}${l.city || l.state ? ` · ${esc([l.city, l.state].filter(Boolean).join(', '))}` : ''}</span>${l.repeatOf ? '<br><span class="admin-badge lead-ganado">Repite pedido anterior</span>' : ''}</td>
         <td>${l.email ? `<a href="mailto:${esc(l.email)}">${esc(l.email)}</a><br>` : ''}${l.phone ? `<a href="https://wa.me/${whatsappDigits(l.phone)}" target="_blank" rel="noopener">${esc(l.phone)}</a>` : ''}</td>
         <td>${l.totalPieces || (l.headcount ? `~${l.headcount} personas` : '—')}${l.lines?.length ? `<br><span class="admin-muted admin-small">${esc(l.lines.map((x) => `${x.name} (${x.total})`).join(', ')).slice(0, 120)}</span>` : ''}${l.customization ? `<br><span class="admin-muted admin-small">${esc(l.customization)}</span>` : ''}</td>
         <td><select class="admin-status-select lead-${l.status}" data-action="lead-status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${k === l.status ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
         <td><textarea class="lead-notes" data-action="lead-notes" rows="2" placeholder="Notas internas…">${esc(l.internalNotes || '')}</textarea></td>
-        <td class="admin-table-actions">${l.notes ? `<button type="button" class="admin-icon-btn" data-action="lead-view" title="Ver comentarios del cliente">${icon('eye')}</button>` : ''}${iconBtn('lead-delete', 'trash', 'Eliminar')}</td>
+        <td class="admin-table-actions">${l.notes ? `<button type="button" class="admin-icon-btn" data-action="lead-view" title="Ver comentarios del cliente">${icon('eye')}</button>` : ''}${l.repeatToken ? `<button type="button" class="admin-icon-btn" data-action="lead-repeat" title="Copiar enlace para que repita este pedido">${icon('copy')}</button>` : ''}${iconBtn('lead-delete', 'trash', 'Eliminar')}</td>
       </tr>`).join('') : '<tr><td colspan="7">Sin cotizaciones todavía. Llegan desde la página /empresas.</td></tr>';
   }
 
@@ -52,6 +52,10 @@
     if (!btn || !id) return;
     const lead = leads.find((l) => l.id === id);
     if (btn.dataset.action === 'lead-view') alert(`${lead.company || lead.name}:\n\n${lead.notes}`);
+    if (btn.dataset.action === 'lead-repeat') {
+      const url = `${location.origin}/empresas?repetir=${lead.repeatToken}`;
+      try { await navigator.clipboard.writeText(url); notifyForbidden('Enlace copiado. Mándaselo por WhatsApp: al abrirlo verá su pedido anterior listo para ajustar y enviar.'); } catch { prompt('Copia este enlace:', url); }
+    }
     if (btn.dataset.action === 'lead-delete') {
       if (!confirm('¿Eliminar esta cotización?')) return;
       const res = await fetch(`/api/admin/leads/${id}`, { method: 'DELETE' });

@@ -5,7 +5,7 @@ Cosas que el sitio ya está preparado para aprovechar, pero que requieren cuenta
 ## Pagos y correo (bloquean ventas)
 
 1. **Stripe:** poner `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET` en Railway → works-jeans → web → Variables, y registrar el webhook `https://www.workjeans.mx/api/stripe/webhook` (evento `checkout.session.completed`). Sin esto solo hay pedidos por WhatsApp.
-2. **Resend:** `RESEND_API_KEY` (y opcionalmente `NOTIFY_FROM` con un dominio verificado) para recibir avisos de pedidos, cotizaciones de empresas, mensajes de contacto y stock bajo. Configurar el correo de avisos en Panel → Configuración.
+2. **Resend:** `RESEND_API_KEY` para recibir avisos de pedidos, cotizaciones, contacto y stock bajo. Para los **correos al cliente** (pedido recibido, enviado, entregado, cancelado, confirmación de cotización) es obligatorio verificar el dominio workjeans.mx en Resend (registros DNS en Cloudflare) y poner `NOTIFY_FROM="Works Jeans <pedidos@workjeans.mx>"`: el remitente de prueba `onboarding@resend.dev` solo entrega al dueño de la cuenta. Configurar el correo de avisos en Panel → Configuración.
 
 ## Google
 

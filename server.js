@@ -2224,7 +2224,7 @@ app.get('/api/admin/orders', requireAdmin, perm('pedidos.ver'), (req, res) => {
 
 app.post('/api/admin/orders', requireAdmin, perm('pedidos.editar'), (req, res) => {
   try {
-    const { customerName, customerPhone, notes, items, invoice } = req.body;
+    const { customerName, customerPhone, customerEmail, notes, items, invoice } = req.body;
     if (!Array.isArray(items) || items.length === 0) {
       res.status(400).json({ error: 'Agrega al menos un producto al pedido.' });
       return;
@@ -2275,6 +2275,7 @@ app.post('/api/admin/orders', requireAdmin, perm('pedidos.editar'), (req, res) =
       createdAt: new Date().toISOString(),
       customerName: cleanText(customerName, 120),
       customerPhone: cleanText(customerPhone, 40),
+      customerEmail: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(customerEmail || '').trim()) ? cleanText(customerEmail, 120).toLowerCase() : '',
       notes: cleanText(notes, 1000),
       invoice: (() => { const { invoice: inv } = normalizeInvoice(invoice); return inv ? { requested: true, issued: false, ...inv } : null; })(),
       discount,
@@ -2287,6 +2288,7 @@ app.post('/api/admin/orders', requireAdmin, perm('pedidos.editar'), (req, res) =
     orders.push(order);
     saveOrders(orders);
     if (discount?.promotions?.length) registerPromoUse(discount.promotions, totalCents);
+    if (order.customerEmail) emailCustomer(order.id, 'confirmacion');
     res.status(201).json(order);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -2327,6 +2329,7 @@ app.put('/api/admin/orders/:id', requireAdmin, perm('pedidos.editar'), (req, res
     }
     if (status === 'enviado' && order.status !== 'enviado') order.shippedAt = new Date().toISOString();
     if (status === 'entregado' && order.status !== 'entregado') order.deliveredAt = new Date().toISOString();
+    if (status !== order.status && ['enviado', 'entregado', 'cancelado'].includes(status)) req.emailAfterSave = status;
     order.status = status;
   }
   if (notes !== undefined) order.notes = cleanText(notes, 1000);
@@ -2341,7 +2344,16 @@ app.put('/api/admin/orders/:id', requireAdmin, perm('pedidos.editar'), (req, res
       : null;
   }
   saveOrders(orders);
+  if (req.emailAfterSave) emailCustomer(order.id, req.emailAfterSave);
   res.json(order);
+});
+
+app.post('/api/admin/orders/:id/email', requireAdmin, perm('pedidos.editar'), async (req, res) => {
+  const type = String(req.body?.type || 'confirmacion');
+  const result = await emailCustomer(req.params.id, type, { force: true });
+  auditLog(req, 'pedidos.correo', { target: req.params.id, details: { type, ok: result.ok } });
+  if (!result.ok) { res.status(400).json({ error: `No se envió: ${result.reason}.` }); return; }
+  res.json({ ok: true });
 });
 
 // --- Inventario (protegido) ---
@@ -2537,6 +2549,85 @@ async function sendEmail({ subject, html }) {
   }
 }
 
+// --- Correos al cliente (confirmación, enviado, entregado, cancelado). Requieren RESEND_API_KEY y un remitente
+// con dominio verificado en Resend (NOTIFY_FROM), porque onboarding@resend.dev solo entrega al dueño de la cuenta.
+function customerEmailsEnabled() {
+  try { return getSettings().customerEmails !== false; } catch { return true; }
+}
+
+async function sendEmailTo({ to, subject, html }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || !to) return { ok: false, reason: apiKey ? 'sin correo' : 'sin RESEND_API_KEY' };
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: process.env.NOTIFY_FROM || 'Works Jeans <onboarding@resend.dev>', to, subject, html }),
+    });
+    if (!r.ok) { const t = await r.text(); console.error('Correo al cliente no enviado:', r.status, t); return { ok: false, reason: `Resend ${r.status}` }; }
+    return { ok: true };
+  } catch (err) {
+    console.error('Correo al cliente no enviado:', err.message);
+    return { ok: false, reason: err.message };
+  }
+}
+
+function emailLayout(title, body) {
+  const s = getSettings();
+  return `<!doctype html><html lang="es"><body style="margin:0;background:#f3f3f3;font-family:Inter,Arial,sans-serif;color:#1e1e1e">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border:1.5px solid #0f0f0f">
+    <div style="height:10px;background:repeating-linear-gradient(-45deg,#111 0 14px,#ffd600 14px 28px)"></div>
+    <div style="padding:28px 32px">
+      <img src="https://www.workjeans.mx/assets/img/works-jeans-logo.png" alt="Works Jeans" width="120" style="display:block;margin-bottom:18px">
+      <h1 style="font-size:22px;margin:0 0 14px;text-transform:uppercase;letter-spacing:.02em">${title}</h1>
+      ${body}
+      <p style="font-size:13px;color:#6a6a6a;margin-top:28px;border-top:1px solid #ddd;padding-top:14px">Works Jeans · ${escapeHtml(s.address || 'Monterrey, N.L.')}<br>WhatsApp ${escapeHtml(s.phoneDisplay || '')} · <a href="https://www.workjeans.mx" style="color:#0f0f0f">www.workjeans.mx</a><br><a href="https://www.workjeans.mx/envios-y-devoluciones.html" style="color:#6a6a6a">Envíos y cambios</a> · <a href="https://www.workjeans.mx/aviso-de-privacidad.html" style="color:#6a6a6a">Aviso de privacidad</a></p>
+    </div>
+  </div></body></html>`;
+}
+
+function orderSummaryHtml(order) {
+  const rows = order.items.map((i) => `<tr><td style="padding:8px 6px;border-bottom:1px solid #eee">${escapeHtml(i.name)}</td><td style="padding:8px 6px;border-bottom:1px solid #eee">${escapeHtml(i.size || '—')}</td><td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right">${i.quantity}</td><td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right">${formatMxn(i.priceCents * i.quantity)}</td></tr>`).join('');
+  const subtotal = order.subtotalCents || order.items.reduce((s, i) => s + i.priceCents * i.quantity, 0);
+  const lines = [`<tr><td colspan="3" style="padding:6px;text-align:right">Subtotal</td><td style="padding:6px;text-align:right">${formatMxn(subtotal)}</td></tr>`];
+  if (order.discount?.cents) lines.push(`<tr><td colspan="3" style="padding:6px;text-align:right">Descuento${order.discount.code ? ` (${escapeHtml(order.discount.code)})` : ''}</td><td style="padding:6px;text-align:right">−${formatMxn(order.discount.cents)}</td></tr>`);
+  if (Number.isFinite(order.shippingCostCents) && order.shippingCostCents !== null) lines.push(`<tr><td colspan="3" style="padding:6px;text-align:right">Envío</td><td style="padding:6px;text-align:right">${order.shippingCostCents ? formatMxn(order.shippingCostCents) : 'Gratis'}</td></tr>`);
+  else if (order.shipping) lines.push(`<tr><td colspan="3" style="padding:6px;text-align:right">Envío</td><td style="padding:6px;text-align:right">Se confirma por WhatsApp</td></tr>`);
+  lines.push(`<tr><td colspan="3" style="padding:8px 6px;text-align:right;font-weight:700">Total</td><td style="padding:8px 6px;text-align:right;font-weight:700">${formatMxn(order.totalCents)}</td></tr>`);
+  const ship = order.shipping ? `<p style="margin:14px 0 0"><b>Entrega:</b> ${escapeHtml([order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', '))}</p>` : '';
+  return `<p style="margin:0 0 6px"><b>Pedido ${escapeHtml(order.id)}</b> · ${new Date(order.createdAt).toLocaleDateString('es-MX', { dateStyle: 'long' })}</p>
+  <table style="width:100%;border-collapse:collapse;font-size:14px"><tr><th style="text-align:left;padding:6px;border-bottom:2px solid #0f0f0f">Producto</th><th style="text-align:left;padding:6px;border-bottom:2px solid #0f0f0f">Talla</th><th style="text-align:right;padding:6px;border-bottom:2px solid #0f0f0f">Cant.</th><th style="text-align:right;padding:6px;border-bottom:2px solid #0f0f0f">Importe</th></tr>${rows}${lines.join('')}</table>${ship}`;
+}
+
+const CUSTOMER_EMAILS = {
+  confirmacion: (o) => ({ subject: `Recibimos tu pedido ${o.id} · Works Jeans`, title: 'Recibimos tu pedido.', intro: o.source === 'stripe' ? 'Tu pago se procesó correctamente. Preparamos tu pedido en 1 a 2 días hábiles y te avisamos por este medio y por WhatsApp cuando salga.' : 'Registramos tu pedido. Te confirmamos por WhatsApp la forma de pago y el envío.', outro: o.invoice ? 'Pediste factura: te la enviamos al correo indicado en cuanto se emita.' : '' }),
+  enviado: (o) => ({ subject: `Tu pedido ${o.id} va en camino · Works Jeans`, title: 'Tu pedido va en camino.', intro: o.tracking?.number ? `Salió por ${escapeHtml(o.tracking.carrier || 'paquetería')} con la guía <b>${escapeHtml(o.tracking.number)}</b>.${o.tracking.url ? ` <a href="${escapeHtml(o.tracking.url)}">Rastrear envío</a>.` : ''} La entrega suele tardar de 3 a 7 días hábiles según el destino.` : 'Salió con la paquetería. Te compartimos la guía por WhatsApp.', outro: '' }),
+  entregado: (o) => ({ subject: `Tu pedido ${o.id} fue entregado · Works Jeans`, title: 'Pedido entregado.', intro: 'Tu pedido ya está contigo. Si algo no quedó bien, tienes 15 días para cambio de talla con la prenda sin usar y con etiquetas.', outro: 'Gracias por comprar ropa de trabajo hecha en Monterrey.' }),
+  cancelado: (o) => ({ subject: `Tu pedido ${o.id} fue cancelado · Works Jeans`, title: 'Pedido cancelado.', intro: 'Cancelamos tu pedido. Si pagaste con tarjeta, el reembolso aparece en tu estado de cuenta en los días que marque tu banco. Si tienes dudas, escríbenos por WhatsApp.', outro: '' }),
+};
+
+// Envía un correo al cliente del pedido y deja registro en order.emails. No repite el mismo tipo.
+async function emailCustomer(orderId, type, { force = false } = {}) {
+  const tpl = CUSTOMER_EMAILS[type];
+  if (!tpl) return { ok: false, reason: 'tipo desconocido' };
+  const orders = getOrders();
+  const order = orders.find((o) => o.id === orderId);
+  if (!order) return { ok: false, reason: 'pedido no encontrado' };
+  if (!customerEmailsEnabled()) return { ok: false, reason: 'correos al cliente desactivados' };
+  if (!order.customerEmail) return { ok: false, reason: 'el pedido no tiene correo' };
+  if (!force && (order.emails || []).some((e) => e.type === type && e.ok)) return { ok: false, reason: 'ya enviado' };
+  const t = tpl(order);
+  const html = emailLayout(t.title, `<p>Hola ${escapeHtml((order.customerName || '').split(' ')[0] || '')}.</p><p>${t.intro}</p>${orderSummaryHtml(order)}${t.outro ? `<p>${t.outro}</p>` : ''}`);
+  const result = await sendEmailTo({ to: order.customerEmail, subject: t.subject, html });
+  const fresh = getOrders();
+  const o2 = fresh.find((o) => o.id === orderId);
+  if (o2) {
+    o2.emails = [...(o2.emails || []), { type, at: new Date().toISOString(), ok: result.ok, reason: result.ok ? undefined : result.reason }];
+    saveOrders(fresh);
+  }
+  return result;
+}
+
 async function notifyLowStock(alerts, threshold) {
   const rows = alerts.map((a) => `<li><b>${a.productName}</b> — talla ${a.size}: quedan ${a.stock} pzas</li>`).join('');
   await sendEmail({
@@ -2566,8 +2657,7 @@ function recordStripeOrder(session) {
   const before = getOrders().some((o) => o.stripeSessionId === session.id);
   const orders = getOrders();
   let order = orders.find((o) => o.stripeSessionId === session.id);
-  if (order) if (!before && order && order.totalCents) trackEvent('purchase', { cents: order.totalCents });
-  return order;
+  if (order) return order;
 
   let cartMeta = [];
   try {
@@ -2644,6 +2734,8 @@ function recordStripeOrder(session) {
     }
   }
   notifyNewOrder(order);
+  if (!before && order.totalCents) trackEvent('purchase', { cents: order.totalCents });
+  emailCustomer(order.id, 'confirmacion');
   return order;
 }
 
@@ -2968,7 +3060,13 @@ app.post('/api/leads', async (req, res) => {
     lines: Array.isArray(b.lines) ? b.lines.slice(0, 30).map((l) => ({ id: cleanText(l.id, 80), name: cleanText(l.name, 120), total: Math.max(0, parseInt(l.total, 10) || 0), sizes: Object.fromEntries(Object.entries(l.sizes || {}).slice(0, 40).map(([k, v]) => [cleanText(k, 30), Math.max(0, parseInt(v, 10) || 0)])) })) : [],
     internalNotes: '',
     source: 'empresas',
+    repeatToken: crypto.randomBytes(12).toString('hex'),
+    repeatOf: null,
   };
+  if (b.repeatOf) {
+    const original = getLeads().find((l) => l.repeatToken === String(b.repeatOf));
+    if (original) lead.repeatOf = original.id;
+  }
   lead.totalPieces = lead.lines.reduce((s, l) => s + l.total, 0);
   if (!lead.name || !lead.company || !lead.phone || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(lead.email)) {
     res.status(400).json({ error: 'Completa nombre, empresa, correo y teléfono.' });
@@ -2989,7 +3087,22 @@ app.post('/api/leads', async (req, res) => {
     subject: `Cotización de empresa: ${lead.company}`,
     html: `<h2>Nueva cotización desde www.workjeans.mx/empresas</h2><p><b>${escapeHtml(lead.company)}</b> · ${escapeHtml(lead.name)}<br>${escapeHtml(lead.email)} · ${escapeHtml(lead.phone)}<br>${escapeHtml([lead.city, lead.state].filter(Boolean).join(', '))}</p><p>${detail ? escapeHtml(detail).replace(/&lt;br&gt;/g, '<br>') : 'Sin desglose por talla.'}<br>Total: ${lead.totalPieces} piezas${lead.headcount ? ` · ~${lead.headcount} personas` : ''}${lead.customization ? ` · ${escapeHtml(lead.customization)}` : ''}</p>${lead.notes ? `<p style="white-space:pre-wrap">${escapeHtml(lead.notes)}</p>` : ''}<p>Revisa y da seguimiento en el panel → Ventas → Cotizaciones.</p>`,
   });
-  res.status(201).json({ ok: true, id: lead.id, emailed });
+  if (customerEmailsEnabled()) {
+    const repeatUrl = `https://www.workjeans.mx/empresas?repetir=${lead.repeatToken}`;
+    const linesHtml = lead.lines.length ? `<ul>${lead.lines.map((l) => `<li>${escapeHtml(l.name)}: ${escapeHtml(Object.entries(l.sizes).map(([s, q]) => `${s} × ${q}`).join(', '))} (${l.total} pzas)</li>`).join('')}</ul>` : '';
+    sendEmailTo({ to: lead.email, subject: `Recibimos tu cotización · Works Jeans`, html: emailLayout('Recibimos tu cotización.', `<p>Hola ${escapeHtml(lead.name.split(' ')[0])}. Ya tenemos tu solicitud para <b>${escapeHtml(lead.company)}</b>; te respondemos por WhatsApp o correo en horario de tienda (lunes a sábado, 9:00 a 18:00).</p>${linesHtml}${lead.customization ? `<p>Personalización: ${escapeHtml(lead.customization)}</p>` : ''}<p style="margin-top:22px"><b>Para la próxima vez:</b> con este enlace repites el mismo pedido y solo ajustas cantidades.<br><a href="${repeatUrl}" style="display:inline-block;margin-top:8px;padding:12px 18px;background:#ffd600;color:#0f0f0f;text-decoration:none;font-weight:700;border:1.5px solid #0f0f0f">Repetir este pedido</a></p>`) });
+  }
+  res.status(201).json({ ok: true, id: lead.id, emailed, repeatToken: lead.repeatToken });
+});
+
+// Datos de una cotización anterior para repetirla (el enlace es privado, con token aleatorio). Sin notas internas.
+app.get('/api/leads/repeat/:token', (req, res) => {
+  const token = String(req.params.token || '');
+  const lead = /^[a-f0-9]{24}$/.test(token) ? getLeads().find((l) => l.repeatToken === token) : null;
+  if (!lead) { res.status(404).json({ error: 'Enlace no válido.' }); return; }
+  const current = new Set(publicProducts().map((p) => p.id));
+  res.set('Cache-Control', 'no-store');
+  res.json({ company: lead.company, name: lead.name, email: lead.email, phone: lead.phone, city: lead.city, state: lead.state, customization: lead.customization, createdAt: lead.createdAt, lines: lead.lines.filter((l) => current.has(l.id)) });
 });
 
 app.get('/api/admin/leads', requireAdmin, perm('pedidos.ver'), (req, res) => {

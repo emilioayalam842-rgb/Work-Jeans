@@ -109,12 +109,31 @@
     return parts.join('\n');
   }
 
+  let repeatOf = '';
+  async function loadRepeat() {
+    const token = new URLSearchParams(location.search).get('repetir');
+    if (!token || !/^[a-f0-9]{24}$/.test(token)) return;
+    try {
+      const res = await fetch(`/api/leads/repeat/${token}`);
+      if (!res.ok) { statusEl.textContent = 'El enlace para repetir el pedido ya no es válido. Arma tu pedido desde cero.'; return; }
+      const prev = await res.json();
+      repeatOf = token;
+      prev.lines.forEach((l) => lines.push({ id: l.id, name: products.find((p) => p.id === l.id)?.name || l.name, sizes: { ...l.sizes }, total: l.total }));
+      const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+      set('leadName', prev.name); set('cotName', prev.company); set('leadEmail', prev.email); set('leadPhone', prev.phone); set('leadCity', prev.city); set('leadState', prev.state); set('cotLogo', prev.customization);
+      renderList();
+      statusEl.textContent = `Cargamos tu pedido del ${new Date(prev.createdAt).toLocaleDateString('es-MX', { dateStyle: 'long' })}. Ajusta cantidades si hace falta y envíalo.`;
+      document.getElementById('cotizador')?.scrollIntoView({ behavior: 'smooth' });
+    } catch { /* sin conexión: el cotizador sigue vacío */ }
+  }
+
   fetch('products.json')
     .then((res) => res.json())
     .then((data) => {
       products = data;
       productSelect.innerHTML = products.map((p) => `<option value="${p.id}">${p.name}${p.wholesale ? ` · mayoreo ${money(p.wholesale.priceCents)} desde ${p.wholesale.minQty} pzas` : ''}</option>`).join('');
       renderSizes();
+      loadRepeat();
     })
     .catch(() => {
       statusEl.textContent = 'No se pudo cargar el catálogo. Escríbenos por WhatsApp.';
@@ -174,11 +193,12 @@
           customization: logoSelect.value,
           notes: document.getElementById('leadNotes').value,
           lines,
+          repeatOf,
         }),
       });
       const data = await res.json();
       if (!res.ok) { statusEl.textContent = data.error || 'No se pudo enviar. Intenta por WhatsApp.'; return; }
-      statusEl.textContent = 'Recibimos tu cotización. Te respondemos por WhatsApp o correo en horario de tienda. Si quieres, también puedes mandarla por WhatsApp con el botón de al lado.';
+      statusEl.textContent = 'Recibimos tu cotización. Te respondemos por WhatsApp o correo en horario de tienda; te mandamos un correo con un enlace para repetir este pedido cuando lo necesites.';
       window.wjTrack?.('b2b_quote_submitted', { pieces: lines.reduce((s, l) => s + l.total, 0) });
     } catch {
       statusEl.textContent = 'Sin conexión. Escríbenos por WhatsApp al 81 2861 3551.';

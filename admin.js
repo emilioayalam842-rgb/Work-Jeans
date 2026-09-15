@@ -1004,6 +1004,7 @@ function openOrderDetail(id) {
     </table>
     ${order.discount ? `<p class="admin-muted">Subtotal ${formatPrice(order.subtotalCents || order.totalCents + order.discount.cents)} · Descuento −${formatPrice(order.discount.cents)}${order.discount.code ? ` (cupón ${order.discount.code})` : ''}${order.discount.promotions?.length ? ` · ${order.discount.promotions.map((p) => p.name).join(', ')}` : ''}</p>` : ''}
     <p class="admin-order-total">Total: ${formatPrice(order.totalCents)}</p>
+    <p class="admin-muted admin-small">Correos al cliente: ${(order.emails || []).length ? order.emails.map((e) => `${e.type} ${e.ok ? '✓' : `✗ (${esc(e.reason || 'error')})`}`).join(' · ') : 'ninguno todavía'}${order.customerEmail ? ` · <button type="button" class="admin-inline-btn" data-action="resend-confirmation">Reenviar confirmación</button>` : ' · sin correo del cliente'}</p>
   `;
   orderDetailNotes.value = order.notes || '';
   document.getElementById('orderDetailStatus').value = order.status;
@@ -1022,6 +1023,15 @@ function openOrderDetail(id) {
   document.getElementById('orderInvoiceIssued').checked = Boolean(inv?.issued);
   orderDetailOverlay.hidden = false;
 }
+
+orderDetailContent.addEventListener('click', async (e) => {
+  if (!e.target.closest('[data-action="resend-confirmation"]')) return;
+  const res = await fetch(`/api/admin/orders/${activeOrderId}/email`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'confirmacion' }) });
+  const data = await res.json().catch(() => ({}));
+  document.getElementById('orderDetailError').textContent = res.ok ? 'Correo enviado.' : (data.error || 'No se pudo enviar.');
+  await loadOrders();
+  openOrderDetail(activeOrderId);
+});
 
 function customerMessage(order) {
   const name = order.customerName ? `Hola ${order.customerName.split(' ')[0]}` : 'Hola';
@@ -1636,6 +1646,7 @@ orderForm.addEventListener('submit', async (e) => {
     body: JSON.stringify({
       customerName: document.getElementById('orderCustomerName').value,
       customerPhone: document.getElementById('orderCustomerPhone').value,
+      customerEmail: document.getElementById('orderCustomerEmail').value,
       notes: document.getElementById('orderNotes').value,
       code: document.getElementById('orderCode').value.trim(),
       discountMxn: document.getElementById('orderDiscount').value,
@@ -1766,6 +1777,7 @@ async function loadSettingsForm() {
   document.getElementById('settingNotifyEmail').value = settings.notifyEmail || '';
   document.getElementById('settingLowStock').value = settings.lowStockThreshold ?? 5;
   document.getElementById('settingGa4').value = settings.ga4Id || '';
+  document.getElementById('settingCustomerEmails').checked = settings.customerEmails !== false;
   const ship = settings.shipping || {};
   document.getElementById('settingFreeFrom').value = ship.freeFromCents ? (ship.freeFromCents / 100).toFixed(0) : '';
   document.getElementById('settingQuoteFromQty').value = ship.quoteFromQty || '';
@@ -1840,6 +1852,7 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     lowStockThreshold: Math.max(0, parseInt(document.getElementById('settingLowStock').value, 10) || 0),
     shipping: collectShipping(),
     ga4Id: document.getElementById('settingGa4').value.trim().toUpperCase(),
+    customerEmails: document.getElementById('settingCustomerEmails').checked,
   };
 
   const res = await fetch('/api/admin/settings', {

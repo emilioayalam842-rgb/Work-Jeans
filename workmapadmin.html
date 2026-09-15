@@ -621,6 +621,8 @@
           <input type="email" id="settingNotifyEmail" name="notifyEmail" placeholder="tucorreo@ejemplo.com">
           <p class="admin-help">Requiere la llave RESEND_API_KEY en Railway. <button type="button" id="testEmailBtn" class="admin-inline-btn">Enviar correo de prueba</button> <span id="testEmailStatus"></span></p>
 
+          <label class="admin-check"><input type="checkbox" id="settingCustomerEmails"> <span><strong>Enviar correos al cliente</strong> (pedido recibido, enviado, entregado, cancelado y confirmación de cotización). Requiere la llave de Resend y un remitente con dominio verificado.</span></label>
+
           <label for="settingGa4">Google Analytics 4 (ID de medición, opcional)</label>
           <input type="text" id="settingGa4" placeholder="G-XXXXXXXXXX">
           <p class="admin-help">Solo se carga cuando el visitante acepta todas las cookies. La medición propia del embudo funciona sin esto.</p>
@@ -870,6 +872,8 @@
 
       <label for="orderCustomerPhone">Teléfono</label>
       <input type="text" id="orderCustomerPhone" placeholder="Opcional">
+      <label for="orderCustomerEmail">Correo del cliente</label>
+      <input type="email" id="orderCustomerEmail" placeholder="Opcional: recibe confirmación y avisos de envío">
 
       <label>Productos</label>
       <div id="orderItems" class="admin-order-items"></div>
