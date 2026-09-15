@@ -34,14 +34,16 @@ async function loadSettings() {
     if (callLink && settings.whatsappNumber) callLink.href = `tel:+${settings.whatsappNumber}`;
 
     const mapsQuery = encodeURIComponent(settings.mapsQuery || settings.address || '');
+    // Si hay enlace a la ficha de Google (googleMapsUrl), se usa ese; si no, una búsqueda por dirección.
+    const placeUrl = settings.googleMapsUrl || `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
     const mapsLink = document.getElementById('mapsLink');
-    if (mapsLink) mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+    if (mapsLink) mapsLink.href = placeUrl;
     const resenasLink = document.getElementById('resenasLink');
-    if (resenasLink) resenasLink.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+    if (resenasLink) resenasLink.href = placeUrl;
     const mapsEmbed = document.getElementById('mapsEmbed');
     if (mapsEmbed && !mapsEmbed.src) mapsEmbed.src = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
     const footerMapsLink = document.getElementById('footerMapsLink');
-    if (footerMapsLink) footerMapsLink.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+    if (footerMapsLink) footerMapsLink.href = placeUrl;
     const footerMapsEmbed = document.getElementById('footerMapsEmbed');
     if (footerMapsEmbed && !footerMapsEmbed.src) footerMapsEmbed.src = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
 
@@ -190,9 +192,10 @@ function renderProductCard(product) {
   const sizeOptions = product.sizes
     .map((s) => `<option value="${s.size}" ${s.stock <= 0 ? 'disabled' : ''}>${s.size}${s.stock <= 0 ? ' (agotado)' : ''}</option>`)
     .join('');
-  const hasGallery = product.images.length > 1;
-  const gallery = `<div class="product-thumbs${hasGallery ? '' : ' product-thumbs--empty'}">${
-    hasGallery ? product.images.map((img, i) => `<img src="${img}" alt="" class="product-thumb ${i === 0 ? 'active' : ''}" data-src="${img}" loading="lazy" width="46" height="58">`).join('') : ''
+  // Siempre se muestran las miniaturas (aunque haya una sola) para que todas las tarjetas alineen igual.
+  const images = product.images && product.images.length ? product.images : [product.image];
+  const gallery = `<div class="product-thumbs">${
+    images.map((img, i) => `<img src="${img}" alt="" class="product-thumb ${i === 0 ? 'active' : ''}" data-src="${img}" loading="lazy" width="46" height="58">`).join('')
   }</div>`;
   const firstSize = product.sizes[0] ? product.sizes[0].size : '';
   const lastSize = product.sizes.length ? product.sizes[product.sizes.length - 1].size : '';
