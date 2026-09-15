@@ -122,18 +122,26 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 // --- Tabs ---
 
-document.querySelectorAll('.admin-tab').forEach((tab) => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.admin-tab').forEach((t) => t.classList.remove('active'));
-    tab.classList.add('active');
-    document.querySelectorAll('.admin-tab-panel').forEach((panel) => { panel.hidden = true; });
-    document.getElementById(`tab${tab.dataset.tab.charAt(0).toUpperCase()}${tab.dataset.tab.slice(1)}`).hidden = false;
+function showTab(name) {
+  document.querySelectorAll('.admin-tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.admin-tab-panel').forEach((panel) => { panel.hidden = true; });
+  document.getElementById(`tab${name.charAt(0).toUpperCase()}${name.slice(1)}`).hidden = false;
 
-    if (tab.dataset.tab === 'dashboard') renderDashboard();
-    if (tab.dataset.tab === 'pedidos') loadOrders();
-    if (tab.dataset.tab === 'inventario') loadInventory();
-    if (tab.dataset.tab === 'configuracion') loadSettingsForm();
-  });
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'tablero') loadOrders().then(renderKanban);
+  if (name === 'pedidos') loadOrders();
+  if (name === 'clientes') loadCustomers();
+  if (name === 'inventario') loadInventory();
+  if (name === 'configuracion') loadSettingsForm();
+}
+
+document.querySelectorAll('.admin-tab').forEach((tab) => {
+  tab.addEventListener('click', () => showTab(tab.dataset.tab));
+});
+
+document.addEventListener('click', (e) => {
+  const go = e.target.closest('[data-goto]');
+  if (go) showTab(go.dataset.goto);
 });
 
 // --- Products ---
@@ -145,8 +153,17 @@ async function loadProducts() {
     return;
   }
   const products = await res.json();
+  products.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
   productsCache = products;
   renderProductsTable(products);
+}
+
+async function saveProductOrder() {
+  await fetch('/api/admin/products-order', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: productsCache.map((p) => p.id) }),
+  });
 }
 
 function totalStock(product) {
@@ -159,25 +176,39 @@ function renderProductsTable(products) {
     return;
   }
 
-  productsTableBody.innerHTML = products.map((p) => {
+  productsTableBody.innerHTML = products.map((p, index) => {
     const stock = totalStock(p);
     const limit = lowStockLimit();
+    const hidden = p.active === false;
+    const tag = p.tag === 'nuevo' ? '<span class="admin-tag admin-tag--nuevo">Nuevo</span>' : p.tag === 'oferta' ? '<span class="admin-tag admin-tag--oferta">Oferta</span>' : '';
+    const wholesale = p.wholesale ? `<span class="admin-muted admin-small">Mayoreo ${formatPrice(p.wholesale.priceCents)} desde ${p.wholesale.minQty}</span>` : '';
     return `
-      <tr data-id="${p.id}">
+      <tr data-id="${p.id}" class="${hidden ? 'admin-row-hidden' : ''}">
+        <td class="admin-order-btns">
+          <button type="button" class="admin-icon-btn" data-action="move-up" title="Subir" ${index === 0 ? 'disabled' : ''}>▲</button>
+          <button type="button" class="admin-icon-btn" data-action="move-down" title="Bajar" ${index === products.length - 1 ? 'disabled' : ''}>▼</button>
+        </td>
         <td><img src="${p.image}" alt="${p.name}" class="admin-table-photo"></td>
-        <td>${p.name}</td>
+        <td>${p.name} ${tag}<br>${wholesale}</td>
         <td>${p.category}</td>
-        <td>${formatPrice(p.priceCents)}</td>
+        <td>${p.comparePriceCents ? `<s class="admin-muted">${formatPrice(p.comparePriceCents)}</s> ` : ''}${formatPrice(p.priceCents)}</td>
         <td class="${p.sizes.some((s) => s.stock <= limit) ? 'admin-stock-low' : ''}">
           <button type="button" class="admin-stock-toggle" data-action="toggle-stock" title="Ver y ajustar por talla">${stock} pzas ▾</button>
         </td>
+        <td>
+          <label class="admin-switch" title="${hidden ? 'Oculto en la tienda' : 'Visible en la tienda'}">
+            <input type="checkbox" data-action="toggle-active" ${hidden ? '' : 'checked'}>
+            <span></span>
+          </label>
+        </td>
         <td class="admin-table-actions">
+          <button class="admin-icon-btn" data-action="duplicate" title="Duplicar">⧉</button>
           <button class="admin-icon-btn" data-action="edit" title="Editar">✏️</button>
           <button class="admin-icon-btn" data-action="delete" title="Eliminar">🗑️</button>
         </td>
       </tr>
       <tr class="admin-stock-row" data-id="${p.id}" hidden>
-        <td colspan="6">
+        <td colspan="8">
           <div class="admin-stock-grid">
             ${p.sizes.map((s) => `
               <div class="admin-stock-size ${s.stock <= limit ? 'is-low' : ''}" data-size="${s.size}">
@@ -286,10 +317,16 @@ function openForm(product) {
     document.getElementById('fieldCategory').value = product.category;
     document.getElementById('fieldPrice').value = (product.priceCents / 100).toFixed(2);
     document.getElementById('fieldDescription').value = product.description;
+    document.getElementById('fieldCompare').value = product.comparePriceCents ? (product.comparePriceCents / 100).toFixed(2) : '';
+    document.getElementById('fieldTag').value = product.tag || '';
+    document.getElementById('fieldWholesaleQty').value = product.wholesale ? product.wholesale.minQty : '';
+    document.getElementById('fieldWholesalePrice').value = product.wholesale ? (product.wholesale.priceCents / 100).toFixed(2) : '';
+    document.getElementById('fieldActive').checked = product.active !== false;
     product.sizes.forEach((s) => addSizeRow(s.size, s.stock));
   } else {
     formTitle.textContent = 'Nuevo producto';
     document.getElementById('productId').value = '';
+    document.getElementById('fieldActive').checked = true;
     addSizeRow();
   }
 
@@ -320,6 +357,27 @@ productsTableBody.addEventListener('click', async (e) => {
   if (!btn) return;
   const id = btn.closest('tr').dataset.id;
 
+  if (btn.dataset.action === 'move-up' || btn.dataset.action === 'move-down') {
+    const i = productsCache.findIndex((p) => p.id === id);
+    const j = btn.dataset.action === 'move-up' ? i - 1 : i + 1;
+    if (j < 0 || j >= productsCache.length) return;
+    [productsCache[i], productsCache[j]] = [productsCache[j], productsCache[i]];
+    productsCache.forEach((p, k) => { p.order = k + 1; });
+    renderProductsTable(productsCache);
+    saveProductOrder();
+    return;
+  }
+
+  if (btn.dataset.action === 'duplicate') {
+    const res = await fetch(`/api/admin/products/${id}/duplicate`, { method: 'POST' });
+    if (res.ok) {
+      await loadProducts();
+      const copy = await res.json();
+      openForm(productsCache.find((p) => p.id === copy.id));
+    }
+    return;
+  }
+
   if (btn.dataset.action === 'edit') {
     const product = productsCache.find((p) => p.id === id);
     openForm(product);
@@ -329,6 +387,21 @@ productsTableBody.addEventListener('click', async (e) => {
     if (!confirm('¿Eliminar este producto? Esta acción no se puede deshacer.')) return;
     const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
     if (res.ok) loadProducts();
+  }
+});
+
+productsTableBody.addEventListener('change', async (e) => {
+  if (e.target.dataset.action !== 'toggle-active') return;
+  const id = e.target.closest('tr').dataset.id;
+  const res = await fetch(`/api/admin/products/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ active: e.target.checked }),
+  });
+  if (res.ok) {
+    const product = productsCache.find((p) => p.id === id);
+    if (product) product.active = e.target.checked;
+    e.target.closest('tr').classList.toggle('admin-row-hidden', !e.target.checked);
   }
 });
 
@@ -352,6 +425,7 @@ productForm.addEventListener('submit', async (e) => {
   const formData = new FormData(productForm);
   formData.set('sizes', JSON.stringify(sizes));
   if (id) formData.set('keepImages', JSON.stringify(formImages));
+  formData.set('active', document.getElementById('fieldActive').checked ? 'true' : 'false');
   if (!id && document.getElementById('fieldImages').files.length === 0) {
     formError.textContent = 'Sube al menos una foto del producto.';
     return;
@@ -624,6 +698,171 @@ document.getElementById('saveOrderNotesBtn').addEventListener('click', async () 
   loadProducts();
 });
 
+// --- Tablero (kanban) ---
+
+const KANBAN_COLUMNS = ['pendiente', 'pagado', 'preparacion', 'enviado', 'entregado'];
+
+function orderCard(o) {
+  const date = new Date(o.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const items = o.items.map((i) => `${i.name}${i.size ? ` ${i.size}` : ''} ×${i.quantity}`).join(', ');
+  return `
+    <article class="admin-card" draggable="true" data-id="${o.id}">
+      <header>
+        <span class="admin-card-date">${date}</span>
+        <span class="admin-card-source">${o.source === 'stripe' ? '💳' : '💬'}</span>
+      </header>
+      <strong>${o.customerName || 'Sin nombre'}</strong>
+      <p>${items}</p>
+      <footer>
+        <b>${formatPrice(o.totalCents)}</b>
+        ${o.tracking?.number ? `<span class="admin-muted admin-small">${o.tracking.carrier || 'Guía'} ${o.tracking.number}</span>` : ''}
+      </footer>
+    </article>
+  `;
+}
+
+function renderKanban() {
+  const board = document.getElementById('kanban');
+  const sorted = [...ordersCache].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  board.innerHTML = KANBAN_COLUMNS.map((status) => {
+    let orders = sorted.filter((o) => o.status === status);
+    if (status === 'entregado') orders = orders.slice(0, 15);
+    return `
+      <section class="admin-kanban-col status-${status}" data-status="${status}">
+        <h3>${STATUS_LABELS[status]} <span>${orders.length}</span></h3>
+        <div class="admin-kanban-cards">${orders.map(orderCard).join('') || '<p class="admin-kanban-empty">Sin pedidos</p>'}</div>
+      </section>
+    `;
+  }).join('');
+}
+
+let draggingOrderId = null;
+
+document.getElementById('kanban').addEventListener('dragstart', (e) => {
+  const card = e.target.closest('.admin-card');
+  if (!card) return;
+  draggingOrderId = card.dataset.id;
+  card.classList.add('is-dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', draggingOrderId);
+});
+
+document.getElementById('kanban').addEventListener('dragend', (e) => {
+  e.target.closest('.admin-card')?.classList.remove('is-dragging');
+  document.querySelectorAll('.admin-kanban-col').forEach((c) => c.classList.remove('is-over'));
+});
+
+document.getElementById('kanban').addEventListener('dragover', (e) => {
+  const col = e.target.closest('.admin-kanban-col');
+  if (!col || !draggingOrderId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.admin-kanban-col').forEach((c) => c.classList.toggle('is-over', c === col));
+});
+
+document.getElementById('kanban').addEventListener('drop', async (e) => {
+  const col = e.target.closest('.admin-kanban-col');
+  if (!col || !draggingOrderId) return;
+  e.preventDefault();
+  const id = draggingOrderId;
+  draggingOrderId = null;
+  const status = col.dataset.status;
+  const order = ordersCache.find((o) => o.id === id);
+  if (!order || order.status === status) {
+    renderKanban();
+    return;
+  }
+  const res = await fetch(`/api/admin/orders/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  if (res.ok) {
+    const updated = await res.json();
+    const idx = ordersCache.findIndex((o) => o.id === id);
+    if (idx >= 0) ordersCache[idx] = updated;
+  }
+  renderKanban();
+});
+
+document.getElementById('kanban').addEventListener('click', (e) => {
+  const card = e.target.closest('.admin-card');
+  if (card) openOrderDetail(card.dataset.id);
+});
+
+// --- Clientes ---
+
+async function loadCustomers() {
+  const res = await fetch('/api/admin/customers');
+  if (res.status === 401) {
+    showLogin();
+    return;
+  }
+  const customers = await res.json();
+  const body = document.getElementById('customersTableBody');
+  if (customers.length === 0) {
+    body.innerHTML = '<tr><td colspan="7">Todavía no hay clientes con pedidos.</td></tr>';
+    return;
+  }
+  body.innerHTML = customers.map((c) => `
+    <tr data-key="${c.key}" data-search="${c.phone || c.email || c.name}">
+      <td><strong>${c.name || 'Sin nombre'}</strong></td>
+      <td>${[c.phone, c.email].filter(Boolean).join('<br>') || '—'}</td>
+      <td>${c.orders}</td>
+      <td>${c.pieces}</td>
+      <td>${formatPrice(c.totalCents)}</td>
+      <td>${new Date(c.lastAt).toLocaleDateString('es-MX', { dateStyle: 'medium' })}</td>
+      <td class="admin-table-actions">
+        ${whatsappDigits(c.phone) ? `<a class="admin-inline-btn" href="https://wa.me/${whatsappDigits(c.phone)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        <button type="button" class="admin-inline-btn" data-action="customer-orders">Ver pedidos</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('customersTableBody').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action="customer-orders"]');
+  if (!btn) return;
+  ordersSearch = btn.closest('tr').dataset.search || '';
+  document.getElementById('ordersSearch').value = ordersSearch;
+  showTab('pedidos');
+});
+
+// --- Respaldo ---
+
+document.getElementById('restoreBtn').addEventListener('click', async () => {
+  const errorEl = document.getElementById('restoreError');
+  const okEl = document.getElementById('restoreSuccess');
+  errorEl.textContent = '';
+  okEl.textContent = '';
+  const file = document.getElementById('restoreFile').files[0];
+  if (!file) {
+    errorEl.textContent = 'Elige primero el archivo de respaldo.';
+    return;
+  }
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch {
+    errorEl.textContent = 'El archivo no se pudo leer.';
+    return;
+  }
+  const when = data.exportedAt ? new Date(data.exportedAt).toLocaleString('es-MX') : 'fecha desconocida';
+  if (!confirm(`Se reemplazarán TODOS los productos, pedidos y ajustes actuales por los del respaldo del ${when}. ¿Continuar?`)) return;
+  const res = await fetch('/api/admin/restore', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json();
+  if (!res.ok) {
+    errorEl.textContent = result.error || 'No se pudo restaurar.';
+    return;
+  }
+  okEl.textContent = `Restaurado: ${result.products} productos y ${result.orders} pedidos.`;
+  loadSettingsCache().then(loadProducts).then(loadOrders);
+});
+
 // --- Inventario ---
 
 async function loadInventory() {
@@ -785,6 +1024,21 @@ function renderDashboard() {
     ? topProducts.map(([name, qty]) => `<li>${name} <span class="admin-rank-value">${qty} vendidos</span></li>`).join('')
     : '<li class="admin-muted">Todavía no hay ventas.</li>';
 
+  const active = [...ordersCache]
+    .filter((o) => ['pendiente', 'pagado', 'preparacion', 'enviado'].includes(o.status))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 8);
+  document.getElementById('activeOrdersBody').innerHTML = active.length
+    ? active.map((o) => `
+      <tr class="admin-clickable-row" data-order="${o.id}">
+        <td>${new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td>
+        <td>${o.customerName || '—'}${o.customerPhone ? `<br><span class="admin-muted">${o.customerPhone}</span>` : ''}</td>
+        <td class="admin-order-items-cell">${o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join(', ')}</td>
+        <td>${formatPrice(o.totalCents)}</td>
+        <td><span class="admin-badge status-${o.status}">${STATUS_LABELS[o.status]}</span></td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="admin-muted">No hay pedidos activos. Todo entregado.</td></tr>';
+
   // Ventas por mes: últimos 6 meses, incluyendo los que no tuvieron ventas.
   const byMonth = {};
   valid.forEach((o) => {
@@ -815,6 +1069,11 @@ function renderDashboard() {
     ? lowStockItems.map((html) => `<li>${html}</li>`).join('')
     : '<li class="admin-muted">Todo el inventario está en buen nivel.</li>';
 }
+
+document.getElementById('activeOrdersBody').addEventListener('click', (e) => {
+  const row = e.target.closest('[data-order]');
+  if (row) openOrderDetail(row.dataset.order);
+});
 
 // --- Settings ---
 

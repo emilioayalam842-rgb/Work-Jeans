@@ -27,22 +27,41 @@
     `).join('');
   }
 
+  const money = (cents) => (cents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+
+  // Precio unitario estimado: el de mayoreo si la línea alcanza el mínimo, si no el normal.
+  function unitPrice(line) {
+    const product = products.find((p) => p.id === line.id);
+    if (!product) return null;
+    if (product.wholesale && line.total >= product.wholesale.minQty) return product.wholesale.priceCents;
+    return product.priceCents;
+  }
+
   function renderList() {
     if (lines.length === 0) {
       listEl.innerHTML = '<p class="cotizador-empty">Aún no has agregado prendas.</p>';
     } else {
-      listEl.innerHTML = lines.map((line, i) => `
+      listEl.innerHTML = lines.map((line, i) => {
+        const unit = unitPrice(line);
+        const product = products.find((p) => p.id === line.id);
+        const isWholesale = product?.wholesale && line.total >= product.wholesale.minQty;
+        return `
         <div class="cot-line">
           <div>
             <strong>${line.name}</strong>
             <span>${Object.entries(line.sizes).map(([size, qty]) => `${size} × ${qty}`).join(' · ')}</span>
+            ${unit ? `<span class="cot-line-price">${money(unit)} c/u${isWholesale ? ' · precio mayoreo' : ''} · ${money(unit * line.total)}</span>` : ''}
           </div>
           <b>${line.total} pzas</b>
           <button type="button" class="cot-remove" data-index="${i}" aria-label="Quitar">✕</button>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
     totalEl.textContent = lines.reduce((sum, l) => sum + l.total, 0);
+    const estimate = lines.reduce((sum, l) => sum + (unitPrice(l) || 0) * l.total, 0);
+    const estimateEl = document.getElementById('cotEstimate');
+    if (estimateEl) estimateEl.textContent = lines.length ? `Estimado: ${money(estimate)} MXN` : '';
   }
 
   function addLine() {
@@ -82,6 +101,8 @@
       parts.push(`- ${line.name}: ${detail} (${line.total} pzas)`);
     });
     parts.push('', `Total: ${lines.reduce((sum, l) => sum + l.total, 0)} piezas`);
+    const estimate = lines.reduce((sum, l) => sum + (unitPrice(l) || 0) * l.total, 0);
+    if (estimate) parts.push(`Estimado según precios publicados: ${money(estimate)} MXN`);
     if (logoSelect.value) parts.push(`Personalización: ${logoSelect.value}`);
     if (nameInput.value.trim()) parts.push(`Nombre/Empresa: ${nameInput.value.trim()}`);
     return parts.join('\n');
@@ -91,7 +112,7 @@
     .then((res) => res.json())
     .then((data) => {
       products = data;
-      productSelect.innerHTML = products.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+      productSelect.innerHTML = products.map((p) => `<option value="${p.id}">${p.name}${p.wholesale ? ` · mayoreo ${money(p.wholesale.priceCents)} desde ${p.wholesale.minQty} pzas` : ''}</option>`).join('');
       renderSizes();
     })
     .catch(() => {

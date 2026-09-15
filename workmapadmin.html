@@ -39,8 +39,10 @@
     <main class="admin-main">
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="dashboard">Dashboard</button>
-        <button class="admin-tab" data-tab="productos">Productos</button>
+        <button class="admin-tab" data-tab="tablero">Tablero</button>
         <button class="admin-tab" data-tab="pedidos">Pedidos</button>
+        <button class="admin-tab" data-tab="productos">Productos</button>
+        <button class="admin-tab" data-tab="clientes">Clientes</button>
         <button class="admin-tab" data-tab="inventario">Inventario</button>
         <button class="admin-tab" data-tab="configuracion">Configuración</button>
       </div>
@@ -67,6 +69,19 @@
         </div>
 
         <div class="admin-panel-box admin-monthly">
+          <div class="admin-box-head">
+            <h3>Pedidos activos</h3>
+            <button type="button" class="admin-inline-btn" data-goto="tablero">Ver tablero</button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead>
+              <tbody id="activeOrdersBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-panel-box admin-monthly">
           <h3>Ventas por mes</h3>
           <div class="admin-table-wrap">
             <table class="admin-table">
@@ -88,6 +103,14 @@
         </div>
       </div>
 
+      <div id="tabTablero" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Tablero de pedidos</h2>
+          <p class="admin-help admin-help--inline">Arrastra una tarjeta a otra columna para cambiar su estado. Haz clic en la tarjeta para ver el detalle, capturar guía o cancelar.</p>
+        </div>
+        <div class="admin-kanban" id="kanban"></div>
+      </div>
+
       <div id="tabProductos" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
           <h2>Productos</h2>
@@ -98,11 +121,13 @@
           <table class="admin-table">
             <thead>
               <tr>
+                <th></th>
                 <th>Foto</th>
                 <th>Nombre</th>
                 <th>Categoría</th>
                 <th>Precio</th>
                 <th>Stock total</th>
+                <th>Visible</th>
                 <th></th>
               </tr>
             </thead>
@@ -146,6 +171,29 @@
               </tr>
             </thead>
             <tbody id="ordersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabClientes" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Clientes</h2>
+          <p class="admin-help admin-help--inline">Se arman solos a partir de los pedidos (sin contar cancelados). Ordenados por lo que han comprado.</p>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Contacto</th>
+                <th>Pedidos</th>
+                <th>Piezas</th>
+                <th>Total comprado</th>
+                <th>Última compra</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="customersTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -208,6 +256,17 @@
           <p class="admin-success" id="settingsSuccess"></p>
         </form>
 
+        <h2 class="admin-section-spacer">Respaldo</h2>
+        <div class="admin-panel-box admin-settings-form">
+          <p class="admin-help">Descarga un archivo con productos, pedidos, clientes, inventario y configuración. Guárdalo en tu computadora o en la nube de vez en cuando. No incluye las fotos.</p>
+          <a class="btn btn-primary" href="/api/admin/backup" download>Descargar respaldo</a>
+          <label for="restoreFile" class="admin-section-spacer">Restaurar desde un respaldo</label>
+          <input type="file" id="restoreFile" accept="application/json,.json">
+          <button type="button" id="restoreBtn" class="btn btn-secondary">Restaurar</button>
+          <p class="admin-error" id="restoreError"></p>
+          <p class="admin-success" id="restoreSuccess"></p>
+        </div>
+
         <h2 class="admin-section-spacer">Cuenta</h2>
         <form id="passwordForm" class="admin-panel-box admin-settings-form">
           <label for="currentPassword">Contraseña actual</label>
@@ -237,6 +296,34 @@
 
       <label for="fieldPrice">Precio (MXN)</label>
       <input type="number" id="fieldPrice" name="priceMxn" step="0.01" min="0" required>
+
+      <div class="admin-field-grid">
+        <div>
+          <label for="fieldCompare">Precio anterior (tachado, opcional)</label>
+          <input type="number" id="fieldCompare" name="compareMxn" step="0.01" min="0" placeholder="Ej. 599">
+        </div>
+        <div>
+          <label for="fieldTag">Etiqueta</label>
+          <select id="fieldTag" name="tag" class="admin-filter">
+            <option value="">Sin etiqueta</option>
+            <option value="nuevo">Nuevo</option>
+            <option value="oferta">Oferta</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="admin-field-grid">
+        <div>
+          <label for="fieldWholesaleQty">Mayoreo: a partir de (piezas)</label>
+          <input type="number" id="fieldWholesaleQty" name="wholesaleMinQty" min="2" step="1" placeholder="Ej. 10">
+        </div>
+        <div>
+          <label for="fieldWholesalePrice">Mayoreo: precio por pieza (MXN)</label>
+          <input type="number" id="fieldWholesalePrice" name="wholesaleMxn" step="0.01" min="0" placeholder="Ej. 399">
+        </div>
+      </div>
+
+      <label class="admin-check"><input type="checkbox" id="fieldActive" checked> Visible en la tienda</label>
 
       <label>Tallas y stock</label>
       <div id="sizeRows" class="admin-size-rows"></div>

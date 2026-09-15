@@ -69,6 +69,35 @@ function getProducts() {
   return JSON.parse(fs.readFileSync(PRODUCTS_PATH, 'utf-8'));
 }
 
+// Productos que ve la tienda: solo los visibles, en el orden definido en el panel.
+function publicProducts() {
+  return getProducts()
+    .filter((p) => p.active !== false)
+    .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+}
+
+function parseMoney(value) {
+  const n = parseFloat(value);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null;
+}
+
+// Campos opcionales del producto que vienen del formulario del panel (multipart, todo es texto).
+function applyProductExtras(product, body) {
+  if (body.active !== undefined) product.active = body.active === 'true' || body.active === '1' || body.active === 'on';
+  if (body.tag !== undefined) product.tag = ['nuevo', 'oferta'].includes(body.tag) ? body.tag : '';
+  if (body.compareMxn !== undefined) {
+    const cents = parseMoney(body.compareMxn);
+    if (cents && cents > product.priceCents) product.comparePriceCents = cents;
+    else delete product.comparePriceCents;
+  }
+  if (body.wholesaleMinQty !== undefined || body.wholesaleMxn !== undefined) {
+    const minQty = parseInt(body.wholesaleMinQty, 10);
+    const cents = parseMoney(body.wholesaleMxn);
+    if (minQty > 1 && cents) product.wholesale = { minQty, priceCents: cents };
+    else delete product.wholesale;
+  }
+}
+
 function saveProducts(products) {
   fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
 }
@@ -253,7 +282,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   res.json({ received: true });
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'works-jeans-dev-secret-change-me',
   resave: false,
@@ -300,7 +329,7 @@ function escapeHtml(text) {
 // /producto/<id>: la misma portada, pero con título, descripción e imagen del producto para
 // compartir por WhatsApp y para Google. Al cargar, se abre la ficha del producto.
 app.get('/producto/:id', (req, res) => {
-  const product = getProducts().find((p) => p.id === req.params.id);
+  const product = publicProducts().find((p) => p.id === req.params.id);
   if (!product) {
     res.status(404).send('Producto no encontrado');
     return;
@@ -334,7 +363,7 @@ app.get('/sitemap.xml', (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
   const urls = [
     { loc: `${origin}/`, priority: '1.0' },
-    ...getProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8' })),
+    ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8' })),
     { loc: `${origin}/aviso-de-privacidad.html`, priority: '0.3' },
     { loc: `${origin}/envios-y-devoluciones.html`, priority: '0.3' },
   ];
@@ -342,9 +371,13 @@ app.get('/sitemap.xml', (req, res) => {
   res.type('application/xml').send(xml);
 });
 
-app.get(['/products.json', '/settings.json'], (req, res) => {
+app.get('/products.json', (req, res) => {
   res.set('Cache-Control', 'no-cache');
-  res.sendFile(req.path === '/products.json' ? PRODUCTS_PATH : SETTINGS_PATH);
+  res.json(publicProducts());
+});
+app.get('/settings.json', (req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.sendFile(SETTINGS_PATH);
 });
 if (USES_EXTERNAL_DATA) {
   app.use('/assets/products', express.static(PRODUCTS_IMG_DIR, { maxAge: '30d' }));
@@ -509,7 +542,10 @@ app.post('/api/admin/products', requireAdmin, productUpload, (req, res) => {
       images,
       description,
       sizes: JSON.parse(sizes),
+      active: true,
+      order: products.reduce((max, p) => Math.max(max, p.order ?? 0), 0) + 1,
     };
+    applyProductExtras(product, req.body);
 
     products.push(product);
     saveProducts(products);
@@ -557,12 +593,62 @@ app.put('/api/admin/products/:id', requireAdmin, productUpload, (req, res) => {
     if (images.length === 0) images.push('assets/img/works-jeans-logo.png');
     product.images = images;
     product.image = images[0];
+    applyProductExtras(product, req.body);
 
     saveProducts(products);
     res.json(product);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+app.post('/api/admin/products/:id/duplicate', requireAdmin, (req, res) => {
+  const products = getProducts();
+  const source = products.find((p) => p.id === req.params.id);
+  if (!source) {
+    res.status(404).json({ error: 'Producto no encontrado.' });
+    return;
+  }
+  const name = `${source.name} (copia)`;
+  let id = slugify(name);
+  let suffix = 2;
+  while (products.some((p) => p.id === id)) id = `${slugify(name)}-${suffix++}`;
+  const copy = {
+    ...JSON.parse(JSON.stringify(source)),
+    id,
+    name,
+    active: false,
+    order: products.reduce((max, p) => Math.max(max, p.order ?? 0), 0) + 1,
+  };
+  products.push(copy);
+  saveProducts(products);
+  res.status(201).json(copy);
+});
+
+app.put('/api/admin/products-order', requireAdmin, (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) {
+    res.status(400).json({ error: 'Falta la lista de ids.' });
+    return;
+  }
+  const products = getProducts();
+  // Los ids recibidos van primero en ese orden; el resto conserva su orden relativo después.
+  const rest = products.filter((p) => !ids.includes(p.id)).sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+  [...ids.map((id) => products.find((x) => x.id === id)).filter(Boolean), ...rest].forEach((p, i) => { p.order = i + 1; });
+  saveProducts(products);
+  res.json({ ok: true });
+});
+
+app.patch('/api/admin/products/:id', requireAdmin, (req, res) => {
+  const products = getProducts();
+  const product = products.find((p) => p.id === req.params.id);
+  if (!product) {
+    res.status(404).json({ error: 'Producto no encontrado.' });
+    return;
+  }
+  if (typeof req.body.active === 'boolean') product.active = req.body.active;
+  saveProducts(products);
+  res.json(product);
 });
 
 app.delete('/api/admin/products/:id', requireAdmin, (req, res) => {
@@ -921,6 +1007,63 @@ app.get('/api/verify-session', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// --- Clientes: se arman a partir de los pedidos (sin tabla aparte) ---
+
+app.get('/api/admin/customers', requireAdmin, (req, res) => {
+  const customers = new Map();
+  for (const o of getOrders()) {
+    if (o.status === 'cancelado') continue;
+    const phone = String(o.customerPhone || '').replace(/\D/g, '');
+    const key = phone || (o.customerEmail || '').toLowerCase() || (o.customerName || '').trim().toLowerCase();
+    if (!key) continue;
+    const c = customers.get(key) || { key, name: '', phone: '', email: '', orders: 0, pieces: 0, totalCents: 0, firstAt: o.createdAt, lastAt: o.createdAt };
+    if (o.customerName && (!c.name || c.name.length < o.customerName.length)) c.name = o.customerName;
+    if (o.customerPhone && !c.phone) c.phone = o.customerPhone;
+    if (o.customerEmail && !c.email) c.email = o.customerEmail;
+    c.orders += 1;
+    c.pieces += o.items.reduce((sum, i) => sum + i.quantity, 0);
+    c.totalCents += o.totalCents;
+    if (o.createdAt < c.firstAt) c.firstAt = o.createdAt;
+    if (o.createdAt > c.lastAt) c.lastAt = o.createdAt;
+    customers.set(key, c);
+  }
+  res.json([...customers.values()].sort((a, b) => b.totalCents - a.totalCents));
+});
+
+// --- Respaldo y restauración de los datos del panel (no incluye las fotos) ---
+
+app.get('/api/admin/backup', requireAdmin, (req, res) => {
+  const backup = {
+    app: 'works-jeans',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    products: getProducts(),
+    orders: getOrders(),
+    settings: getSettings(),
+    inventory: getInventoryLog(),
+  };
+  res.set('Content-Disposition', `attachment; filename="respaldo-works-jeans-${backup.exportedAt.slice(0, 10)}.json"`);
+  res.json(backup);
+});
+
+app.post('/api/admin/restore', requireAdmin, (req, res) => {
+  const b = req.body;
+  if (!b || b.app !== 'works-jeans' || !Array.isArray(b.products) || !Array.isArray(b.orders) || typeof b.settings !== 'object') {
+    res.status(400).json({ error: 'El archivo no es un respaldo válido de Works Jeans.' });
+    return;
+  }
+  // Copia de seguridad de lo actual antes de sobrescribir, por si acaso.
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  for (const [name, file] of [['products', PRODUCTS_PATH], ['orders', ORDERS_PATH], ['settings', SETTINGS_PATH], ['inventory', INVENTORY_PATH]]) {
+    if (fs.existsSync(file)) fs.copyFileSync(file, path.join(DATA_DIR, `${name}.antes-de-restaurar-${stamp}.json`));
+  }
+  saveProducts(b.products);
+  saveOrders(b.orders);
+  saveSettings(b.settings);
+  fs.writeFileSync(INVENTORY_PATH, JSON.stringify(Array.isArray(b.inventory) ? b.inventory : [], null, 2) + '\n');
+  res.json({ ok: true, products: b.products.length, orders: b.orders.length });
 });
 
 app.get('/api/admin/dashboard', requireAdmin, (req, res) => {

@@ -190,6 +190,23 @@ async function startStripeCheckout() {
   }
 }
 
+function priceHtml(product) {
+  const compare = product.comparePriceCents && product.comparePriceCents > product.priceCents
+    ? `<s class="price-compare">${formatPrice(product.comparePriceCents)}</s>` : '';
+  return `${compare}${formatPrice(product.priceCents)}<small>MXN</small>`;
+}
+
+function wholesaleHtml(product) {
+  if (!product.wholesale) return '';
+  return `<p class="product-wholesale">Mayoreo: <b>${formatPrice(product.wholesale.priceCents)}</b> c/u desde ${product.wholesale.minQty} pzas</p>`;
+}
+
+function tagHtml(product) {
+  if (product.tag === 'nuevo') return '<span class="product-tag product-tag--nuevo">Nuevo</span>';
+  if (product.tag === 'oferta') return '<span class="product-tag product-tag--oferta">Oferta</span>';
+  return '';
+}
+
 function renderProductCard(product) {
   const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
   const sizeOptions = product.sizes
@@ -207,12 +224,14 @@ function renderProductCard(product) {
   return `
     <article class="product-card reveal" data-id="${product.id}" data-name="${product.name}" data-price="${product.priceCents}">
       <span class="product-category">${product.category}</span>
+      ${tagHtml(product)}
       ${totalStock <= 0 ? '<span class="product-soldout">Agotado</span>' : ''}
       <img src="${product.image}" alt="${product.name}" class="product-photo" data-main-photo loading="lazy" decoding="async" width="800" height="1000">
       ${gallery}
       <h3>${product.name}</h3>
       <p class="product-sizes">Tallas ${sizeRange}</p>
-      <p class="price">${formatPrice(product.priceCents)}<small>MXN</small></p>
+      <p class="price">${priceHtml(product)}</p>
+      ${wholesaleHtml(product)}
       <p class="product-desc">${product.description}</p>
       <label class="size-label" for="size-${product.id}">Talla</label>
       <select class="size-select" id="size-${product.id}" ${totalStock <= 0 ? 'disabled' : ''}>
@@ -279,7 +298,8 @@ function openProduct(id, { pushState = true } = {}) {
   const first = product.sizes[0]?.size || '';
   const last = product.sizes[product.sizes.length - 1]?.size || '';
   document.getElementById('pmSizes').innerHTML = `Tallas <b>${first}</b>${last && last !== first ? ` / <b>${last}</b>` : ''}`;
-  document.getElementById('pmPrice').innerHTML = `${formatPrice(product.priceCents)}<small>MXN</small>`;
+  document.getElementById('pmPrice').innerHTML = priceHtml(product);
+  document.getElementById('pmWholesale').innerHTML = wholesaleHtml(product);
   document.getElementById('pmDesc').textContent = product.description;
   const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
   const select = document.getElementById('pmSize');
