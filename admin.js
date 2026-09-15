@@ -1261,6 +1261,8 @@ function reportRange() {
 }
 
 function renderReports() {
+  // Reemplazada por admin-reportes.js (se conserva por compatibilidad).
+  if (window.__reportsV2) return;
   const from = reportRange();
   const orders = ordersCache.filter((o) => o.status !== 'cancelado' && (!from || new Date(o.createdAt) >= from));
   const sales = orders.reduce((sum, o) => sum + o.totalCents, 0);
@@ -1307,7 +1309,7 @@ function renderReports() {
     : '<tr><td colspan="4">Sin ventas en el periodo.</td></tr>';
 }
 
-document.getElementById('reportPeriod').addEventListener('change', renderReports);
+
 
 // --- Aviso de pedidos nuevos (campana) ---
 
@@ -1568,10 +1570,13 @@ function renderDashboard() {
   for (let i = 0; i < 6; i += 1) {
     monthKeys.push(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
   }
-  document.getElementById('monthlySalesBody').innerHTML = monthKeys.map((key) => {
+  const monthlyHtml = monthKeys.map((key) => {
     const m = byMonth[key] || { orders: 0, pieces: 0, cents: 0, cost: 0 };
     return `<tr class="${m.orders ? '' : 'admin-muted'}"><td>${monthLabel(key)}</td><td>${m.orders}</td><td>${m.pieces}</td><td>${formatPrice(m.cents)}</td><td>${formatPrice(m.cost)}</td><td class="admin-profit">${formatPrice(m.cents - m.cost)}</td></tr>`;
   }).join('');
+  document.getElementById('monthlySalesBody').innerHTML = monthlyHtml;
+  const monthlyReport = document.getElementById('monthlySalesBodyReport');
+  if (monthlyReport) monthlyReport.innerHTML = monthlyHtml;
 
   const lowStockList = document.getElementById('lowStockList');
   const lowStockItems = [];

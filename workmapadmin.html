@@ -98,29 +98,31 @@
       <div id="tabDashboard" class="admin-tab-panel">
         <h2>Resumen</h2>
         <div class="admin-stats">
-          <div class="admin-stat-card">
-            <p class="admin-stat-label">Ventas totales</p>
-            <p class="admin-stat-value" id="statTotalSales">$0.00 MXN</p>
-          </div>
-          <div class="admin-stat-card">
-            <p class="admin-stat-label">Ingresos este mes</p>
-            <p class="admin-stat-value" id="statMonthSales">$0.00 MXN</p>
-          </div>
-          <div class="admin-stat-card admin-stat-card--profit">
-            <p class="admin-stat-label">Utilidad este mes</p>
-            <p class="admin-stat-value" id="statMonthProfit">$0.00 MXN</p>
-            <p class="admin-stat-note" id="statMonthMargin"></p>
-          </div>
-          <div class="admin-stat-card">
-            <p class="admin-stat-label">Pedidos pendientes</p>
-            <p class="admin-stat-value" id="statPending">0</p>
-          </div>
-          <div class="admin-stat-card">
-            <p class="admin-stat-label">Total de pedidos</p>
-            <p class="admin-stat-value" id="statTotalOrders">0</p>
-          </div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Ventas de hoy</p><p class="admin-stat-value" id="dSalesToday">$0.00</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Últimos 7 días</p><p class="admin-stat-value" id="dSalesWeek">$0.00</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Este mes</p><p class="admin-stat-value" id="dSalesMonth">$0.00</p></div>
+          <div class="admin-stat-card admin-stat-card--profit"><p class="admin-stat-label">Utilidad del mes</p><p class="admin-stat-value" id="dProfit">$0.00</p><p class="admin-stat-note" id="dProfitNote"></p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Pedidos pendientes</p><p class="admin-stat-value" id="dPending">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Ticket promedio</p><p class="admin-stat-value" id="dTicket">—</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Piezas vendidas (mes)</p><p class="admin-stat-value" id="dUnits">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Devoluciones (mes)</p><p class="admin-stat-value" id="dReturns">0</p></div>
         </div>
-
+        <div class="admin-panel-box admin-monthly">
+          <h3>Ventas de los últimos 30 días</h3>
+          <div id="dChart" class="admin-chart-wrap"></div>
+        </div>
+        <div class="admin-alerts admin-alerts--wide" id="dInsights"></div>
+        <div class="admin-dashboard-grid admin-dashboard-grid--3">
+          <div class="admin-panel-box"><h3>Modelos más vendidos</h3><ul class="admin-rank" id="dTopProducts"></ul></div>
+          <div class="admin-panel-box"><h3>Tallas más vendidas</h3><ul class="admin-rank" id="dTopSizes"></ul></div>
+          <div class="admin-panel-box"><h3>Lavados / colores más vendidos</h3><ul class="admin-rank" id="dTopColors"></ul></div>
+        </div>
+        <div class="admin-dashboard-grid">
+          <div class="admin-panel-box"><h3>Stock bajo</h3><ul class="admin-rank-list" id="dLowStock"></ul></div>
+          <div class="admin-panel-box"><h3>Agotados</h3><ul class="admin-rank-list" id="dOutStock"></ul></div>
+        </div>
+        <ol class="admin-rank-list" id="topProductsList" hidden></ol><ul class="admin-rank-list" id="lowStockList" hidden></ul>
+        <span id="statTotalSales" hidden></span><span id="statMonthSales" hidden></span><span id="statMonthProfit" hidden></span><span id="statMonthMargin" hidden></span><span id="statPending" hidden></span><span id="statTotalOrders" hidden></span>
         <div class="admin-panel-box admin-monthly">
           <div class="admin-box-head">
             <h3>Pedidos activos</h3>
@@ -144,16 +146,6 @@
           </div>
         </div>
 
-        <div class="admin-dashboard-grid">
-          <div class="admin-panel-box">
-            <h3>Productos más vendidos</h3>
-            <ol class="admin-rank-list" id="topProductsList"></ol>
-          </div>
-          <div class="admin-panel-box">
-            <h3>Stock bajo</h3>
-            <ul class="admin-rank-list" id="lowStockList"></ul>
-          </div>
-        </div>
       </div>
 
       <div id="tabTablero" class="admin-tab-panel" hidden>
@@ -453,39 +445,77 @@
       <div id="tabReportes" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
           <h2>Reportes</h2>
-          <select id="reportPeriod" class="admin-filter">
-            <option value="month">Este mes</option>
-            <option value="30">Últimos 30 días</option>
-            <option value="90">Últimos 90 días</option>
-            <option value="year">Este año</option>
-            <option value="all">Todo</option>
-          </select>
+          <div class="admin-toolbar-actions">
+            <select id="reportPeriod" class="admin-filter">
+              <option value="month">Este mes</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+              <option value="year">Este año</option>
+              <option value="all">Todo</option>
+            </select>
+            <button type="button" class="btn btn-secondary admin-btn-icon" data-report-print><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="6" y="14" width="12" height="7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg> Imprimir</button>
+          </div>
         </div>
+
+        <h3 class="admin-section-title">Ventas</h3>
         <div class="admin-stats admin-stats--compact">
           <div class="admin-stat-card"><p class="admin-stat-label">Ingresos</p><p class="admin-stat-value" id="repSales">$0.00</p></div>
-          <div class="admin-stat-card"><p class="admin-stat-label">Costo</p><p class="admin-stat-value" id="repCost">$0.00</p></div>
-          <div class="admin-stat-card admin-stat-card--profit"><p class="admin-stat-label">Utilidad</p><p class="admin-stat-value" id="repProfit">$0.00</p><p class="admin-stat-note" id="repMargin"></p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Pedidos</p><p class="admin-stat-value" id="repOrders">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Ticket promedio</p><p class="admin-stat-value" id="repTicket">—</p></div>
           <div class="admin-stat-card"><p class="admin-stat-label">Piezas vendidas</p><p class="admin-stat-value" id="repPieces">0</p></div>
+        </div>
+        <div class="admin-panel-box admin-monthly">
+          <h3>Ventas en el periodo</h3>
+          <div id="repChart" class="admin-chart-wrap"></div>
         </div>
         <div class="admin-dashboard-grid">
           <div class="admin-panel-box">
-            <h3>Por producto</h3>
-            <div class="admin-table-wrap admin-table-wrap--flat">
-              <table class="admin-table">
-                <thead><tr><th>Producto</th><th>Piezas</th><th>Ingresos</th><th>Utilidad</th><th>Stock</th></tr></thead>
-                <tbody id="repProductsBody"></tbody>
-              </table>
-            </div>
+            <h3>Por canal</h3>
+            <div class="admin-table-wrap admin-table-wrap--flat"><table class="admin-table"><thead><tr><th>Canal</th><th>Pedidos</th><th>Ventas</th><th>%</th></tr></thead><tbody id="repChannelBody"></tbody></table></div>
           </div>
           <div class="admin-panel-box">
-            <h3>Tallas más vendidas</h3>
-            <p class="admin-help">Piezas vendidas por talla en el periodo, y cuántas quedan. Sirve para saber qué reponer.</p>
-            <div class="admin-table-wrap admin-table-wrap--flat">
-              <table class="admin-table">
-                <thead><tr><th>Producto</th><th>Talla</th><th>Vendidas</th><th>Quedan</th></tr></thead>
-                <tbody id="repSizesBody"></tbody>
-              </table>
-            </div>
+            <h3>Por mes</h3>
+            <div class="admin-table-wrap admin-table-wrap--flat"><table class="admin-table"><thead><tr><th>Mes</th><th>Pedidos</th><th>Piezas</th><th>Ingresos</th><th>Costo</th><th>Utilidad</th></tr></thead><tbody id="monthlySalesBodyReport"></tbody></table></div>
+          </div>
+        </div>
+
+        <h3 class="admin-section-title">Producto</h3>
+        <div class="admin-dashboard-grid admin-dashboard-grid--4">
+          <div class="admin-panel-box"><h3>Corte más vendido</h3><ul class="admin-rank" id="repFit"></ul></div>
+          <div class="admin-panel-box"><h3>Color / lavado</h3><ul class="admin-rank" id="repColor"></ul></div>
+          <div class="admin-panel-box"><h3>Talla</h3><ul class="admin-rank" id="repSize"></ul></div>
+          <div class="admin-panel-box"><h3>Talla × largo</h3><ul class="admin-rank" id="repSizeLength"></ul></div>
+        </div>
+
+        <h3 class="admin-section-title">Rentabilidad</h3>
+        <div class="admin-stats admin-stats--compact">
+          <div class="admin-stat-card"><p class="admin-stat-label">Venta</p><p class="admin-stat-value" id="repSales2">$0.00</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Costo</p><p class="admin-stat-value" id="repCost">$0.00</p></div>
+          <div class="admin-stat-card admin-stat-card--profit"><p class="admin-stat-label">Utilidad</p><p class="admin-stat-value" id="repProfit">$0.00</p><p class="admin-stat-note" id="repMargin"></p></div>
+        </div>
+        <div class="admin-panel-box admin-monthly">
+          <h3>Utilidad por modelo</h3>
+          <div class="admin-table-wrap admin-table-wrap--flat"><table class="admin-table"><thead><tr><th>Modelo</th><th>Vendidos</th><th>Venta</th><th>Costo</th><th>Utilidad</th><th>Margen</th></tr></thead><tbody id="repProfitBody"></tbody></table></div>
+        </div>
+
+        <h3 class="admin-section-title">Inventario</h3>
+        <div class="admin-stats admin-stats--compact">
+          <div class="admin-stat-card"><p class="admin-stat-label">Piezas en stock</p><p class="admin-stat-value" id="repStockUnits">0</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Valor a costo</p><p class="admin-stat-value" id="repStockCost">$0.00</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Días de inventario</p><p class="admin-stat-value" id="repDaysStock">—</p><p class="admin-stat-note">Al ritmo de venta del periodo</p></div>
+          <div class="admin-stat-card"><p class="admin-stat-label">Rotación</p><p class="admin-stat-value" id="repRotation">—</p><p class="admin-stat-note">Piezas vendidas ÷ piezas en stock</p></div>
+        </div>
+        <div class="admin-alerts admin-alerts--wide" id="repInsights"></div>
+        <div class="admin-dashboard-grid">
+          <div class="admin-panel-box">
+            <h3>Próximos a agotarse</h3>
+            <p class="admin-help">Venta promedio de los últimos 30 días; se listan las variantes con 14 días o menos de inventario.</p>
+            <div class="admin-table-wrap admin-table-wrap--flat"><table class="admin-table"><thead><tr><th>Modelo</th><th>Variante</th><th>Stock</th><th>Venta</th><th>Inventario</th></tr></thead><tbody id="repRiskBody"></tbody></table></div>
+          </div>
+          <div class="admin-panel-box">
+            <h3>Inventario lento</h3>
+            <p class="admin-help">Variantes con 20 piezas o más y 3 ventas o menos en 60 días.</p>
+            <div class="admin-table-wrap admin-table-wrap--flat"><table class="admin-table"><thead><tr><th>Modelo</th><th>Variante</th><th>Stock</th><th>Ventas 60 d</th><th>Detenido</th></tr></thead><tbody id="repSlowBody"></tbody></table></div>
           </div>
         </div>
       </div>
@@ -973,5 +1003,6 @@
   <script src="admin-catalogo.js"></script>
   <script src="admin-compras.js"></script>
   <script src="admin-marketing.js"></script>
+  <script src="admin-reportes.js"></script>
 </body>
 </html>
