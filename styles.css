@@ -1704,3 +1704,74 @@ body.modal-open { overflow: hidden; }
 .category-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 40px; }
 .nav-links--static { display: flex; }
 @media (max-width: 860px) { .nav-links--static { display: none; } }
+
+/* Barra de anuncio ------------------------------------------------------- */
+.announcement { background: var(--black); color: var(--paper); font-family: var(--label); font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; overflow: hidden; }
+.announcement-track { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 8px 16px; white-space: nowrap; }
+.announcement-track i { font-style: normal; color: var(--yellow); }
+.announcement-track a { color: var(--yellow); text-decoration: none; font-weight: 600; }
+.announcement-track a:hover { text-decoration: underline; }
+@media (max-width: 860px) {
+  .announcement-track { justify-content: flex-start; animation: announcement-scroll 22s linear infinite; }
+  @keyframes announcement-scroll { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+}
+
+/* Cantidad y stock ------------------------------------------------------- */
+.card-row, .pm-row { display: grid; grid-template-columns: 1fr 118px; gap: 12px; padding: 0 26px; align-items: end; }
+.card-row .size-select, .pm-row .size-select { margin: 0; width: 100%; }
+.card-row .size-label, .pm-row .size-label { padding-left: 0; padding-right: 0; }
+.pm-row { padding: 0; }
+.qty-picker { display: flex; border: 1.5px solid var(--black); border-radius: var(--radius); overflow: hidden; height: 47px; }
+.qty-picker button { width: 34px; border: 0; background: var(--gray); font-size: 1.15rem; cursor: pointer; color: var(--black); }
+.qty-picker button:hover { background: var(--yellow); }
+.qty-picker input { width: 100%; min-width: 0; border: 0; text-align: center; font-family: var(--label); font-size: 1rem; -moz-appearance: textfield; }
+.qty-picker input::-webkit-outer-spin-button, .qty-picker input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qty-picker input:focus { outline: 0; background: #fffbe0; }
+.stock-note { font-family: var(--label); font-size: 0.78rem; letter-spacing: 0.04em; color: #b00020; padding: 8px 26px 0; min-height: 1.2em; }
+.stock-note:empty { padding: 0; min-height: 0; }
+.product-modal-info .stock-note { padding-left: 0; padding-right: 0; }
+
+/* Factura en el carrito --------------------------------------------------- */
+.cart-invoice { border: 1.5px solid var(--line); border-radius: var(--radius); padding: 0 12px; }
+.cart-invoice summary { list-style: none; cursor: pointer; padding: 12px 0; font-family: var(--label); font-weight: 600; font-size: 0.86rem; letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.cart-invoice summary::-webkit-details-marker { display: none; }
+.cart-invoice-check { width: 18px; height: 18px; border: 1.5px solid var(--black); border-radius: 3px; flex: none; }
+.cart-invoice[open] .cart-invoice-check { background: var(--black) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffd600' stroke-width='3'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center/14px no-repeat; }
+.cart-invoice-fields { display: grid; gap: 8px; padding: 0 0 12px; }
+.cart-invoice-fields label { font-family: var(--label); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: grid; gap: 4px; }
+.cart-invoice-fields input { font-family: var(--body); font-size: 0.95rem; padding: 9px 10px; border: 1.5px solid var(--line); border-radius: var(--radius); text-transform: none; letter-spacing: 0; }
+.cart-invoice-fields input:focus { outline: 2px solid var(--yellow); border-color: var(--black); }
+.cart-invoice-note { font-size: 0.78rem; color: var(--muted); margin: 0; }
+
+/* Cómo comprar ----------------------------------------------------------- */
+.como-comprar { background: var(--paper); }
+.steps { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid var(--black); counter-reset: paso; }
+.step { padding: 36px 30px 34px; border-right: 1.5px solid var(--black); display: flex; flex-direction: column; gap: 12px; background: var(--paper); }
+.step:last-child { border-right: 0; }
+.step .num { font-size: 2.6rem; }
+.step h3 { font-size: 1.15rem; }
+.step p { font-size: 0.94rem; line-height: 1.65; color: #555; }
+.step p a { color: var(--black); font-weight: 600; }
+@media (max-width: 860px) { .steps { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1.5px solid var(--black); } .step:last-child { border-bottom: 0; } }
+
+/* Cómo medir ------------------------------------------------------------- */
+.medidas-como { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+.medidas-figura { display: grid; grid-template-columns: 150px 1fr; gap: 18px; align-items: center; background: var(--paper); border: 1.5px solid var(--black); padding: 18px 20px; }
+.medidas-figura svg { width: 150px; height: auto; }
+.fig-label { font-family: var(--display); font-size: 16px; fill: var(--black); }
+.medidas-figura ul { list-style: none; font-size: 0.9rem; line-height: 1.6; color: #444; }
+.medidas-figura li b { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; background: var(--yellow); color: var(--black); font-family: var(--display); margin-right: 8px; }
+.medidas-tip { grid-column: 1 / -1; font-family: var(--label); font-size: 0.82rem; letter-spacing: 0.06em; color: var(--muted); margin: -8px 0 0; }
+@media (max-width: 860px) { .medidas-como { grid-template-columns: 1fr; } .medidas-figura { grid-template-columns: 110px 1fr; } .medidas-figura svg { width: 110px; } }
+
+/* Tabla de medidas en la ficha ------------------------------------------- */
+.pm-sizechart-toggle { margin-top: 12px; background: transparent; border: 0; border-bottom: 2px solid var(--yellow); align-self: flex-start; font-family: var(--label); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; padding: 4px 0; color: var(--black); }
+.pm-sizechart-toggle:hover { background: var(--yellow); }
+.pm-sizechart { margin-top: 12px; border: 1.5px solid var(--black); }
+.pm-sizechart .pm-figure { display: grid; grid-template-columns: 110px 1fr; gap: 14px; align-items: center; padding: 14px; border-bottom: 1.5px solid var(--black); }
+.pm-sizechart .pm-figure svg { width: 110px; height: auto; }
+.pm-sizechart .pm-figure ul { list-style: none; font-size: 0.82rem; line-height: 1.5; color: #444; }
+.pm-sizechart .pm-figure li b { display: inline-block; width: 20px; height: 20px; line-height: 20px; text-align: center; background: var(--yellow); font-family: var(--display); margin-right: 6px; }
+.pm-sizechart table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.pm-sizechart th, .pm-sizechart td { padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+.pm-sizechart th { font-family: var(--label); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; background: var(--gray); }

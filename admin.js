@@ -717,6 +717,7 @@ function renderOrders(orders) {
         <td>
           <select class="admin-status-select status-${o.status}" data-action="status">${statusOptions(o.status)}</select>
           ${o.tracking?.number ? `<span class="admin-muted admin-tracking-tag">${o.tracking.carrier ? `${o.tracking.carrier} · ` : ''}${o.tracking.number}</span>` : ''}
+          ${o.invoice ? `<span class="admin-tracking-tag ${o.invoice.issued ? 'admin-muted' : 'admin-invoice-pending'}">${o.invoice.issued ? 'Facturado' : 'Pide factura'}</span>` : ''}
         </td>
         <td class="admin-table-actions">
           ${iconBtn('view-order', 'eye', 'Ver detalle')}
@@ -816,6 +817,12 @@ function openOrderDetail(id) {
   document.getElementById('orderTrackingNumber').value = order.tracking?.number || '';
   document.getElementById('orderDetailError').textContent = '';
   document.getElementById('orderWhatsappBtn').disabled = !whatsappDigits(order.customerPhone);
+  const inv = order.invoice;
+  document.getElementById('orderInvoiceBox').open = Boolean(inv);
+  document.getElementById('orderInvoiceRfc').value = inv?.rfc || '';
+  document.getElementById('orderInvoiceName').value = inv?.name || '';
+  document.getElementById('orderInvoiceEmail').value = inv?.email || '';
+  document.getElementById('orderInvoiceIssued').checked = Boolean(inv?.issued);
   orderDetailOverlay.hidden = false;
 }
 
@@ -863,6 +870,13 @@ document.getElementById('saveOrderNotesBtn').addEventListener('click', async () 
       tracking: {
         carrier: document.getElementById('orderTrackingCarrier').value,
         number: document.getElementById('orderTrackingNumber').value,
+      },
+      invoice: {
+        rfc: document.getElementById('orderInvoiceRfc').value,
+        name: document.getElementById('orderInvoiceName').value,
+        email: document.getElementById('orderInvoiceEmail').value,
+        issued: document.getElementById('orderInvoiceIssued').checked,
+        requested: Boolean(order?.invoice) || Boolean(document.getElementById('orderInvoiceRfc').value || document.getElementById('orderInvoiceName').value),
       },
     }),
   });

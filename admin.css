@@ -903,3 +903,7 @@ input.admin-filter { background-image: none; padding-right: 14px; cursor: text; 
 .admin-login-foot { margin: 26px 0 0; text-align: center; font-size: 0.76rem; color: var(--muted); }
 .admin-login-foot a { color: var(--black); font-weight: 600; text-decoration: none; }
 .admin-login-foot a:hover { text-decoration: underline; }
+
+.admin-invoice { border: 1.5px solid var(--line); border-radius: 10px; padding: 0 12px; margin: 6px 0 10px; }
+.admin-invoice summary { cursor: pointer; padding: 10px 0; font-weight: 600; }
+.admin-invoice-pending { display: block; font-size: 0.72rem; margin-top: 4px; color: #b00020; font-weight: 600; }

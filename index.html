@@ -82,6 +82,11 @@
 </head>
 <body>
   <a class="skip-link" href="#productos">Ir al catálogo</a>
+  <div class="announcement" role="note">
+    <div class="announcement-track">
+      <span>Envíos a todo México</span><i>·</i><span>Mayoreo con stock inmediato</span><i>·</i><span>Bordado y DTF con tu logotipo</span><i>·</i><a id="announcementWhatsapp" href="https://wa.me/528128613551">WhatsApp 81 2861 3551</a>
+    </div>
+  </div>
   <div class="hazard" aria-hidden="true"></div>
 
   <header class="header">
@@ -126,6 +131,15 @@
         <span>Total</span>
         <span id="cartTotal">$0.00 MXN</span>
       </div>
+      <details class="cart-invoice" id="cartInvoice">
+        <summary><span class="cart-invoice-check" aria-hidden="true"></span> Necesito factura</summary>
+        <div class="cart-invoice-fields">
+          <label>RFC <input type="text" id="invoiceRfc" autocomplete="off" maxlength="13" placeholder="XAXX010101000"></label>
+          <label>Razón social <input type="text" id="invoiceName" placeholder="Nombre o empresa"></label>
+          <label>Correo para la factura <input type="email" id="invoiceEmail" placeholder="facturas@empresa.com"></label>
+          <p class="cart-invoice-note">Te enviamos la factura al correo indicado. Régimen y uso de CFDI los confirmamos contigo.</p>
+        </div>
+      </details>
       <button class="btn btn-primary" id="checkoutWhatsapp">Pedir por WhatsApp</button>
       <button class="btn btn-secondary" id="checkoutStripe">Pagar con tarjeta</button>
       <p class="cart-message" id="cartMessage"></p>
@@ -216,6 +230,36 @@
       </div>
     </section>
 
+    <!-- CÓMO COMPRAR -->
+    <section class="section section--tight como-comprar" id="como-comprar" aria-labelledby="como-comprar-titulo">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Cómo comprar</span>
+            <h2 id="como-comprar-titulo">Tres pasos<br>y listo.</h2>
+          </div>
+          <p>Compra en línea con tarjeta o cierra tu pedido por WhatsApp. Sin registro ni cuentas.</p>
+        </div>
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="num" aria-hidden="true">01</span>
+            <h3>Elige prenda, talla y cantidad</h3>
+            <p>Consulta la <a href="#medidas">tabla de medidas</a> si tienes duda. Puedes agregar varias tallas de la misma prenda.</p>
+          </li>
+          <li class="step reveal">
+            <span class="num" aria-hidden="true">02</span>
+            <h3>Paga con tarjeta o pide por WhatsApp</h3>
+            <p>Pago seguro con tarjeta de crédito o débito, o envíanos el pedido armado por WhatsApp y te confirmamos transferencia o pago en tienda. ¿Necesitas factura? Márcalo en el carrito.</p>
+          </li>
+          <li class="step reveal">
+            <span class="num" aria-hidden="true">03</span>
+            <h3>Recibe o recoge</h3>
+            <p>Enviamos a todo México por paquetería con número de guía, o recoges sin costo en nuestra tienda de Monterrey. Cambios de talla dentro de 15 días.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
     <!-- DETALLES -->
     <section class="section detalles" id="detalles">
       <div class="container">
@@ -258,6 +302,38 @@
             <h2>Tablas de<br>medidas.</h2>
           </div>
           <p>Medidas en pulgadas. Tolerancia ±1". A: Largo · B: Pecho · C: Hombros · D: Manga (camisas). A: Cintura · B: Cadera · C: Largo (pantalón).</p>
+        </div>
+        <div class="medidas-como" id="como-medir">
+          <div class="medidas-figura">
+            <svg viewBox="0 0 200 220" class="figura-camisa" aria-labelledby="fig-camisa-t" role="img"><title id="fig-camisa-t">Camisa: A largo, B pecho, C hombros, D manga</title>
+              <path d="M70 30 L40 45 L20 110 L45 118 L50 90 L50 200 L150 200 L150 90 L155 118 L180 110 L160 45 L130 30 Q100 55 70 30 Z" fill="#fff" stroke="#0f0f0f" stroke-width="2.5"/>
+              <path d="M70 30 Q100 55 130 30" fill="none" stroke="#0f0f0f" stroke-width="2.5"/>
+              <line x1="100" y1="52" x2="100" y2="200" stroke="#ffd600" stroke-width="3"/><text x="106" y="130" class="fig-label">A</text>
+              <line x1="50" y1="105" x2="150" y2="105" stroke="#ffd600" stroke-width="3"/><text x="96" y="99" class="fig-label">B</text>
+              <line x1="42" y1="44" x2="158" y2="44" stroke="#ffd600" stroke-width="3"/><text x="96" y="40" class="fig-label">C</text>
+              <line x1="158" y1="47" x2="178" y2="108" stroke="#ffd600" stroke-width="3"/><text x="180" y="82" class="fig-label">D</text>
+            </svg>
+            <ul>
+              <li><b>A</b> Largo: del hombro al borde inferior.</li>
+              <li><b>B</b> Pecho: de costura a costura bajo la axila.</li>
+              <li><b>C</b> Hombros: de costura a costura por la espalda.</li>
+              <li><b>D</b> Manga: del hombro al puño.</li>
+            </ul>
+          </div>
+          <div class="medidas-figura">
+            <svg viewBox="0 0 200 220" class="figura-pantalon" aria-labelledby="fig-pant-t" role="img"><title id="fig-pant-t">Pantalón: A cintura, B cadera, C largo</title>
+              <path d="M55 20 L145 20 L152 210 L110 210 L100 90 L90 210 L48 210 Z" fill="#fff" stroke="#0f0f0f" stroke-width="2.5"/>
+              <line x1="55" y1="26" x2="145" y2="26" stroke="#ffd600" stroke-width="3"/><text x="96" y="22" class="fig-label">A</text>
+              <line x1="52" y1="60" x2="148" y2="60" stroke="#ffd600" stroke-width="3"/><text x="96" y="56" class="fig-label">B</text>
+              <line x1="30" y1="20" x2="30" y2="210" stroke="#ffd600" stroke-width="3"/><text x="10" y="118" class="fig-label">C</text>
+            </svg>
+            <ul>
+              <li><b>A</b> Cintura: contorno con el pantalón abrochado, extendido.</li>
+              <li><b>B</b> Cadera: contorno en la parte más ancha.</li>
+              <li><b>C</b> Largo: de la cintura al borde de la pierna.</li>
+            </ul>
+          </div>
+          <p class="medidas-tip">Mide una prenda que te quede bien, extendida sobre una mesa, y compárala con la tabla. Tolerancia ±1".</p>
         </div>
         <div class="medidas-grid">
           <details class="size-block" open>
@@ -559,9 +635,24 @@
         <p class="price" id="pmPrice"></p>
         <div id="pmWholesale"></div>
         <p class="product-desc" id="pmDesc"></p>
-        <label class="size-label" for="pmSize">Talla</label>
-        <select class="size-select" id="pmSize"></select>
+        <div class="pm-row">
+          <div>
+            <label class="size-label" for="pmSize">Talla</label>
+            <select class="size-select" id="pmSize"></select>
+          </div>
+          <div>
+            <label class="size-label" for="pmQty">Cantidad</label>
+            <div class="qty-picker">
+              <button type="button" data-qty="-1" aria-label="Menos">−</button>
+              <input type="number" id="pmQty" value="1" min="1" max="200" inputmode="numeric">
+              <button type="button" data-qty="1" aria-label="Más">+</button>
+            </div>
+          </div>
+        </div>
+        <p class="stock-note" id="pmStock"></p>
         <button type="button" class="btn btn-dark" id="pmAdd">Agregar al carrito</button>
+        <button type="button" class="pm-sizechart-toggle" id="pmSizechartToggle">Ver tabla de medidas y cómo medir</button>
+        <div class="pm-sizechart" id="pmSizechart" hidden></div>
         <div class="product-modal-share">
           <button type="button" class="btn btn-secondary" id="pmShare">Compartir por WhatsApp</button>
           <button type="button" class="btn btn-secondary" id="pmCopy">Copiar enlace</button>

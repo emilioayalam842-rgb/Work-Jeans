@@ -21,6 +21,7 @@ async function loadSettings() {
     setText('storeHours', settings.hours);
     setText('resenasScore', settings.googleRating);
     setText('footerAddress', settings.address);
+    if (Number.isFinite(parseInt(settings.lowStockThreshold, 10))) LOW_STOCK_LIMIT = parseInt(settings.lowStockThreshold, 10);
     setText('footerHours', settings.hours);
 
     const phoneLink = document.getElementById('storePhoneLink');
@@ -51,6 +52,7 @@ async function loadSettings() {
     if (footerMapsEmbed && !footerMapsEmbed.src) footerMapsEmbed.src = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
 
     const waLinks = {
+      announcementWhatsapp: 'Hola, me interesa la ropa de trabajo de Works Jeans.',
       whatsappFloat: 'Hola, me interesa la ropa de trabajo de Works Jeans.',
       mayoreoWhatsapp: 'Hola, quiero cotizar un pedido por mayoreo de Works Jeans.',
       contactWhatsapp: '',
@@ -79,13 +81,35 @@ function saveCart(cart) {
   renderCart();
 }
 
-function addToCart(id, name, priceCents, size) {
+let LOW_STOCK_LIMIT = 5;
+
+function sizeStock(productId, size) {
+  const product = PRODUCTS.find((p) => p.id === productId);
+  const entry = product?.sizes.find((s) => s.size === size);
+  return entry ? entry.stock : null;
+}
+
+function stockNoteText(productId, size) {
+  const stock = sizeStock(productId, size);
+  if (stock === null) return '';
+  if (stock <= 0) return 'Talla agotada por ahora. Pídela por WhatsApp y te avisamos.';
+  if (stock <= LOW_STOCK_LIMIT) return `Quedan ${stock} ${stock === 1 ? 'pieza' : 'piezas'} en esta talla.`;
+  return '';
+}
+
+function clampQty(value) {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) && n > 0 ? Math.min(n, 200) : 1;
+}
+
+function addToCart(id, name, priceCents, size, quantity = 1) {
   const cart = getCart();
+  const qty = clampQty(quantity);
   const existing = cart.find((item) => item.id === id && item.size === size);
   if (existing) {
-    existing.quantity += 1;
+    existing.quantity += qty;
   } else {
-    cart.push({ id, name, priceCents, size, quantity: 1 });
+    cart.push({ id, name, priceCents, size, quantity: qty });
   }
   saveCart(cart);
   openCart();
@@ -150,11 +174,52 @@ function closeCart() {
   document.getElementById('cartOverlay').classList.remove('open');
 }
 
+const INVOICE_KEY = 'worksjeans_invoice';
+
+function getInvoice() {
+  const box = document.getElementById('cartInvoice');
+  if (!box || !box.open) return null;
+  const rfc = document.getElementById('invoiceRfc').value.trim().toUpperCase();
+  const name = document.getElementById('invoiceName').value.trim();
+  const email = document.getElementById('invoiceEmail').value.trim();
+  if (!rfc && !name && !email) return null;
+  return { rfc, name, email };
+}
+
+function saveInvoiceDraft() {
+  try {
+    const box = document.getElementById('cartInvoice');
+    localStorage.setItem(INVOICE_KEY, JSON.stringify({
+      open: box.open,
+      rfc: document.getElementById('invoiceRfc').value,
+      name: document.getElementById('invoiceName').value,
+      email: document.getElementById('invoiceEmail').value,
+    }));
+  } catch {
+    // Sin almacenamiento: no pasa nada.
+  }
+}
+
+function restoreInvoiceDraft() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(INVOICE_KEY) || 'null');
+    if (!saved) return;
+    document.getElementById('cartInvoice').open = Boolean(saved.open);
+    document.getElementById('invoiceRfc').value = saved.rfc || '';
+    document.getElementById('invoiceName').value = saved.name || '';
+    document.getElementById('invoiceEmail').value = saved.email || '';
+  } catch {
+    // Ignorar.
+  }
+}
+
 function buildWhatsappMessage() {
   const cart = getCart();
   const lines = cart.map((item) => `- ${item.name} (Talla ${item.size}) x${item.quantity} - ${formatPrice(item.priceCents * item.quantity)}`);
   const total = formatPrice(cartTotalCents());
-  const text = `Hola, quiero hacer un pedido:\n${lines.join('\n')}\n\nTotal: ${total}`;
+  let text = `Hola, quiero hacer un pedido:\n${lines.join('\n')}\n\nTotal: ${total}`;
+  const invoice = getInvoice();
+  if (invoice) text += `\n\nNecesito factura:\nRFC: ${invoice.rfc || '(pendiente)'}\nRazón social: ${invoice.name || '(pendiente)'}\nCorreo: ${invoice.email || '(pendiente)'}`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
@@ -175,6 +240,7 @@ async function startStripeCheckout() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         items: cart.map((item) => ({ id: item.id, quantity: item.quantity, size: item.size })),
+        invoice: getInvoice(),
       }),
     });
     const data = await res.json();
@@ -233,10 +299,23 @@ function renderProductCard(product) {
       <p class="price">${priceHtml(product)}</p>
       ${wholesaleHtml(product)}
       <p class="product-desc">${product.description}</p>
-      <label class="size-label" for="size-${product.id}">Talla</label>
-      <select class="size-select" id="size-${product.id}" ${totalStock <= 0 ? 'disabled' : ''}>
-        ${sizeOptions}
-      </select>
+      <div class="card-row">
+        <div>
+          <label class="size-label" for="size-${product.id}">Talla</label>
+          <select class="size-select" id="size-${product.id}" ${totalStock <= 0 ? 'disabled' : ''}>
+            ${sizeOptions}
+          </select>
+        </div>
+        <div>
+          <label class="size-label" for="qty-${product.id}">Cant.</label>
+          <div class="qty-picker">
+            <button type="button" data-qty="-1" aria-label="Menos">−</button>
+            <input type="number" id="qty-${product.id}" class="qty-input" value="1" min="1" max="200" inputmode="numeric" ${totalStock <= 0 ? 'disabled' : ''}>
+            <button type="button" data-qty="1" aria-label="Más">+</button>
+          </div>
+        </div>
+      </div>
+      <p class="stock-note" data-stock-note>${stockNoteText(product.id, product.sizes.find((s) => s.stock > 0)?.size || product.sizes[0]?.size)}</p>
       <button class="btn btn-dark add-to-cart" ${totalStock <= 0 ? 'disabled' : ''}>${totalStock <= 0 ? 'Agotado' : 'Agregar al carrito'}</button>
     </article>
   `;
@@ -312,6 +391,12 @@ function openProduct(id, { pushState = true } = {}) {
   addBtn.textContent = totalStock <= 0 ? 'Agotado' : 'Agregar al carrito';
   addBtn.dataset.id = product.id;
   document.getElementById('pmStatus').textContent = '';
+  document.getElementById('pmQty').value = 1;
+  document.getElementById('pmStock').textContent = stockNoteText(product.id, select.value);
+  const chart = document.getElementById('pmSizechart');
+  chart.hidden = true;
+  chart.innerHTML = '';
+  document.getElementById('pmSizechartToggle').textContent = 'Ver tabla de medidas y cómo medir';
   modal.hidden = false;
   document.body.classList.add('modal-open');
   document.title = `${product.name} | Works Jeans`;
@@ -354,8 +439,34 @@ function setupProductModal() {
   document.getElementById('pmAdd').addEventListener('click', (e) => {
     const product = PRODUCTS.find((p) => p.id === e.currentTarget.dataset.id);
     if (!product) return;
+    const qty = clampQty(document.getElementById('pmQty').value);
     closeProduct();
-    addToCart(product.id, product.name, product.priceCents, document.getElementById('pmSize').value);
+    addToCart(product.id, product.name, product.priceCents, document.getElementById('pmSize').value, qty);
+  });
+  document.getElementById('pmSize').addEventListener('change', (e) => {
+    document.getElementById('pmStock').textContent = stockNoteText(document.getElementById('pmAdd').dataset.id, e.target.value);
+  });
+  document.getElementById('pmSizechartToggle').addEventListener('click', (e) => {
+    const chart = document.getElementById('pmSizechart');
+    const product = PRODUCTS.find((p) => p.id === document.getElementById('pmAdd').dataset.id);
+    if (chart.hidden) {
+      const isPants = /pantal/i.test(product?.category || '');
+      const block = document.querySelectorAll('#medidas .size-block')[isPants ? 1 : 0];
+      const figure = document.querySelectorAll('#medidas .medidas-figura')[isPants ? 1 : 0];
+      chart.innerHTML = (figure ? `<div class="pm-figure">${figure.innerHTML}</div>` : '') + (block ? block.querySelector('.table-scroll').outerHTML : '');
+      chart.hidden = false;
+      e.currentTarget.textContent = 'Ocultar tabla de medidas';
+    } else {
+      chart.hidden = true;
+      e.currentTarget.textContent = 'Ver tabla de medidas y cómo medir';
+    }
+  });
+  // Botones + y − de cantidad (tarjetas y ficha).
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.qty-picker [data-qty]');
+    if (!btn) return;
+    const input = btn.parentElement.querySelector('input');
+    input.value = clampQty(clampQty(input.value) + parseInt(btn.dataset.qty, 10));
   });
   document.getElementById('pmShare').addEventListener('click', () => {
     const id = document.getElementById('pmAdd').dataset.id;
@@ -437,8 +548,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const card = e.target.closest('.product-card');
     const { id, name, price } = card.dataset;
     const size = card.querySelector('.size-select').value;
-    addToCart(id, name, parseInt(price, 10), size);
+    const qty = clampQty(card.querySelector('.qty-input')?.value);
+    addToCart(id, name, parseInt(price, 10), size, qty);
   });
+
+  document.getElementById('productsGrid').addEventListener('change', (e) => {
+    if (!e.target.classList.contains('size-select')) return;
+    const card = e.target.closest('.product-card');
+    const note = card.querySelector('[data-stock-note]');
+    if (note) note.textContent = stockNoteText(card.dataset.id, e.target.value);
+  });
+
+  restoreInvoiceDraft();
+  ['invoiceRfc', 'invoiceName', 'invoiceEmail'].forEach((id) => document.getElementById(id)?.addEventListener('input', saveInvoiceDraft));
+  document.getElementById('cartInvoice')?.addEventListener('toggle', saveInvoiceDraft);
 
   document.getElementById('cartItems').addEventListener('click', (e) => {
     const itemEl = e.target.closest('.cart-item');

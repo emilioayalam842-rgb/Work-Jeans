@@ -821,7 +821,7 @@ app.get('/api/admin/orders', requireAdmin, (req, res) => {
 
 app.post('/api/admin/orders', requireAdmin, (req, res) => {
   try {
-    const { customerName, customerPhone, notes, items } = req.body;
+    const { customerName, customerPhone, notes, items, invoice } = req.body;
     if (!Array.isArray(items) || items.length === 0) {
       res.status(400).json({ error: 'Agrega al menos un producto al pedido.' });
       return;
@@ -858,6 +858,9 @@ app.post('/api/admin/orders', requireAdmin, (req, res) => {
       customerName: customerName || '',
       customerPhone: customerPhone || '',
       notes: notes || '',
+      invoice: invoice && (invoice.rfc || invoice.name || invoice.email)
+        ? { requested: true, issued: false, rfc: String(invoice.rfc || '').toUpperCase(), name: String(invoice.name || ''), email: String(invoice.email || '') }
+        : null,
       items: orderItems,
       totalCents,
     };
@@ -908,6 +911,12 @@ app.put('/api/admin/orders/:id', requireAdmin, (req, res) => {
     order.status = status;
   }
   if (notes !== undefined) order.notes = String(notes);
+  if (req.body.invoice !== undefined) {
+    const inv = req.body.invoice;
+    order.invoice = inv && (inv.rfc || inv.name || inv.email || inv.requested)
+      ? { requested: true, issued: Boolean(inv.issued), rfc: String(inv.rfc || '').toUpperCase(), name: String(inv.name || ''), email: String(inv.email || '') }
+      : null;
+  }
   if (tracking !== undefined) {
     order.tracking = tracking && (tracking.carrier || tracking.number)
       ? { carrier: String(tracking.carrier || '').trim(), number: String(tracking.number || '').trim(), url: String(tracking.url || '').trim() }
@@ -1065,6 +1074,7 @@ async function notifyNewOrder(order) {
     <p><b>Origen:</b> ${order.source === 'stripe' ? 'Pago con tarjeta' : 'WhatsApp'}<br>
     <b>Cliente:</b> ${order.customerName || 'Sin nombre'}${order.customerPhone ? ` · ${order.customerPhone}` : ''}${order.customerEmail ? ` · ${order.customerEmail}` : ''}</p>
     ${ship}
+    ${order.invoice ? `<p><b>Pide factura:</b> RFC ${order.invoice.rfc || '—'} · ${order.invoice.name || '—'} · ${order.invoice.email || '—'}</p>` : ''}
     <table border="1" cellpadding="6" style="border-collapse:collapse"><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>Subtotal</th></tr>${rows}</table>
     <p><b>Total:</b> ${formatMxn(order.totalCents)}</p>
     <p>Revísalo en el panel: https://www.workjeans.mx/workmapadmin.html</p>`;
@@ -1105,6 +1115,14 @@ function recordStripeOrder(session) {
       country: addr.country || '',
     } : null,
     notes: '',
+    invoice: (() => {
+      try {
+        const inv = session.metadata?.invoice ? JSON.parse(session.metadata.invoice) : null;
+        return inv ? { requested: true, issued: false, ...inv } : null;
+      } catch {
+        return null;
+      }
+    })(),
     stripeSessionId: session.id,
     items: session.line_items.data.map((li, i) => {
       const product = cartMeta[i]?.id ? productsNow.find((p) => p.id === cartMeta[i].id) : null;
@@ -1147,11 +1165,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
     return;
   }
 
-  const { items } = req.body;
+  const { items, invoice } = req.body;
   if (!Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'El carrito está vacío.' });
     return;
   }
+  const invoiceMeta = invoice && typeof invoice === 'object'
+    ? { rfc: String(invoice.rfc || '').slice(0, 13).toUpperCase(), name: String(invoice.name || '').slice(0, 120), email: String(invoice.email || '').slice(0, 120) }
+    : null;
 
   try {
     const products = getProducts();
@@ -1177,7 +1198,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items,
-      metadata: { cart: JSON.stringify(cartMeta) },
+      metadata: { cart: JSON.stringify(cartMeta), invoice: invoiceMeta ? JSON.stringify(invoiceMeta) : '' },
       shipping_address_collection: { allowed_countries: ['MX'] },
       phone_number_collection: { enabled: true },
       locale: 'es',

@@ -515,6 +515,17 @@
         <input type="text" id="orderTrackingNumber" placeholder="Opcional">
       </div>
 
+      <details class="admin-invoice" id="orderInvoiceBox">
+        <summary>Factura</summary>
+        <div class="admin-field-grid">
+          <div><label for="orderInvoiceRfc">RFC</label><input type="text" id="orderInvoiceRfc" maxlength="13"></div>
+          <div><label for="orderInvoiceName">Razón social</label><input type="text" id="orderInvoiceName"></div>
+        </div>
+        <label for="orderInvoiceEmail">Correo para la factura</label>
+        <input type="email" id="orderInvoiceEmail">
+        <label class="admin-check"><input type="checkbox" id="orderInvoiceIssued"> Factura emitida</label>
+      </details>
+
       <label for="orderDetailNotes">Notas</label>
       <textarea id="orderDetailNotes" rows="3"></textarea>
 
