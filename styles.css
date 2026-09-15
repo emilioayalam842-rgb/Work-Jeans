@@ -1944,3 +1944,7 @@ html { overflow-x: clip; }
 .admin-badge.lead-ganado, .admin-status-select.lead-ganado { border-color: #2e7d32; background: #e6f4e8; }
 .admin-badge.lead-perdido, .admin-status-select.lead-perdido { border-color: #999; background: #eee; }
 .lead-notes { width: 100%; min-width: 160px; font: inherit; font-size: 0.82rem; padding: 6px; border: 1.5px solid rgba(0,0,0,0.2); }
+
+.article-meta { font-family: var(--label); font-size: 0.8rem; letter-spacing: 0.06em; color: var(--muted); margin-top: 10px; }
+.content-body h3 { font-size: 1.15rem; margin-top: 26px; }
+.content-body ol { padding-left: 22px; }

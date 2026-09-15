@@ -111,6 +111,7 @@
         </div>
         <div class="admin-side-group"><span>Marketing</span>
           <button class="admin-tab" data-tab="promociones" data-perm="promociones.ver">Cupones y promociones</button>
+          <button class="admin-tab" data-tab="articulos" data-perm="contenido.editar">Artículos</button>
         </div>
         <div class="admin-side-group"><span>Análisis</span>
           <button class="admin-tab" data-tab="reportes" data-perm="reportes.ver">Reportes</button>
@@ -452,6 +453,20 @@
               <table class="admin-table"><thead><tr><th>Folio</th><th>Cliente</th><th>Tipo</th><th>Piezas</th><th>Reembolso</th><th>Regresó a stock</th></tr></thead><tbody id="returnsTableBody"></tbody></table>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div id="tabArticulos" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Artículos</h2>
+          <button type="button" id="newArticleBtn" class="btn btn-primary admin-btn-icon">+ Nuevo artículo</button>
+        </div>
+        <p class="admin-muted">Se publican en <a href="/articulos" target="_blank" rel="noopener">workjeans.mx/articulos</a>. Un artículo útil por semana es lo que más ayuda a subir en Google. Escribe con datos reales: no afirmes cifras que no puedas comprobar.</p>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Artículo</th><th>Estado</th><th>Fechas</th><th></th></tr></thead>
+            <tbody id="articlesTableBody"></tbody>
+          </table>
         </div>
       </div>
 
@@ -977,6 +992,40 @@
     </div>
   </div>
 
+  <div class="admin-overlay" id="articleOverlay" hidden>
+    <form id="articleForm" class="admin-form admin-form--wide">
+      <h2 id="articleFormTitle">Nuevo artículo</h2>
+      <input type="hidden" id="articleOriginalSlug">
+      <label for="articleH1">Título del artículo</label>
+      <input type="text" id="articleH1" required maxlength="140" placeholder="Ej. Cómo elegir pantalón de trabajo para soldadura">
+      <div class="admin-field-grid">
+        <div><label for="articleSlug">URL (slug)</label><input type="text" id="articleSlug" required maxlength="80" placeholder="como-elegir-pantalon-de-trabajo"></div>
+        <div><label for="articleKicker">Etiqueta</label><input type="text" id="articleKicker" maxlength="40" value="Artículo"></div>
+      </div>
+      <label for="articleTitle">Título para Google (máx. 70)</label>
+      <input type="text" id="articleTitle" maxlength="90">
+      <label for="articleDescription">Descripción para Google (120 a 170 caracteres)</label>
+      <input type="text" id="articleDescription" maxlength="200" required>
+      <label for="articleIntro">Entrada (una frase que engancha)</label>
+      <input type="text" id="articleIntro" maxlength="300">
+      <label for="articleBody">Contenido</label>
+      <p class="admin-help">Escribe normal: <code>## Subtítulo</code> para secciones, <code>- </code> para viñetas, línea en blanco entre párrafos, <code>**negritas**</code> y <code>[texto](/pantalones-de-trabajo)</code> para enlaces. También acepta HTML sencillo.</p>
+      <textarea id="articleBody" rows="16" required></textarea>
+      <label for="articleFaq">Preguntas frecuentes (una por línea: Pregunta | Respuesta)</label>
+      <textarea id="articleFaq" rows="3"></textarea>
+      <div class="admin-field-grid">
+        <div><label for="articleProducts">Productos relacionados al final</label><select id="articleProducts" class="admin-filter"><option value="none">Ninguno</option><option value="all">Todos</option><option value="pantalones">Pantalones</option><option value="camisas">Camisas</option><option value="reflejante">Reflejantes</option></select></div>
+        <div><label for="articleStatus">Estado</label><select id="articleStatus" class="admin-filter"><option value="borrador">Borrador (no visible)</option><option value="publicado">Publicado</option></select></div>
+        <div><label for="articlePublishedAt">Fecha de publicación</label><input type="date" id="articlePublishedAt"></div>
+      </div>
+      <div class="admin-form-actions">
+        <button type="button" id="cancelArticleBtn" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+      <p class="admin-error" id="articleError"></p>
+    </form>
+  </div>
+
   <div class="admin-overlay" id="userOverlay" hidden>
     <form id="userForm" class="admin-form">
       <h2 id="userFormTitle">Nuevo usuario</h2>
@@ -1239,5 +1288,6 @@
   <script src="admin-reportes.js?v=20260915d"></script>
   <script src="admin-seguridad.js?v=20260915d"></script>
   <script src="admin-leads.js?v=20260915d"></script>
+  <script src="admin-contenido.js?v=20260915d"></script>
 </body>
 </html>

@@ -26,6 +26,7 @@ const PERMISSIONS = {
   'compras.editar': 'Gestionar proveedores y órdenes de compra',
   'promociones.ver': 'Ver cupones y promociones',
   'promociones.editar': 'Gestionar cupones y promociones',
+  'contenido.editar': 'Escribir y publicar artículos',
   'reportes.ver': 'Ver dashboard y reportes',
   'costos.ver': 'Ver costos y utilidad',
   'configuracion.ver': 'Ver configuración de la tienda',
@@ -61,7 +62,7 @@ const ROLES = {
   marketing: {
     label: 'Marketing',
     description: 'Cupones y promociones. Sin datos financieros ni de clientes.',
-    perms: ['promociones.ver', 'promociones.editar', 'productos.ver'],
+    perms: ['promociones.ver', 'promociones.editar', 'productos.ver', 'contenido.editar'],
   },
   contabilidad: {
     label: 'Contabilidad',

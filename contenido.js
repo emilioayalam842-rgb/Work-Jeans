@@ -151,7 +151,7 @@ const ARTICLES = {
     products: (p) => p.category === 'Pantalones',
     body: `
       <h2>1. La tela pesa más</h2>
-      <p>Un jean de moda usa mezclilla de 10 a 12 onzas por yarda, muchas veces con elastano para que estire. Un work jean usa mezclilla de 13 a 14 onzas, 100% algodón. Pesa más, protege más contra raspones y tarda mucho más en desgastarse en rodillas y muslos.</p>
+      <p>Un jean de moda suele usar mezclilla ligera, muchas veces con elastano para que estire. Un work jean usa mezclilla más pesada y 100% algodón: protege mejor contra raspones y tarda más en desgastarse en rodillas y muslos. El peso exacto de cada tela se indica en la ficha técnica del producto cuando está confirmado.</p>
       <h2>2. Las costuras son dobles y los remaches, reales</h2>
       <p>En un pantalón de trabajo las costuras del tiro, la entrepierna y las bolsas van dobles, con hilo grueso. Los remaches en las esquinas de las bolsas evitan que se abran cuando cargas herramienta. En un jean de moda muchos remaches son decorativos.</p>
       <h2>3. El corte deja moverse</h2>
@@ -159,8 +159,8 @@ const ARTICLES = {
       <h2>4. Tallas completas</h2>
       <p>La ropa de trabajo debe existir en 28 y en 50, porque una cuadrilla no viene en un solo tamaño. La mayoría de las marcas de moda no pasan de la 42.</p>
       <h2>5. Precio por uso, no por etiqueta</h2>
-      <p>Un work jean cuesta parecido a un jean de marca media, pero dura tres o cuatro veces más en condiciones reales de trabajo. Dividido entre los meses de uso, sale mucho más barato.</p>
-      <p>Si lo tuyo es trabajar, mira nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a>: mezclilla pesada, costuras dobles y tallas 28 a 50.</p>
+      <p>Un work jean cuesta parecido a un jean de marca media, pero está hecho para aguantar el trabajo diario. Dividido entre los meses de uso real, suele salir más barato que reponer un jean de moda cada pocos meses.</p>
+      <p>Si lo tuyo es trabajar, mira nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a>: mezclilla 100% algodón, costuras reforzadas y tallas del 28 al 50.</p>
     `,
   },
   'ropa-de-trabajo-y-normas-de-seguridad-en-mexico': {
@@ -192,6 +192,154 @@ const ARTICLES = {
         <li><a href="https://dof.gob.mx/normasOficiales/9496/stps/stps.html" target="_blank" rel="noopener">DOF: NOM-017-STPS-2024, Equipo de protección personal. Selección, uso y manejo en los centros de trabajo</a></li>
         <li><a href="https://platiica.economia.gob.mx/normalizacion/nom-017-stps-2024/" target="_blank" rel="noopener">Secretaría de Economía: ficha de la NOM-017-STPS-2024</a></li>
       </ul>
+    `,
+  },
+  'ropa-reflejante-de-trabajo-cuando-ayuda-y-que-no-es': {
+    kicker: 'Artículo',
+    h1: 'Ropa reflejante de trabajo: cuándo ayuda y qué no es',
+    h1Html: 'Reflejante:<br>qué es y qué no.',
+    title: 'Ropa Reflejante de Trabajo: Cuándo Ayuda y Qué No Es | Works Jeans',
+    description: 'Diferencia entre una prenda con cinta reflejante y una prenda certificada de alta visibilidad, dónde conviene usarla y qué revisar antes de comprar para tu equipo.',
+    intro: 'Una cinta reflejante te hace visible bajo una luz. Una certificación es otra cosa. Conviene saber cuál necesitas.',
+    products: (p) => /reflejante/.test(p.id),
+    body: `
+      <h2>Qué hace una cinta reflejante</h2>
+      <p>La cinta retrorreflectante devuelve la luz hacia su origen. Cuando los faros de un montacargas o de un camión iluminan a la persona, la cinta brilla y el conductor la distingue a varios metros. De día, sin una fuente de luz que apunte a la prenda, la cinta casi no se nota: ahí lo que ayuda es el color de la ropa.</p>
+      <h2>Prenda con reflejante no es prenda certificada</h2>
+      <p>Las normas internacionales de alta visibilidad (ANSI/ISEA 107 en Estados Unidos, ISO 20471 en Europa) exigen una cantidad mínima de material fluorescente y reflejante, colores específicos y pruebas de laboratorio. Una camisa o pantalón con cinta cosida, como los nuestros, mejora la visibilidad pero <strong>no es una prenda certificada</strong> bajo esas normas. Si el reglamento interno de tu planta o el contrato con tu cliente exige certificación, pregúntalo antes de comprar.</p>
+      <h2>Qué dice la norma mexicana</h2>
+      <p>La NOM-017-STPS-2024, vigente desde el 28 de septiembre de 2025, obliga al patrón a identificar los riesgos de cada puesto y a entregar el equipo de protección que corresponda. No fija una norma propia de alta visibilidad; cada centro de trabajo define en su análisis de riesgos qué necesita. Lee más en <a href="/articulos/ropa-de-trabajo-y-normas-de-seguridad-en-mexico">ropa de trabajo y normas de seguridad</a>.</p>
+      <h2>Dónde sí conviene usarla</h2>
+      <ul>
+        <li>Patios de maniobras, andenes y almacenes con montacargas.</li>
+        <li>Vialidades, obra y mantenimiento en la calle, sobre todo al amanecer y al anochecer.</li>
+        <li>Turnos nocturnos en planta con zonas de poca luz.</li>
+      </ul>
+      <h2>Qué revisar al comprar</h2>
+      <ul>
+        <li>Que la cinta vaya cosida, no pegada: aguanta más lavadas.</li>
+        <li>Dónde está colocada: pecho y espalda en camisa; rodilla y pantorrilla en pantalón.</li>
+        <li>Que la prenda base aguante el trabajo: de nada sirve la cinta si la tela se rompe en un mes.</li>
+        <li>Lavado al revés, con agua fría y sin cloro, para conservar el brillo.</li>
+      </ul>
+      <p>Nuestra <a href="/ropa-de-trabajo-reflejante">ropa de trabajo reflejante</a> lleva cinta cosida sobre mezclilla 100% algodón, en verde o naranja, con tallas del 28 al 50 en pantalón y de XCH a 5XG en camisa.</p>
+    `,
+    faq: [
+      ['¿La ropa reflejante de Works Jeans está certificada?', 'No. Lleva cinta reflejante cosida, pero no cuenta con certificación ANSI/ISEA 107 ni ISO 20471. Si necesitas prenda certificada, consúltanos antes de comprar.'],
+      ['¿Verde o naranja?', 'Ambos reflejan igual bajo una luz. Elige el que contraste más con el entorno de trabajo o el que marque el reglamento interno de tu empresa.'],
+    ],
+  },
+  'camisa-de-mezclilla-o-de-poliester-para-trabajar-en-planta': {
+    kicker: 'Artículo',
+    h1: 'Camisa de mezclilla o de poliéster para trabajar en planta: cuál conviene',
+    h1Html: 'Mezclilla o<br>poliéster.',
+    title: 'Camisa de Mezclilla o de Poliéster para Trabajar: Cuál Conviene | Works Jeans',
+    description: 'Comparación práctica entre camisas de trabajo de mezclilla de algodón y camisas de poliéster: calor, durabilidad, lavado, personalización y precio por uso.',
+    intro: 'Las dos se venden como "camisa de trabajo". Se comportan muy distinto en un turno de ocho horas.',
+    products: (p) => p.category === 'Camisas',
+    body: `
+      <h2>Calor y sudor</h2>
+      <p>El algodón absorbe el sudor y deja pasar el aire; el poliéster tiende a retener el calor y a sentirse pegajoso cuando la persona suda. En planta sin clima, en obra o en taller, la gente aguanta mejor la jornada con algodón.</p>
+      <h2>Desgaste</h2>
+      <p>La mezclilla es un tejido grueso: resiste el roce con mesas, herramienta y superficies ásperas. Las camisas de poliéster delgado se rasgan o se pelan antes con ese mismo uso. A cambio, el poliéster arruga menos y pesa menos.</p>
+      <h2>Chispas y calor radiante</h2>
+      <p>El poliéster funde con el calor y puede pegarse a la piel; el algodón se chamusca pero no se derrite. Para soldadura o zonas con chispa se requiere ropa específica con tratamiento retardante, que ninguna de las dos es por sí sola, pero entre ambas el algodón es la base más segura.</p>
+      <h2>Lavado</h2>
+      <p>Ambas se lavan en casa. La mezclilla se lava al revés, con agua fría y sin cloro; puede encoger si no es preencogida. El poliéster seca rápido y no encoge, pero atrapa olores con más facilidad.</p>
+      <h2>Personalización</h2>
+      <p>Las dos aceptan bordado y estampado DTF. Sobre mezclilla el bordado luce bien y aguanta muchas lavadas; sobre poliéster delgado conviene DTF o bordado con entretela.</p>
+      <h2>Precio por uso</h2>
+      <p>La camisa de poliéster suele ser más barata al comprarla. Si se repone cada pocos meses, la de mezclilla termina costando menos por turno trabajado. Haz la cuenta con tu ritmo real de reposición.</p>
+      <p>Mira nuestras <a href="/camisas-de-trabajo">camisas de trabajo de mezclilla</a>: 100% algodón, con bolsillo frontal, botones reforzados y tallas de XCH a 5XG.</p>
+    `,
+  },
+  'bordado-o-dtf-como-poner-tu-logotipo-en-uniformes-de-trabajo': {
+    kicker: 'Artículo',
+    h1: 'Bordado o DTF: cómo poner tu logotipo en uniformes de trabajo',
+    h1Html: 'Bordado<br>o DTF.',
+    title: 'Bordado o DTF para Uniformes de Trabajo: Cuál Elegir | Works Jeans',
+    description: 'Diferencias entre bordado y estampado DTF para logotipos en camisas y pantalones de trabajo: durabilidad, detalle, colores, ubicación y qué archivo enviar.',
+    intro: 'Un logotipo bien puesto identifica a tu equipo y hace que la prenda dure más tiempo "en uniforme". Así se elige la técnica.',
+    products: () => true,
+    body: `
+      <h2>Bordado</h2>
+      <p>El logotipo se cose con hilo directamente sobre la prenda. Es la opción más resistente al lavado y al roce, se ve bien sobre mezclilla y transmite un acabado más formal. Funciona mejor con logotipos sencillos, de pocos colores y sin degradados. Los detalles muy finos o letras muy pequeñas pierden definición.</p>
+      <h2>Estampado DTF</h2>
+      <p>El diseño se imprime en una película y se transfiere con calor. Reproduce degradados, fotografías y muchos colores con detalle, y permite logotipos grandes (por ejemplo, en la espalda). Aguanta el lavado doméstico si se cuida (al revés, agua fría, sin plancha directa), pero con el tiempo y el roce intenso se desgasta antes que un bordado.</p>
+      <h2>Dónde colocarlo</h2>
+      <ul>
+        <li><strong>Camisa:</strong> pecho izquierdo (bordado pequeño), espalda (DTF grande), manga (nombre o área).</li>
+        <li><strong>Pantalón:</strong> bolsa trasera o parte baja de la pierna, siempre lejos de las costuras reforzadas y de la cinta reflejante.</li>
+      </ul>
+      <h2>Qué archivo enviar</h2>
+      <p>Para bordado basta el logotipo en buena resolución; para DTF, lo ideal es un archivo vectorial (SVG, AI, PDF) o un PNG grande con fondo transparente. Indica los colores exactos si tu marca los tiene definidos.</p>
+      <h2>Cómo se cotiza</h2>
+      <p>La personalización se cotiza junto con el pedido, según técnica, tamaño y número de piezas. Arma tu pedido por talla en la <a href="/empresas">página para empresas</a>, elige "Bordado" o "DTF" y te respondemos con el costo por pieza.</p>
+    `,
+    faq: [
+      ['¿Puedo personalizar una sola pieza?', 'La personalización la ofrecemos en pedidos de mayoreo. Si necesitas pocas piezas, escríbenos y revisamos si es viable.'],
+      ['¿Las prendas personalizadas tienen cambio?', 'No, salvo defecto de fabricación. Por eso conviene confirmar tallas con la guía antes de personalizar.'],
+    ],
+  },
+  'que-preguntar-antes-de-comprar-ropa-de-trabajo-por-mayoreo': {
+    kicker: 'Artículo',
+    h1: 'Qué preguntar antes de comprar ropa de trabajo por mayoreo',
+    h1Html: 'Antes de comprar<br>por mayoreo.',
+    title: 'Qué Preguntar Antes de Comprar Ropa de Trabajo por Mayoreo | Works Jeans',
+    description: 'Lista de preguntas para el encargado de compras: tallas, existencias, reposición, factura, envío, personalización y cambios. Evita sorpresas en pedidos de uniformes.',
+    intro: 'Diez preguntas que ahorran semanas de retrasos y cambios de talla.',
+    products: () => true,
+    body: `
+      <h2>1. ¿Qué tallas manejan y con qué patrón?</h2>
+      <p>Pide la corrida completa y confirma que todas las tallas usan el mismo patrón. En una cuadrilla siempre hay alguien de 30 y alguien de 48.</p>
+      <h2>2. ¿Hay existencia o se fabrica bajo pedido?</h2>
+      <p>Cambia el tiempo de entrega por completo. Pregunta cuántas piezas hay en stock por talla y cuánto tarda lo que no está.</p>
+      <h2>3. ¿Cuál es el precio de mayoreo y desde cuántas piezas aplica?</h2>
+      <p>Debe estar por escrito, por modelo. Pregunta también si el precio se mantiene en reposiciones pequeñas.</p>
+      <h2>4. ¿Facturan y con qué datos?</h2>
+      <p>Confirma que emiten CFDI y ten a la mano RFC, régimen, código postal fiscal y uso de CFDI para que la factura salga a la primera.</p>
+      <h2>5. ¿Cuánto cuesta el envío y quién lo paga?</h2>
+      <p>En pedidos grandes el envío suele cotizarse aparte. Pide el costo y el tiempo antes de confirmar.</p>
+      <h2>6. ¿Cómo se maneja un cambio de talla?</h2>
+      <p>Pregunta plazo, condiciones (sin uso, con etiquetas) y quién paga el envío del cambio. Con prendas personalizadas normalmente no hay cambio.</p>
+      <h2>7. ¿Qué personalización ofrecen y en qué tiempo?</h2>
+      <p>Bordado y DTF son lo habitual. Pregunta tiempos y qué archivo necesitan de tu logotipo.</p>
+      <h2>8. ¿Puedo ver una muestra?</h2>
+      <p>Una prenda física evita malentendidos de tela, color y talla antes de comprometer todo el pedido.</p>
+      <h2>9. ¿Cómo se identifican las tallas al recibir?</h2>
+      <p>Etiqueta visible por prenda y empaque por talla ahorran horas al repartir uniformes.</p>
+      <h2>10. ¿Cómo repongo piezas después?</h2>
+      <p>Pregunta si puedes reponer tallas sueltas y en cuánto tiempo. La reposición es lo que mantiene uniformado al equipo el resto del año.</p>
+      <p>En Works Jeans respondemos estas preguntas en la cotización. Arma tu pedido por talla en la <a href="/empresas">página para empresas</a> y te enviamos todo por escrito.</p>
+    `,
+  },
+  'como-cuidar-la-ropa-de-trabajo-de-mezclilla-para-que-dure-mas': {
+    kicker: 'Artículo',
+    h1: 'Cómo cuidar la ropa de trabajo de mezclilla para que dure más',
+    h1Html: 'Cuidar la<br>mezclilla.',
+    title: 'Cómo Cuidar la Ropa de Trabajo de Mezclilla para que Dure Más | Works Jeans',
+    description: 'Lavado, secado, manchas de grasa, reflejantes y rotación: consejos prácticos para alargar la vida de pantalones y camisas de trabajo de mezclilla.',
+    intro: 'La mezclilla aguanta mucho, pero el lavado con cloro y la secadora al máximo la acaban antes de tiempo.',
+    products: () => true,
+    body: `
+      <h2>Lavado</h2>
+      <ul>
+        <li>Al revés, para proteger el color y las cintas reflejantes.</li>
+        <li>Agua fría o tibia; nunca cloro. El cloro decolora y debilita el hilo.</li>
+        <li>Cierra botones y cremalleras para que no rocen otras prendas.</li>
+        <li>Lava la ropa de trabajo aparte cuando trae grasa o polvo pesado.</li>
+      </ul>
+      <h2>Manchas de grasa y aceite</h2>
+      <p>Aplica jabón líquido para trastes directamente sobre la mancha, frota suave con las yemas de los dedos, deja actuar unos minutos y lava normal. No planches una mancha de grasa: el calor la fija.</p>
+      <h2>Secado</h2>
+      <p>Lo mejor es a la sombra y colgado por la pretina o los hombros. Si usas secadora, a temperatura baja; el calor alto encoge el algodón y endurece las cintas reflejantes.</p>
+      <h2>Reflejantes</h2>
+      <p>Las cintas cosidas resisten el lavado doméstico; lo que las apaga es el cloro, la plancha directa y la secadora muy caliente. Si el brillo baja, revisa el proceso de lavado antes de dar la prenda por vencida.</p>
+      <h2>Rotación</h2>
+      <p>Dos o tres prendas por persona en rotación duran más que una sola usada todos los días: la mezclilla descansa, se lava sin prisa y se seca bien entre turnos.</p>
+      <h2>Reparaciones</h2>
+      <p>Una costura abierta o un botón flojo se arreglan en minutos si se atienden a tiempo. Deja pasar semanas y el hueco crece hasta que la prenda ya no sirve.</p>
+      <p>Cada producto tiene su sección de cuidados en la ficha: revisa los <a href="/pantalones-de-trabajo">pantalones</a> y las <a href="/camisas-de-trabajo">camisas</a> de Works Jeans.</p>
     `,
   },
   'como-elegir-talla-de-uniforme-para-tu-cuadrilla': {

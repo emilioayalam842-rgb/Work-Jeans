@@ -30,6 +30,7 @@ const RETURNS_PATH = path.join(DATA_DIR, 'returns.json');
 const PROMOTIONS_PATH = path.join(DATA_DIR, 'promotions.json');
 const LEADS_PATH = path.join(DATA_DIR, 'leads.json');
 const ANALYTICS_PATH = path.join(DATA_DIR, 'analytics.json');
+const ARTICLES_PATH = path.join(DATA_DIR, 'articles.json');
 
 // Primer arranque con DATA_DIR externo: copiar los datos iniciales del proyecto.
 if (USES_EXTERNAL_DATA) {
@@ -808,7 +809,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -1304,16 +1305,99 @@ app.get('/feed/google-merchant.xml', (req, res) => {
 
 // --- Landings y artículos de contenido (contenido.js) ---
 
-const ALL_PAGES = () => ({ ...CONTENT.LANDINGS, ...CONTENT.ARTICLES });
+const ALL_PAGES = () => ({ ...CONTENT.LANDINGS, ...articlesMap() });
+
+// --- Artículos editables desde el panel (articles.json). Los de contenido.js se copian una vez y luego manda el panel. ---
+const PRODUCT_FILTERS = {
+  none: null,
+  all: () => true,
+  pantalones: (p) => p.category === 'Pantalones',
+  camisas: (p) => p.category === 'Camisas',
+  reflejante: (p) => /reflejante/.test(p.id),
+};
+const STATIC_FILTER_BY_SLUG = { 'work-jeans-vs-pantalon-de-mezclilla-normal': 'pantalones', 'ropa-de-trabajo-y-normas-de-seguridad-en-mexico': 'reflejante', 'como-elegir-talla-de-uniforme-para-tu-cuadrilla': 'all', 'ropa-reflejante-de-trabajo-cuando-ayuda-y-que-no-es': 'reflejante', 'camisa-de-mezclilla-o-de-poliester-para-trabajar-en-planta': 'camisas', 'bordado-o-dtf-como-poner-tu-logotipo-en-uniformes-de-trabajo': 'all', 'que-preguntar-antes-de-comprar-ropa-de-trabajo-por-mayoreo': 'all', 'como-cuidar-la-ropa-de-trabajo-de-mezclilla-para-que-dure-mas': 'all' };
+
+const getArticles = () => readJsonList(ARTICLES_PATH);
+const saveArticles = (list) => fs.writeFileSync(ARTICLES_PATH, JSON.stringify(list, null, 2) + '\n');
+
+// Texto del panel → HTML seguro. Acepta HTML sencillo o un formato ligero: "## Título", "- viñeta", párrafos separados por línea en blanco, **negritas**, [texto](url).
+const ALLOWED_TAGS = new Set(['h2', 'h3', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'a', 'br', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'details', 'summary', 'div', 'span']);
+function sanitizeHtml(html) {
+  return String(html || '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(script|style|iframe|object|embed|form|input|textarea|button|link|meta)[\s\S]*?(<\/\1>|$)/gi, '')
+    .replace(/<\/?([a-zA-Z0-9]+)([^>]*)>/g, (m, tag, attrs) => {
+      const t = tag.toLowerCase();
+      if (!ALLOWED_TAGS.has(t)) return '';
+      if (m.startsWith('</')) return `</${t}>`;
+      let keep = '';
+      if (t === 'a') {
+        const href = (attrs.match(/href\s*=\s*"([^"]*)"/i) || attrs.match(/href\s*=\s*'([^']*)'/i) || [])[1] || '';
+        if (/^(https?:\/\/|\/|#|mailto:|tel:)/i.test(href) && !/javascript:/i.test(href)) keep = ` href="${href.replace(/"/g, '&quot;')}"${/^https?:\/\//i.test(href) && !href.includes('workjeans.mx') ? ' target="_blank" rel="noopener"' : ''}`;
+      }
+      const cls = (attrs.match(/class\s*=\s*"([a-zA-Z0-9 _-]*)"/i) || [])[1];
+      if (cls) keep += ` class="${cls}"`;
+      return `<${t}${keep}>`;
+    });
+}
+function markdownLite(text) {
+  const esc = (t) => escapeHtml(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g, '<a href="$2">$1</a>');
+  const blocks = String(text || '').replace(/\r/g, '').split(/\n{2,}/);
+  return blocks.map((b) => {
+    const lines = b.split('\n').filter((l) => l.trim());
+    if (!lines.length) return '';
+    if (lines.every((l) => /^[-*] /.test(l))) return `<ul>${lines.map((l) => `<li>${esc(l.replace(/^[-*] /, ''))}</li>`).join('')}</ul>`;
+    if (lines.every((l) => /^\d+[.)] /.test(l))) return `<ol>${lines.map((l) => `<li>${esc(l.replace(/^\d+[.)] /, ''))}</li>`).join('')}</ol>`;
+    return lines.map((l) => (/^### /.test(l) ? `<h3>${esc(l.slice(4))}</h3>` : /^## /.test(l) ? `<h2>${esc(l.slice(3))}</h2>` : `<p>${esc(l)}</p>`)).join('');
+  }).join('\n');
+}
+function articleBodyHtml(source) {
+  // Si el texto trae bloques HTML (p, h2, ul…) se limpia como HTML; si no, se interpreta el formato ligero y cualquier etiqueta se muestra como texto.
+  return /<(h2|h3|p|ul|ol|table|div|blockquote)[\s>]/i.test(source || '') ? sanitizeHtml(source) : markdownLite(source);
+}
+function readingStats(html) {
+  const words = String(html || '').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+  return { words, readingMinutes: Math.max(1, Math.round(words / 200)) };
+}
+
+// Los artículos escritos en contenido.js se agregan a articles.json si aún no existen (sin pisar ediciones del panel).
+try {
+  const list = getArticles();
+  let changed = false;
+  for (const [slug, a] of Object.entries(CONTENT.ARTICLES)) {
+    if (list.some((x) => x.slug === slug)) continue;
+    list.push({ slug, kicker: a.kicker, h1: a.h1, title: a.title, description: a.description, intro: a.intro, bodySource: a.body.trim(), faq: a.faq || [], productsFilter: STATIC_FILTER_BY_SLUG[slug] || 'none', status: 'publicado', publishedAt: CONTENT.PUBLISHED, updatedAt: CONTENT.PUBLISHED, author: 'Works Jeans' });
+    changed = true;
+  }
+  if (changed) saveArticles(list);
+} catch {
+  // Sin artículos aún.
+}
+
+function articleToPage(a) {
+  const html = articleBodyHtml(a.bodySource);
+  return { kicker: a.kicker || 'Artículo', h1: a.h1, h1Html: escapeHtml(a.h1), title: a.title || `${a.h1} | Works Jeans`, description: a.description || '', intro: a.intro || '', products: PRODUCT_FILTERS[a.productsFilter] || null, body: html, faq: a.faq && a.faq.length ? a.faq : null, publishedAt: a.publishedAt, updatedAt: a.updatedAt, author: a.author || 'Works Jeans', ...readingStats(html) };
+}
+function publishedArticles() {
+  const today = new Date().toISOString().slice(0, 10);
+  return getArticles().filter((a) => a.status === 'publicado' && (!a.publishedAt || a.publishedAt <= today)).sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+}
+function articlesMap() {
+  return Object.fromEntries(publishedArticles().map((a) => [a.slug, articleToPage(a)]));
+}
 
 function relatedLinks(currentSlug) {
   const items = [
     ['/pantalones-de-trabajo', 'Pantalones de trabajo'],
     ['/camisas-de-trabajo', 'Camisas de trabajo'],
     ...Object.entries(CONTENT.LANDINGS).map(([slug, p]) => [`/${slug}`, p.h1]),
-    ...Object.entries(CONTENT.ARTICLES).map(([slug, p]) => [`/articulos/${slug}`, p.h1]),
+    ...Object.entries(articlesMap()).map(([slug, p]) => [`/articulos/${slug}`, p.h1]),
   ];
   return items.filter(([href]) => !href.endsWith(`/${currentSlug}`)).slice(0, 8).map(([href, label]) => `<li><a href="${href}">${escapeHtml(label)}</a></li>`).join('');
+}
+
+function fmtLongDate(iso) {
+  try { return new Date(`${String(iso).slice(0, 10)}T12:00:00`).toLocaleDateString('es-MX', { dateStyle: 'long' }); } catch { return iso; }
 }
 
 function renderContentPage(req, res, slug, page, { isArticle }) {
@@ -1334,7 +1418,7 @@ function renderContentPage(req, res, slug, page, { isArticle }) {
       url: canonical,
       inLanguage: 'es-MX',
       isPartOf: { '@id': `${origin}/#sitio` },
-      ...(isArticle ? { datePublished: CONTENT.PUBLISHED, dateModified: CONTENT.PUBLISHED, author: { '@id': `${origin}/#negocio` }, publisher: { '@id': `${origin}/#negocio` }, image } : {}),
+      ...(isArticle ? { datePublished: page.publishedAt || CONTENT.PUBLISHED, dateModified: page.updatedAt || page.publishedAt || CONTENT.PUBLISHED, author: { '@type': 'Organization', name: page.author || 'Works Jeans', '@id': `${origin}/#negocio` }, publisher: { '@id': `${origin}/#negocio` }, image, ...(page.words ? { wordCount: page.words } : {}) } : {}),
     },
     { '@type': 'BreadcrumbList', itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })) },
   ];
@@ -1359,6 +1443,7 @@ function renderContentPage(req, res, slug, page, { isArticle }) {
     KICKER: escapeHtml(page.kicker),
     H1_HTML: page.h1Html,
     INTRO: escapeHtml(page.intro),
+    META: isArticle ? `<p class="article-meta">Por <strong>${escapeHtml(page.author || 'Works Jeans')}</strong> · Publicado el ${fmtLongDate(page.publishedAt || CONTENT.PUBLISHED)}${page.updatedAt && page.updatedAt !== page.publishedAt ? ` · Actualizado el ${fmtLongDate(page.updatedAt)}` : ''}${page.readingMinutes ? ` · ${page.readingMinutes} min de lectura` : ''}</p>` : '',
     BODY: body,
     PRODUCTS_BLOCK: products.length ? `<section class="content-products"><h2>Productos relacionados</h2><div class="products-grid products-grid--static">${products.map((p) => productCardStatic(p, origin)).join('')}</div></section>` : '',
     RELATED: relatedLinks(slug),
@@ -1370,9 +1455,9 @@ function renderContentPage(req, res, slug, page, { isArticle }) {
 
 app.get('/articulos', (req, res) => {
   const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
-  const list = Object.entries(CONTENT.ARTICLES).map(([slug, a]) => `
+  const list = Object.entries(articlesMap()).map(([slug, a]) => `
     <a class="article-card" href="/articulos/${slug}">
-      <span class="kicker">${escapeHtml(a.kicker)} · ${CONTENT.PUBLISHED}</span>
+      <span class="kicker">${escapeHtml(a.kicker)} · ${fmtLongDate(a.publishedAt)} · ${a.readingMinutes} min</span>
       <h2>${escapeHtml(a.h1)}</h2>
       <p>${escapeHtml(a.description)}</p>
       <span class="article-more">Leer artículo</span>
@@ -1390,7 +1475,11 @@ app.get('/articulos', (req, res) => {
 });
 
 app.get('/articulos/:slug', (req, res, next) => {
-  const page = CONTENT.ARTICLES[req.params.slug];
+  let page = articlesMap()[req.params.slug];
+  if (!page && req.query.preview !== undefined && loadSessionUser(req)) {
+    const draft = getArticles().find((a) => a.slug === req.params.slug);
+    if (draft) page = articleToPage(draft);
+  }
   if (!page) return next();
   renderContentPage(req, res, req.params.slug, page, { isArticle: true });
 });
@@ -1414,12 +1503,12 @@ app.get('/sitemap.xml', (req, res) => {
     ...Object.keys(CONTENT.LANDINGS).map((slug) => ({ loc: `${origin}/${slug}`, priority: '0.8' })),
     { loc: `${origin}/empresas`, priority: '0.9' },
     { loc: `${origin}/articulos`, priority: '0.6' },
-    ...Object.keys(CONTENT.ARTICLES).map((slug) => ({ loc: `${origin}/articulos/${slug}`, priority: '0.7' })),
+    ...publishedArticles().map((a) => ({ loc: `${origin}/articulos/${a.slug}`, priority: '0.7', lastmod: a.updatedAt || a.publishedAt })),
     ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8' })),
     { loc: `${origin}/aviso-de-privacidad.html`, priority: '0.3' },
     { loc: `${origin}/envios-y-devoluciones.html`, priority: '0.3' },
   ];
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${today}</lastmod><priority>${u.priority}</priority></url>`).join('\n')}\n</urlset>\n`;
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod || today}</lastmod><priority>${u.priority}</priority></url>`).join('\n')}\n</urlset>\n`;
   res.type('application/xml').send(xml);
 });
 
@@ -2668,6 +2757,63 @@ app.post('/api/create-checkout-session', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// --- Artículos: API del panel ---
+function normalizeArticle(body, existing = {}) {
+  const a = { ...existing };
+  if (body.slug !== undefined) a.slug = slugify(body.slug || body.h1 || a.h1 || '').slice(0, 80);
+  if (body.h1 !== undefined) a.h1 = cleanText(body.h1, 140);
+  if (body.kicker !== undefined) a.kicker = cleanText(body.kicker, 40) || 'Artículo';
+  if (body.title !== undefined) a.title = cleanText(body.title, 90) || `${a.h1} | Works Jeans`;
+  if (body.description !== undefined) a.description = cleanText(body.description, 200);
+  if (body.intro !== undefined) a.intro = cleanText(body.intro, 300);
+  if (body.bodySource !== undefined) a.bodySource = String(body.bodySource || '').slice(0, 60000);
+  if (body.faq !== undefined) a.faq = Array.isArray(body.faq) ? body.faq.slice(0, 12).map((x) => [cleanText(x[0], 200), cleanText(x[1], 600)]).filter((x) => x[0] && x[1]) : [];
+  if (body.productsFilter !== undefined) a.productsFilter = Object.keys(PRODUCT_FILTERS).includes(body.productsFilter) ? body.productsFilter : 'none';
+  if (body.status !== undefined) a.status = body.status === 'publicado' ? 'publicado' : 'borrador';
+  if (body.publishedAt !== undefined) a.publishedAt = /^\d{4}-\d{2}-\d{2}$/.test(body.publishedAt) ? body.publishedAt : new Date().toISOString().slice(0, 10);
+  a.author = a.author || 'Works Jeans';
+  a.updatedAt = new Date().toISOString().slice(0, 10);
+  return a;
+}
+
+app.get('/api/admin/articles', requireAdmin, perm('contenido.editar'), (req, res) => {
+  res.json(getArticles().map((a) => ({ ...a, ...readingStats(articleBodyHtml(a.bodySource)) })).sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || '')));
+});
+
+app.post('/api/admin/articles', requireAdmin, perm('contenido.editar'), (req, res) => {
+  const a = normalizeArticle(req.body || {});
+  if (!a.h1 || !a.slug) { res.status(400).json({ error: 'El artículo necesita título.' }); return; }
+  if (!a.bodySource || !a.bodySource.trim()) { res.status(400).json({ error: 'Escribe el contenido del artículo.' }); return; }
+  const list = getArticles();
+  if (list.some((x) => x.slug === a.slug) || CONTENT.LANDINGS[a.slug]) { res.status(409).json({ error: 'Ya existe una página con esa URL. Cambia el slug.' }); return; }
+  a.createdAt = new Date().toISOString();
+  list.push(a);
+  saveArticles(list);
+  auditLog(req, 'articulos.crear', { target: a.slug });
+  res.status(201).json(a);
+});
+
+app.put('/api/admin/articles/:slug', requireAdmin, perm('contenido.editar'), (req, res) => {
+  const list = getArticles();
+  const idx = list.findIndex((x) => x.slug === req.params.slug);
+  if (idx < 0) { res.status(404).json({ error: 'Artículo no encontrado.' }); return; }
+  const a = normalizeArticle(req.body || {}, list[idx]);
+  if (!a.h1 || !a.slug) { res.status(400).json({ error: 'El artículo necesita título.' }); return; }
+  if (a.slug !== req.params.slug && (list.some((x) => x.slug === a.slug) || CONTENT.LANDINGS[a.slug])) { res.status(409).json({ error: 'Ya existe una página con esa URL. Cambia el slug.' }); return; }
+  list[idx] = a;
+  saveArticles(list);
+  auditLog(req, 'articulos.editar', { target: a.slug, details: { status: a.status } });
+  res.json(a);
+});
+
+app.delete('/api/admin/articles/:slug', requireAdmin, perm('contenido.editar'), (req, res) => {
+  const list = getArticles();
+  if (!list.some((x) => x.slug === req.params.slug)) { res.status(404).json({ error: 'Artículo no encontrado.' }); return; }
+  saveArticles(list.filter((x) => x.slug !== req.params.slug));
+  auditLog(req, 'articulos.eliminar', { target: req.params.slug });
+  res.json({ ok: true });
 });
 
 // --- Medición propia (sin datos personales): contadores por día y evento ---
