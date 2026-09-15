@@ -1822,3 +1822,18 @@ body.modal-open { overflow: hidden; }
 .cart-summary { display: grid; gap: 4px; font-size: 0.86rem; color: #444; border-top: 1px solid var(--line); padding-top: 8px; }
 .cart-summary-row { display: flex; justify-content: space-between; gap: 12px; }
 .cart-summary-row--discount { color: #2e7d32; font-weight: 600; }
+
+/* --- Aviso de cookies y mapas bajo consentimiento --- */
+.cookie-banner { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 900; margin: 0 auto; max-width: 720px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; padding: 16px 20px; background: var(--black); color: #fff; border-top: 4px solid var(--yellow); box-shadow: 0 12px 32px rgba(0,0,0,0.35); font-size: 0.9rem; line-height: 1.5; }
+.cookie-banner p { margin: 0; flex: 1 1 320px; }
+.cookie-banner a { color: var(--yellow); text-decoration: underline; }
+.cookie-banner-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.cookie-banner .btn { padding: 10px 16px; font-size: 0.8rem; }
+.cookie-banner .btn-secondary { background: transparent; color: #fff; border-color: rgba(255,255,255,0.6); }
+.map-placeholder-wrap { position: relative; min-height: 320px; }
+.map-placeholder-wrap iframe[data-src] { display: none; }
+.map-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: repeating-linear-gradient(-45deg, #f1f1f1 0 14px, #e6e6e6 14px 28px); border: 1.5px solid rgba(0,0,0,0.15); }
+.map-placeholder p { margin: 0; max-width: 320px; font-size: 0.9rem; color: var(--muted); }
+.map-placeholder a { font-size: 0.85rem; text-decoration: underline; color: var(--black); }
+.map-placeholder-wrap.is-loaded .map-placeholder { display: none; }
+@media (max-width: 600px) { .cookie-banner { left: 8px; right: 8px; bottom: 8px; padding: 14px 16px; } }
