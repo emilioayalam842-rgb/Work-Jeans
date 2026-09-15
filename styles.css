@@ -825,11 +825,22 @@ a { color: inherit; }
 
 .nosotros-text > * + * { margin-top: 18px; }
 
+/* La sombra de franjas va en ::after y el fondo blanco en ::before, con su propio contexto de
+   apilamiento: así no parpadea ni se cuela sobre la tarjeta mientras corre la animación de aparición. */
 .nosotros-quote {
-  border: 1.5px solid var(--black);
   padding: 40px 36px;
   position: relative;
+  isolation: isolate;
+  background: transparent;
+}
+
+.nosotros-quote::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: var(--paper);
+  border: 1.5px solid var(--black);
+  z-index: 0;
 }
 
 .nosotros-quote::after {
@@ -839,6 +850,8 @@ a { color: inherit; }
   background: var(--hazard);
   z-index: -1;
 }
+
+.nosotros-quote > * { position: relative; z-index: 1; }
 
 .nosotros-quote p {
   font-family: var(--display);
