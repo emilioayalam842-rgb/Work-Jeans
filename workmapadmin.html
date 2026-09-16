@@ -91,6 +91,7 @@
           <button class="admin-tab" data-tab="tablero" data-perm="pedidos.ver">Tablero</button>
           <button class="admin-tab" data-tab="pedidos" data-perm="pedidos.ver">Pedidos</button>
           <button class="admin-tab" data-tab="cotizaciones" data-perm="pedidos.ver">Cotizaciones</button>
+          <button class="admin-tab" data-tab="resenas" data-perm="pedidos.ver">Reseñas</button>
           <button class="admin-tab" data-tab="devoluciones" data-perm="devoluciones.ver">Devoluciones</button>
           <button class="admin-tab" data-tab="clientes" data-perm="clientes.ver">Clientes</button>
         </div>
@@ -401,6 +402,20 @@
           <table class="admin-table">
             <thead><tr><th>Orden</th><th>Proveedor</th><th>Partidas</th><th>Recibido</th><th>Total</th><th>Llega</th><th>Estado</th></tr></thead>
             <tbody id="purchasesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabResenas" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Reseñas de clientes</h2>
+          <select id="reviewFilter" class="admin-filter"><option value="pendiente">Pendientes</option><option value="">Todas</option><option value="aprobada">Aprobadas</option><option value="rechazada">Rechazadas</option></select>
+        </div>
+        <p class="admin-muted">Solo pueden reseñar clientes con pedido entregado, desde el enlace que reciben por correo (o el que copies desde el pedido). Aprueba las que sean reales; se publican en la ficha del producto con nombre de pila e inicial. Con 3 o más aprobadas por modelo, Google puede mostrar estrellas en el resultado. <span id="reviewCounts"></span></p>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Fecha</th><th>Producto</th><th>Reseña</th><th>Cliente</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="reviewsTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -1316,6 +1331,7 @@
   <script src="admin-reportes.js?v=20260915f"></script>
   <script src="admin-seguridad.js?v=20260915f"></script>
   <script src="admin-leads.js?v=20260915f"></script>
+  <script src="admin-resenas.js?v=20260916a"></script>
   <script src="admin-contenido.js?v=20260915f"></script>
 </body>
 </html>

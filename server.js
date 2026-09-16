@@ -32,6 +32,7 @@ const LEADS_PATH = path.join(DATA_DIR, 'leads.json');
 const ANALYTICS_PATH = path.join(DATA_DIR, 'analytics.json');
 const ARTICLES_PATH = path.join(DATA_DIR, 'articles.json');
 const CUSTOMERS_PATH = path.join(DATA_DIR, 'customers.json');
+const REVIEWS_PATH = path.join(DATA_DIR, 'reviews.json');
 
 // Primer arranque con DATA_DIR externo: copiar los datos iniciales del proyecto.
 if (USES_EXTERNAL_DATA) {
@@ -598,6 +599,8 @@ const saveReturns = (l) => writeJsonList(RETURNS_PATH, l);
 const getPromotions = () => readJsonList(PROMOTIONS_PATH);
 const getLeads = () => readJsonList(LEADS_PATH);
 const getCustomers = () => readJsonList(CUSTOMERS_PATH);
+const getReviews = () => readJsonList(REVIEWS_PATH);
+const saveReviews = (list) => fs.writeFileSync(REVIEWS_PATH, JSON.stringify(list, null, 2) + '\n');
 const saveCustomers = (list) => fs.writeFileSync(CUSTOMERS_PATH, JSON.stringify(list, null, 2) + '\n');
 const saveLeads = (list) => fs.writeFileSync(LEADS_PATH, JSON.stringify(list, null, 2) + '\n');
 const savePromotions = (l) => writeJsonList(PROMOTIONS_PATH, l);
@@ -873,7 +876,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/reviews.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -952,6 +955,34 @@ function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// --- Reseñas verificadas: solo desde el enlace único de un pedido entregado; se publican tras aprobarse en el panel ---
+function approvedReviews(productId) {
+  return getReviews().filter((r) => r.productId === productId && r.status === 'aprobada').sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+function reviewsMinForRating() {
+  try { const n = parseInt(getSettings().reviewsMinForRating, 10); return Number.isFinite(n) && n > 0 ? n : 3; } catch { return 3; }
+}
+function ratingSummary(list) {
+  if (!list.length) return null;
+  const avg = list.reduce((s, r) => s + r.rating, 0) / list.length;
+  return { avg: Math.round(avg * 10) / 10, count: list.length };
+}
+function displayNameFor(fullName) {
+  const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'Cliente';
+  return parts.length > 1 ? `${parts[0]} ${parts[1].charAt(0).toUpperCase()}.` : parts[0];
+}
+function ensureReviewToken(orderId) {
+  const orders = getOrders();
+  const order = orders.find((o) => o.id === orderId);
+  if (!order) return null;
+  if (!order.reviewToken) { order.reviewToken = crypto.randomBytes(12).toString('hex'); saveOrders(orders); }
+  return order.reviewToken;
+}
+function starsHtml(n) {
+  return `<span class="pdp-stars" aria-label="${n} de 5">${'★'.repeat(n)}${'☆'.repeat(5 - n)}</span>`;
+}
+
 function productJsonLd(product, origin, url) {
   const inStock = product.sizes.some((s) => s.stock > 0);
   const categorySlug = product.category === 'Pantalones' ? 'pantalones-de-trabajo' : 'camisas-de-trabajo';
@@ -970,6 +1001,14 @@ function productJsonLd(product, origin, url) {
         ...(product.specs?.material || product.composition ? { material: product.specs?.material || product.composition } : {}),
         ...(product.specs?.color || product.wash ? { color: product.specs?.color || product.wash } : {}),
         audience: { '@type': 'PeopleAudience', suggestedGender: 'unisex' },
+        ...(() => {
+          const list = approvedReviews(product.id);
+          const sum = ratingSummary(list);
+          const out = {};
+          if (list.length) out.review = list.slice(0, 10).map((r) => ({ '@type': 'Review', author: { '@type': 'Person', name: r.displayName }, datePublished: r.createdAt.slice(0, 10), reviewBody: r.comment, reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5, worstRating: 1 } }));
+          if (sum && list.length >= reviewsMinForRating()) out.aggregateRating = { '@type': 'AggregateRating', ratingValue: sum.avg, reviewCount: sum.count, bestRating: 5, worstRating: 1 };
+          return out;
+        })(),
         offers: {
           '@type': 'Offer',
           url,
@@ -993,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260915h';
+const ASSET_V = '20260916a';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1083,6 +1122,11 @@ function renderProductPage(product, req) {
   sections.push(['cambios', 'Cambios y devoluciones', `<p>Cambio de talla dentro de 15 días con la prenda sin usar, sin lavar y con etiquetas. En tienda no tiene costo; por paquetería el cliente cubre el envío de ida y vuelta. Las prendas personalizadas (bordado o DTF) no tienen cambio salvo defecto de fabricación.</p><p><a class="pdp-link" href="/envios-y-devoluciones.html#cambios">Cómo solicitar un cambio</a></p>`]);
   sections.push(['facturacion', 'Facturación', '<p>Facturamos (CFDI). Al pagar marca <strong>Necesito factura</strong> en el carrito y captura RFC, razón social, código postal fiscal, régimen y uso de CFDI. La factura llega al correo que indiques.</p>']);
   sections.push(['mayoreo', 'Mayoreo y empresas', `<p>El precio que ves es de cliente final con IVA incluido. ${product.wholesale ? `Precio de mayoreo de <strong>${money(product.wholesale.priceCents)}</strong> por pieza a partir de ${product.wholesale.minQty} piezas. ` : ''}Para distribuidores y compras por volumen manejamos <strong>precios de distribuidor y de socio</strong> por grupo de tallas. Cotizamos corridas para cuadrillas, plantas y talleres, con facturación y entrega a todo México.</p><p><a class="btn btn-primary" href="/empresas">Cotizar para empresa</a></p>`]);
+  const rvs = approvedReviews(product.id);
+  const rsum = ratingSummary(rvs);
+  sections.push(['resenas', 'Reseñas de clientes', rvs.length
+    ? `<p class="pdp-rating">${starsHtml(Math.round(rsum.avg))} <b>${rsum.avg}</b> de 5 · ${rsum.count} reseña${rsum.count === 1 ? '' : 's'} de compra verificada</p><ul class="pdp-reviews">${rvs.slice(0, 20).map((r) => `<li><div class="pdp-review-head">${starsHtml(r.rating)} <strong>${escapeHtml(r.displayName)}</strong> <span class="pdp-verified">Compra verificada</span> <time datetime="${r.createdAt.slice(0, 10)}">${fmtLongDate(r.createdAt)}</time></div><p>${escapeHtml(r.comment)}</p></li>`).join('')}</ul>`
+    : '<p>Todavía no hay reseñas de este modelo. Cada cliente recibe un enlace para calificar su compra cuando le entregamos el pedido; solo publicamos reseñas de compras reales.</p>']);
   sections.push(['personalizacion', 'Personalización', `<p>${escapeHtml(product.customization || 'Bordado o estampado DTF con el logotipo de tu empresa en pedidos de mayoreo. Cuéntanos qué necesitas y te cotizamos.')}</p>`]);
 
   const related = publicProducts().filter((p) => p.id !== product.id && p.category === product.category).slice(0, 3);
@@ -2604,7 +2648,7 @@ function orderSummaryHtml(order) {
 const CUSTOMER_EMAILS = {
   confirmacion: (o) => ({ subject: `Recibimos tu pedido ${o.id} · Works Jeans`, title: 'Recibimos tu pedido.', intro: o.source === 'stripe' ? 'Tu pago se procesó correctamente. Preparamos tu pedido en 1 a 2 días hábiles y te avisamos por este medio y por WhatsApp cuando salga.' : 'Registramos tu pedido. Te confirmamos por WhatsApp la forma de pago y el envío.', outro: o.invoice ? 'Pediste factura: te la enviamos al correo indicado en cuanto se emita.' : '' }),
   enviado: (o) => ({ subject: `Tu pedido ${o.id} va en camino · Works Jeans`, title: 'Tu pedido va en camino.', intro: o.tracking?.number ? `Salió por ${escapeHtml(o.tracking.carrier || 'paquetería')} con la guía <b>${escapeHtml(o.tracking.number)}</b>.${o.tracking.url ? ` <a href="${escapeHtml(o.tracking.url)}">Rastrear envío</a>.` : ''} La entrega suele tardar de 3 a 7 días hábiles según el destino.` : 'Salió con la paquetería. Te compartimos la guía por WhatsApp.', outro: '' }),
-  entregado: (o) => ({ subject: `Tu pedido ${o.id} fue entregado · Works Jeans`, title: 'Pedido entregado.', intro: 'Tu pedido ya está contigo. Si algo no quedó bien, tienes 15 días para cambio de talla con la prenda sin usar y con etiquetas.', outro: 'Gracias por comprar ropa de trabajo hecha en Monterrey.' }),
+  entregado: (o) => ({ subject: `Tu pedido ${o.id} fue entregado · Works Jeans`, title: 'Pedido entregado.', intro: 'Tu pedido ya está contigo. Si algo no quedó bien, tienes 15 días para cambio de talla con la prenda sin usar y con etiquetas.', outro: `Gracias por comprar ropa de trabajo hecha en Monterrey.${o.reviewToken ? ` <br><br><b>¿Nos cuentas cómo te fue?</b> Toma un minuto y ayuda a otros a elegir.<br><a href="https://www.workjeans.mx/resena?t=${o.reviewToken}" style="display:inline-block;margin-top:8px;padding:12px 18px;background:#ffd600;color:#0f0f0f;text-decoration:none;font-weight:700;border:1.5px solid #0f0f0f">Calificar mi compra</a>` : ''}` }),
   cancelado: (o) => ({ subject: `Tu pedido ${o.id} fue cancelado · Works Jeans`, title: 'Pedido cancelado.', intro: 'Cancelamos tu pedido. Si pagaste con tarjeta, el reembolso aparece en tu estado de cuenta en los días que marque tu banco. Si tienes dudas, escríbenos por WhatsApp.', outro: '' }),
 };
 
@@ -2612,6 +2656,7 @@ const CUSTOMER_EMAILS = {
 async function emailCustomer(orderId, type, { force = false } = {}) {
   const tpl = CUSTOMER_EMAILS[type];
   if (!tpl) return { ok: false, reason: 'tipo desconocido' };
+  if (type === 'entregado') ensureReviewToken(orderId);
   const orders = getOrders();
   const order = orders.find((o) => o.id === orderId);
   if (!order) return { ok: false, reason: 'pedido no encontrado' };
@@ -3262,6 +3307,70 @@ app.get('/api/admin/analytics', requireAdmin, perm('reportes.ver'), (req, res) =
   const leads = getLeads().filter((l) => l.createdAt.slice(0, 10) >= since);
   totals.b2b = { visits: totals.paths['/empresas'] || 0, started: totals.events.b2b_quote_started || 0, submitted: leads.length, contacted: leads.filter((l) => l.status !== 'nuevo').length, won: leads.filter((l) => l.status === 'ganado').length, lost: leads.filter((l) => l.status === 'perdido').length };
   res.json(totals);
+});
+
+// --- Reseñas: invitación por pedido, envío y moderación ---
+const reviewAttempts = new Map();
+app.get('/api/reviews/invite/:token', (req, res) => {
+  const token = String(req.params.token || '');
+  const order = /^[a-f0-9]{24}$/.test(token) ? getOrders().find((o) => o.reviewToken === token) : null;
+  if (!order) { res.status(404).json({ error: 'Este enlace no es válido o ya caducó.' }); return; }
+  const done = new Set(getReviews().filter((r) => r.orderId === order.id).map((r) => r.productId));
+  const products = getProducts();
+  const seen = new Set();
+  const items = order.items.filter((i) => !done.has(i.id) && !seen.has(i.id) && seen.add(i.id)).map((i) => ({ productId: i.id, name: i.name, size: i.size, quantity: order.items.filter((x) => x.id === i.id).reduce((s, x) => s + x.quantity, 0), image: products.find((p) => p.id === i.id)?.image || '' }));
+  res.set('Cache-Control', 'no-store');
+  res.json({ orderId: order.id, firstName: String(order.customerName || '').split(/\s+/)[0] || '', items });
+});
+
+app.post('/api/reviews', (req, res) => {
+  const b = req.body || {};
+  const token = String(b.token || '');
+  const order = /^[a-f0-9]{24}$/.test(token) ? getOrders().find((o) => o.reviewToken === token) : null;
+  if (!order) { res.status(404).json({ error: 'Este enlace no es válido.' }); return; }
+  const now = Date.now();
+  const recent = (reviewAttempts.get(clientIp(req)) || []).filter((t) => now - t < 10 * 60 * 1000);
+  if (recent.length >= 10) { res.status(429).json({ error: 'Demasiados intentos. Espera unos minutos.' }); return; }
+  reviewAttempts.set(clientIp(req), [...recent, now]);
+  const productId = cleanText(b.productId, 80);
+  const rating = parseInt(b.rating, 10);
+  const comment = cleanText(b.comment, 600);
+  if (!order.items.some((i) => i.id === productId)) { res.status(400).json({ error: 'Ese producto no está en el pedido.' }); return; }
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) { res.status(400).json({ error: 'La calificación debe ser de 1 a 5.' }); return; }
+  if (comment.length < 10) { res.status(400).json({ error: 'Escribe un comentario de al menos 10 letras.' }); return; }
+  const list = getReviews();
+  if (list.some((r) => r.orderId === order.id && r.productId === productId)) { res.status(409).json({ error: 'Ya calificaste este producto. ¡Gracias!' }); return; }
+  const product = getProducts().find((p) => p.id === productId);
+  const review = { id: `rev_${Date.now().toString(36)}_${crypto.randomBytes(3).toString('hex')}`, productId, productName: product?.name || order.items.find((i) => i.id === productId)?.name || productId, orderId: order.id, customerName: order.customerName || '', displayName: displayNameFor(order.customerName), rating, comment, verified: true, status: 'pendiente', createdAt: new Date().toISOString() };
+  list.push(review);
+  saveReviews(list);
+  sendEmail({ subject: `Nueva reseña (${rating}/5) de ${review.productName}`, html: `<p><b>${escapeHtml(review.displayName)}</b> calificó <b>${escapeHtml(review.productName)}</b> con ${rating}/5:</p><p style="white-space:pre-wrap">${escapeHtml(comment)}</p><p>Apruébala en el panel → Ventas → Reseñas.</p>` });
+  res.status(201).json({ ok: true });
+});
+
+app.get('/api/admin/reviews', requireAdmin, perm('pedidos.ver'), (req, res) => {
+  res.json(getReviews().sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+});
+app.put('/api/admin/reviews/:id', requireAdmin, perm('pedidos.editar'), (req, res) => {
+  const list = getReviews();
+  const r = list.find((x) => x.id === req.params.id);
+  if (!r) { res.status(404).json({ error: 'Reseña no encontrada.' }); return; }
+  if (['pendiente', 'aprobada', 'rechazada'].includes(req.body?.status)) { r.status = req.body.status; r.moderatedAt = new Date().toISOString(); }
+  saveReviews(list);
+  auditLog(req, 'resenas.moderar', { target: r.id, details: { status: r.status } });
+  res.json(r);
+});
+app.delete('/api/admin/reviews/:id', requireAdmin, perm('pedidos.eliminar'), (req, res) => {
+  const list = getReviews();
+  if (!list.some((x) => x.id === req.params.id)) { res.status(404).json({ error: 'Reseña no encontrada.' }); return; }
+  saveReviews(list.filter((x) => x.id !== req.params.id));
+  auditLog(req, 'resenas.eliminar', { target: req.params.id });
+  res.json({ ok: true });
+});
+app.post('/api/admin/orders/:id/review-link', requireAdmin, perm('pedidos.editar'), (req, res) => {
+  const token = ensureReviewToken(req.params.id);
+  if (!token) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
+  res.json({ url: `${publicOrigin(req)}/resena?t=${token}` });
 });
 
 // --- Cotizaciones de empresas (leads): quedan guardadas y avisan por correo ---
