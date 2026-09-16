@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/">
+  <title>Pago | Works Jeans</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://www.workjeans.mx/pago">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" href="/assets/img/favicon-96.png" type="image/png" sizes="96x96">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css?v=20260915h">
+</head>
+<body class="checkout-body">
+  <div class="hazard" aria-hidden="true"></div>
+  <header class="header">
+    <nav class="navbar" aria-label="Principal">
+      <a href="/" class="logo" aria-label="Works Jeans, inicio">
+        <img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="logo-img" width="98" height="46">
+      </a>
+      <div class="nav-right">
+        <span class="checkout-secure">Pago seguro · datos cifrados</span>
+      </div>
+    </nav>
+  </header>
+
+  <main class="checkout">
+    <div class="container checkout-grid">
+      <form class="checkout-form" id="checkoutForm" novalidate>
+        <span class="kicker">Paso final</span>
+        <h1>Datos de entrega<br>y pago.</h1>
+
+        <section class="checkout-block">
+          <h2>1. Tus datos</h2>
+          <div class="checkout-fields">
+            <label>Nombre completo <input type="text" id="coName" name="name" autocomplete="name" required maxlength="120"></label>
+            <label>Correo (recibes la confirmación) <input type="email" id="coEmail" name="email" autocomplete="email" required maxlength="120"></label>
+            <label>Teléfono / WhatsApp <input type="tel" id="coPhone" name="tel" autocomplete="tel" inputmode="tel" required maxlength="20" placeholder="10 dígitos"></label>
+          </div>
+        </section>
+
+        <section class="checkout-block">
+          <h2>2. Dirección de entrega</h2>
+          <div class="checkout-fields">
+            <label class="span-2">Calle y número <input type="text" id="coLine1" name="address-line1" autocomplete="address-line1" required maxlength="160" placeholder="Calle, número exterior e interior"></label>
+            <label>Colonia <input type="text" id="coLine2" name="address-line2" autocomplete="address-line2" required maxlength="120"></label>
+            <label>Código postal <input type="text" id="coZip" name="postal-code" autocomplete="postal-code" inputmode="numeric" maxlength="5" required></label>
+            <label>Ciudad <input type="text" id="coCity" name="city" autocomplete="address-level2" required maxlength="80"></label>
+            <label>Estado <select id="coState" name="state" autocomplete="address-level1" required><option value="">Elige…</option><option>Aguascalientes</option><option>Baja California</option><option>Baja California Sur</option><option>Campeche</option><option>Chiapas</option><option>Chihuahua</option><option>Ciudad de México</option><option>Coahuila</option><option>Colima</option><option>Durango</option><option>Estado de México</option><option>Guanajuato</option><option>Guerrero</option><option>Hidalgo</option><option>Jalisco</option><option>Michoacán</option><option>Morelos</option><option>Nayarit</option><option>Nuevo León</option><option>Oaxaca</option><option>Puebla</option><option>Querétaro</option><option>Quintana Roo</option><option>San Luis Potosí</option><option>Sinaloa</option><option>Sonora</option><option>Tabasco</option><option>Tamaulipas</option><option>Tlaxcala</option><option>Veracruz</option><option>Yucatán</option><option>Zacatecas</option></select></label>
+            <label class="span-2">Referencias (opcional) <input type="text" id="coRef" maxlength="200" placeholder="Entre calles, color de la fachada, horario para recibir…"></label>
+          </div>
+          <p class="checkout-ship" id="coShipMsg"></p>
+        </section>
+
+        <section class="checkout-block">
+          <h2>3. Factura</h2>
+          <label class="checkout-check"><input type="checkbox" id="coInvoiceWanted"> Necesito factura (CFDI)</label>
+          <div class="checkout-fields" id="coInvoiceFields" hidden>
+            <label>RFC <input type="text" id="coRfc" maxlength="13" style="text-transform:uppercase" autocomplete="off"></label>
+            <label>Nombre o razón social <input type="text" id="coRazon" maxlength="120"></label>
+            <label>Código postal fiscal <input type="text" id="coFiscalZip" inputmode="numeric" maxlength="5"></label>
+            <label>Régimen fiscal <select id="coRegimen"><option value="">Elige…</option></select></label>
+            <label>Uso de CFDI <select id="coUso"><option value="">Elige…</option></select></label>
+            <label>Correo para la factura <input type="email" id="coInvoiceEmail" maxlength="120"></label>
+          </div>
+        </section>
+
+        <section class="checkout-block">
+          <h2>4. Forma de pago</h2>
+          <div class="checkout-methods" id="coMethods">
+            <label class="checkout-method"><input type="radio" name="method" value="card" checked><span><strong>Tarjeta de crédito o débito</strong><small>Pago inmediato en la página segura de Openpay.</small></span></label>
+            <label class="checkout-method"><input type="radio" name="method" value="spei"><span><strong>Transferencia SPEI</strong><small>Te damos una CLABE y referencia; el pedido se prepara al recibir el pago.</small></span></label>
+            <label class="checkout-method" id="coStoreMethod" hidden><input type="radio" name="method" value="store"><span><strong>Pago en tienda de conveniencia</strong><small>Te damos una referencia para pagar en efectivo.</small></span></label>
+          </div>
+        </section>
+
+        <p class="checkout-legal">Al pagar aceptas nuestras <a href="envios-y-devoluciones.html" target="_blank" rel="noopener">políticas de envío y cambios</a> y el <a href="aviso-de-privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a>.</p>
+        <button type="submit" class="btn btn-primary checkout-submit" id="coSubmit">Pagar <span id="coSubmitTotal"></span></button>
+        <p class="form-status" id="coStatus" aria-live="polite"></p>
+      </form>
+
+      <aside class="checkout-summary" aria-label="Resumen del pedido">
+        <h2>Tu pedido</h2>
+        <div id="coItems"></div>
+        <div class="checkout-totals">
+          <div><span>Subtotal</span><span id="coSubtotal">—</span></div>
+          <div id="coDiscountRow" hidden><span id="coDiscountLabel">Descuento</span><span id="coDiscount"></span></div>
+          <div><span>Envío</span><span id="coShipping">Por calcular</span></div>
+          <div class="checkout-total"><span>Total</span><span id="coTotal">—</span></div>
+        </div>
+        <p class="checkout-note">Precios en pesos mexicanos con IVA incluido. <a href="/">Volver a la tienda</a> para cambiar el carrito.</p>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="footer footer--simple">
+    <p class="footer-copy">Works Jeans · Monterrey · México</p>
+  </footer>
+  <script src="pago.js?v=20260915h" defer></script>
+  <script src="analytics.js?v=20260915h" defer></script>
+  <script src="cookies.js?v=20260915h" defer></script>
+</body>
+</html>

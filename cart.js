@@ -3,6 +3,7 @@ const COUPON_KEY = 'worksjeans_coupon';
 let CART_QUOTE = null; // última cotización del servidor (precios, promociones, cupón)
 let quoteTimer = null;
 let WHATSAPP_NUMBER = '528128613551';
+let PAYMENTS = { provider: null };
 
 async function loadSettings() {
   try {
@@ -10,6 +11,9 @@ async function loadSettings() {
     const settings = await res.json();
 
     WHATSAPP_NUMBER = settings.whatsappNumber || WHATSAPP_NUMBER;
+    PAYMENTS = settings.payments || PAYMENTS;
+    const payBtn = document.getElementById('checkoutStripe');
+    if (payBtn) payBtn.textContent = PAYMENTS.provider === 'openpay' ? 'Pagar en línea (tarjeta o SPEI)' : 'Pagar con tarjeta';
 
     const setText = (id, value) => {
       const el = document.getElementById(id);
@@ -383,6 +387,16 @@ async function startStripeCheckout() {
 
   if (cart.length === 0) {
     cartMessage.textContent = 'Agrega productos antes de pagar.';
+    return;
+  }
+  if (PAYMENTS.provider === 'openpay') {
+    saveZip(getZip());
+    window.wjTrack?.('begin_checkout', { items: cart.length });
+    window.location.href = '/pago';
+    return;
+  }
+  if (!PAYMENTS.provider) {
+    cartMessage.textContent = 'El pago en línea aún no está activo. Pide por WhatsApp y te confirmamos transferencia o pago en tienda.';
     return;
   }
 

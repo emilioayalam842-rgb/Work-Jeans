@@ -1971,3 +1971,48 @@ html { overflow-x: clip; }
 .b2b-pricing .kicker { color: var(--black); }
 .b2b-pricing p { margin: 0; max-width: 720px; line-height: 1.6; }
 .b2b-pricing .btn { justify-self: start; }
+
+/* Página de pago */
+.checkout { padding: 32px 0 72px; }
+.checkout-secure { font-family: var(--label); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.checkout-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr); gap: 40px; align-items: start; }
+.checkout-form h1 { font-size: clamp(2rem, 4vw, 2.8rem); line-height: 0.95; margin: 6px 0 24px; }
+.checkout-block { border: 1.5px solid var(--black); padding: 22px 24px; margin-bottom: 16px; background: #fff; }
+.checkout-block h2 { font-size: 1.1rem; margin: 0 0 14px; text-transform: uppercase; }
+.checkout-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.checkout-fields label, .checkout-check { font-family: var(--label); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); display: grid; gap: 5px; }
+.checkout-fields input, .checkout-fields select { font: inherit; font-size: 1rem; letter-spacing: 0; text-transform: none; padding: 11px 12px; border: 1.5px solid rgba(0,0,0,0.3); background: #fff; width: 100%; }
+.checkout-fields input:focus, .checkout-fields select:focus { border-color: var(--black); outline: none; box-shadow: 0 0 0 3px rgba(255,214,0,0.4); }
+.checkout-fields .span-2 { grid-column: 1 / -1; }
+.checkout-check { display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px; }
+.checkout-check input { width: 18px; height: 18px; }
+.checkout-ship { margin: 12px 0 0; font-size: 0.85rem; color: var(--muted); }
+.checkout-ship.is-error { color: #b00020; }
+.checkout-methods { display: grid; gap: 10px; }
+.checkout-method { display: flex; gap: 12px; align-items: flex-start; border: 1.5px solid rgba(0,0,0,0.3); padding: 14px 16px; cursor: pointer; }
+.checkout-method:has(input:checked) { border-color: var(--black); background: #fffbe0; box-shadow: 4px 4px 0 var(--yellow); }
+.checkout-method input { margin-top: 4px; }
+.checkout-method span { display: grid; gap: 2px; }
+.checkout-method small { color: var(--muted); font-size: 0.85rem; }
+.checkout-legal { font-size: 0.82rem; color: var(--muted); }
+.checkout-legal a { color: var(--black); }
+.checkout-submit { width: 100%; justify-content: center; padding: 18px; font-size: 1rem; }
+.checkout-summary { position: sticky; top: 90px; border: 1.5px solid var(--black); background: #fff; padding: 22px 24px; box-shadow: 8px 8px 0 var(--yellow); }
+.checkout-summary h2 { font-size: 1.1rem; text-transform: uppercase; margin: 0 0 12px; }
+.checkout-item { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.12); font-size: 0.92rem; }
+.checkout-item small { display: block; color: var(--muted); font-size: 0.8rem; }
+.checkout-totals { margin-top: 12px; display: grid; gap: 8px; font-size: 0.92rem; }
+.checkout-totals > div { display: flex; justify-content: space-between; }
+.checkout-total { font-family: var(--display); font-size: 1.5rem; border-top: 1.5px solid var(--black); padding-top: 10px; margin-top: 4px; }
+.checkout-note { font-size: 0.8rem; color: var(--muted); margin-top: 14px; }
+.checkout-note a { color: var(--black); }
+.checkout-empty { text-align: center; padding: 60px 0; grid-column: 1 / -1; }
+.status-card--spei { margin-top: 20px; text-align: left; }
+.status-dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 18px; margin: 12px 0; font-size: 0.95rem; }
+.status-dl dt { font-family: var(--label); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); align-self: center; }
+.status-dl dd { margin: 0; }
+.status-mono { font-family: ui-monospace, Menlo, monospace; font-size: 1.05rem; letter-spacing: 0.06em; }
+@media (max-width: 860px) { .checkout-grid { grid-template-columns: 1fr; } .checkout-summary { position: static; order: -1; } .checkout-fields { grid-template-columns: 1fr; } }
+
+.status-page { flex-direction: column; gap: 20px; }
+.status-card--spei h2 { font-size: 1.1rem; text-transform: uppercase; margin: 0 0 8px; }

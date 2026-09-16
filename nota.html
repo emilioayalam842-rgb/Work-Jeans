@@ -94,7 +94,7 @@
       document.getElementById('store').innerHTML = `${settings.storeName || 'Works Jeans'}<br>${settings.address || ''}<br>Tel. ${settings.phoneDisplay || ''}`;
       document.getElementById('orderId').textContent = `Pedido ${order.id}`;
       document.getElementById('orderDate').textContent = new Date(order.createdAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
-      document.getElementById('orderStatus').textContent = `${STATUS_LABELS[order.status] || order.status} · ${order.source === 'stripe' ? 'Tarjeta' : 'WhatsApp'}`;
+      document.getElementById('orderStatus').textContent = `${STATUS_LABELS[order.status] || order.status} · ${order.source === 'stripe' || order.source === 'openpay' ? 'Tarjeta' : 'WhatsApp'}`;
       document.getElementById('customer').innerHTML = [order.customerName || 'Sin nombre', order.customerPhone, order.customerEmail].filter(Boolean).map(esc).join('<br>');
       const ship = order.shipping ? [order.shipping.name, order.shipping.line1, order.shipping.line2, [order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', ')].filter(Boolean).map(esc) : [];
       if (order.tracking && (order.tracking.carrier || order.tracking.number)) ship.push(`<strong>${esc([order.tracking.carrier, order.tracking.number].filter(Boolean).join(' · '))}</strong>`);

@@ -264,7 +264,7 @@ function publicProducts() {
 
 function publicSettings() {
   const { notifyEmail, warehouses, security, ...rest } = getSettings();
-  return rest;
+  return { ...rest, payments: paymentsInfo() };
 }
 
 // Catálogos SAT usados en el formulario de factura (solo los habituales para una tienda).
@@ -873,7 +873,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -993,7 +993,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260915g';
+const ASSET_V = '20260915h';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -2740,6 +2740,230 @@ function recordStripeOrder(session) {
   emailCustomer(order.id, 'confirmacion');
   return order;
 }
+
+
+// --- Openpay: tarjeta (página segura con redirección), SPEI y pago en tienda ---
+// Variables: OPENPAY_MERCHANT_ID, OPENPAY_PRIVATE_KEY, OPENPAY_SANDBOX ('true' hasta salir a producción),
+// opcionales OPENPAY_WEBHOOK_USER / OPENPAY_WEBHOOK_PASS (autenticación básica del webhook) y OPENPAY_STORES ('false' para ocultar pago en tienda).
+const OPENPAY = process.env.OPENPAY_MERCHANT_ID && process.env.OPENPAY_PRIVATE_KEY ? {
+  merchant: process.env.OPENPAY_MERCHANT_ID,
+  key: process.env.OPENPAY_PRIVATE_KEY,
+  base: process.env.OPENPAY_BASE_URL || (process.env.OPENPAY_SANDBOX === 'false' ? 'https://api.openpay.mx/v1' : 'https://sandbox-api.openpay.mx/v1'),
+  sandbox: process.env.OPENPAY_SANDBOX !== 'false',
+} : null;
+const PENDING_CHECKOUTS_PATH = path.join(DATA_DIR, 'pending-checkouts.json');
+const getPendingCheckouts = () => readJsonList(PENDING_CHECKOUTS_PATH);
+const savePendingCheckouts = (list) => fs.writeFileSync(PENDING_CHECKOUTS_PATH, JSON.stringify(list, null, 2) + '\n');
+
+function paymentsInfo() {
+  return { provider: OPENPAY ? 'openpay' : (stripe ? 'stripe' : null), spei: Boolean(OPENPAY), store: Boolean(OPENPAY) && process.env.OPENPAY_STORES !== 'false', sandbox: Boolean(OPENPAY?.sandbox) };
+}
+
+async function openpayRequest(method, route, body) {
+  const r = await fetch(`${OPENPAY.base}/${OPENPAY.merchant}${route}`, {
+    method,
+    headers: { Authorization: `Basic ${Buffer.from(`${OPENPAY.key}:`).toString('base64')}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await r.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+  if (!r.ok) {
+    const err = new Error(data.description || `Openpay ${r.status}`);
+    err.openpay = data;
+    throw err;
+  }
+  return data;
+}
+
+// Arma el pedido (sin guardarlo) a partir de la cotización y los datos del formulario de pago.
+function buildCheckoutOrder({ quote, customer, shipping, invoice, method, source = 'openpay' }) {
+  const products = getProducts();
+  const items = quote.lines.map((l) => {
+    const product = products.find((p) => p.id === l.id);
+    const variant = findVariant(product, l.size);
+    return { id: l.id, name: l.name, size: l.size, quantity: l.quantity, priceCents: l.unitCents, costCents: productCost(product, variant) || undefined };
+  });
+  return {
+    id: `ord_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+    source,
+    status: 'pendiente',
+    createdAt: new Date().toISOString(),
+    customerName: cleanText(customer.name, 120),
+    customerPhone: cleanText(customer.phone, 40),
+    customerEmail: cleanText(customer.email, 120).toLowerCase(),
+    shipping: { name: cleanText(customer.name, 120), line1: cleanText(shipping.line1, 160), line2: cleanText(shipping.line2, 120), city: cleanText(shipping.city, 80), state: cleanText(shipping.state, 60), postalCode: cleanText(shipping.postalCode, 5), country: 'MX', references: cleanText(shipping.references, 200) },
+    notes: '',
+    invoice: invoice ? { requested: true, issued: false, ...invoice } : null,
+    discount: quote.discounts.length ? { cents: quote.discountCents, code: quote.discounts.find((d) => d.code)?.code || null, promotions: quote.discounts.map((d) => ({ id: d.id, name: d.name, cents: d.cents })), freeShipping: quote.freeShipping } : null,
+    items,
+    subtotalCents: quote.subtotalCents,
+    shippingCostCents: ['quoted', 'free'].includes(quote.shipping.status) ? quote.shipping.costCents : null,
+    shippingZone: quote.shipping.zone || null,
+    totalCents: quote.totalCents,
+    accessKey: crypto.randomBytes(8).toString('hex'),
+    payment: { provider: 'openpay', method, status: 'pending', createdAt: new Date().toISOString() },
+  };
+}
+
+// Marca un pedido como pagado: existencias, promociones, avisos y correo. Idempotente.
+function markOrderPaid(orderId, extra = {}) {
+  const orders = getOrders();
+  const order = orders.find((o) => o.id === orderId);
+  if (!order || order.payment?.status === 'paid') return order || null;
+  order.payment = { ...(order.payment || {}), ...extra, status: 'paid', paidAt: new Date().toISOString() };
+  order.status = 'pagado';
+  saveOrders(orders);
+  try {
+    const products = getProducts();
+    decrementStock(products, order.items, { strict: false, orderId: order.id, reason: `Pedido pagado (${order.payment.method})` });
+    saveProducts(products);
+  } catch { /* nunca bloquear la confirmación por inventario */ }
+  if (order.discount?.promotions?.length) registerPromoUse(order.discount.promotions, order.totalCents);
+  notifyNewOrder(order);
+  emailCustomer(order.id, 'confirmacion');
+  trackEvent('purchase', { cents: order.totalCents });
+  return order;
+}
+
+// Cobro con tarjeta pagado: crea el pedido guardado en pendientes (si aún no existe) y lo marca pagado.
+function finalizeOpenpayCharge(charge) {
+  const orders = getOrders();
+  const existing = orders.find((o) => o.payment?.chargeId === charge.id);
+  if (existing) return charge.status === 'completed' ? markOrderPaid(existing.id, { chargeStatus: charge.status }) : existing;
+  const pending = getPendingCheckouts();
+  const entry = pending.find((p) => p.chargeId === charge.id);
+  if (!entry) return null;
+  if (charge.status !== 'completed') return null;
+  const order = { ...entry.order, payment: { ...entry.order.payment, chargeId: charge.id } };
+  orders.push(order);
+  saveOrders(orders);
+  savePendingCheckouts(pending.filter((p) => p.chargeId !== charge.id));
+  return markOrderPaid(order.id, { chargeStatus: charge.status, card: charge.card ? { brand: charge.card.brand, last4: charge.card.card_number?.slice(-4) } : undefined });
+}
+
+// Limpieza de intentos de tarjeta abandonados (48 h).
+try {
+  const pending = getPendingCheckouts();
+  const keep = pending.filter((p) => Date.now() - new Date(p.createdAt).getTime() < 48 * 3600 * 1000);
+  if (keep.length !== pending.length) savePendingCheckouts(keep);
+} catch { /* sin archivo aún */ }
+
+app.post('/api/checkout', async (req, res) => {
+  if (!OPENPAY) { res.status(503).json({ error: 'El pago en línea no está disponible ahora mismo. Pide por WhatsApp.' }); return; }
+  const b = req.body || {};
+  const items = Array.isArray(b.items) ? b.items : [];
+  if (!items.length) { res.status(400).json({ error: 'El carrito está vacío.' }); return; }
+  const method = ['card', 'spei', 'store'].includes(b.method) ? b.method : 'card';
+  if (method === 'store' && process.env.OPENPAY_STORES === 'false') { res.status(400).json({ error: 'Pago en tienda no disponible.' }); return; }
+  const customer = b.customer || {};
+  const shipping = b.shipping || {};
+  if (!cleanText(customer.name, 120) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(customer.email || '').trim()) || String(customer.phone || '').replace(/\D/g, '').length < 10) {
+    res.status(400).json({ error: 'Completa nombre, correo y teléfono de 10 dígitos.' }); return;
+  }
+  for (const [k, msg] of [['line1', 'calle y número'], ['line2', 'colonia'], ['city', 'ciudad'], ['state', 'estado']]) {
+    if (!cleanText(shipping[k], 160)) { res.status(400).json({ error: `Falta ${msg} en la dirección de entrega.` }); return; }
+  }
+  const { invoice, error: invoiceError } = normalizeInvoice(b.invoice, { strict: true });
+  if (invoiceError) { res.status(400).json({ error: invoiceError }); return; }
+  const quote = quoteCart(items, b.code, b.postalCode);
+  if (!quote.lines.length) { res.status(400).json({ error: 'El carrito no tiene productos válidos.' }); return; }
+  if (quote.codeError && b.code) { res.status(400).json({ error: quote.codeError }); return; }
+  if (['quote_required', 'invalid_cp', 'unknown_cp', 'need_cp'].includes(quote.shipping.status)) { res.status(400).json({ error: quote.shipping.label, code: quote.shipping.status }); return; }
+  const stockProducts = getProducts();
+  for (const l of quote.lines) {
+    const v = findVariant(stockProducts.find((p) => p.id === l.id), l.size);
+    if (v && v.stock < l.quantity) { res.status(400).json({ error: `Solo quedan ${v.stock} piezas de ${l.name} talla ${l.size}. Ajusta la cantidad.` }); return; }
+  }
+  const order = buildCheckoutOrder({ quote, customer, shipping: { ...shipping, postalCode: b.postalCode }, invoice, method });
+  const [firstName, ...rest] = order.customerName.split(/\s+/);
+  const pieces = order.items.reduce((s, i) => s + i.quantity, 0);
+  const base = {
+    amount: Number((order.totalCents / 100).toFixed(2)),
+    currency: 'MXN',
+    description: `Works Jeans · pedido ${order.id} (${pieces} pza${pieces === 1 ? '' : 's'})`,
+    order_id: order.id,
+    customer: { name: firstName, last_name: rest.join(' ') || '.', email: order.customerEmail, phone_number: order.customerPhone.replace(/\D/g, '').slice(-10) },
+  };
+  try {
+    if (method === 'card') {
+      const charge = await openpayRequest('POST', '/charges', { ...base, method: 'card', confirm: 'false', send_email: 'false', use_card_points: 'false', redirect_url: `${publicOrigin(req)}/success.html?openpay=1` });
+      const url = charge.payment_method?.url;
+      if (!url) throw new Error('Openpay no devolvió la página de pago.');
+      const pending = getPendingCheckouts();
+      pending.push({ chargeId: charge.id, createdAt: new Date().toISOString(), order: { ...order, payment: { ...order.payment, chargeId: charge.id } } });
+      savePendingCheckouts(pending);
+      res.json({ url });
+      return;
+    }
+    const charge = await openpayRequest('POST', '/charges', { ...base, method: method === 'spei' ? 'bank_account' : 'store' });
+    const pm = charge.payment_method || {};
+    order.payment = { ...order.payment, chargeId: charge.id, chargeStatus: charge.status, dueDate: charge.due_date || null, ...(method === 'spei' ? { clabe: pm.clabe, bank: pm.bank, agreement: pm.agreement, beneficiary: pm.name } : { reference: pm.reference, barcodeUrl: pm.barcode_url }) };
+    const orders = getOrders();
+    orders.push(order);
+    saveOrders(orders);
+    notifyNewOrder(order);
+    res.json({ orderId: order.id, key: order.accessKey });
+  } catch (err) {
+    console.error('Openpay:', err.message, err.openpay ? JSON.stringify(err.openpay).slice(0, 300) : '');
+    res.status(502).json({ error: `No se pudo iniciar el pago: ${err.message}. Intenta de nuevo o pide por WhatsApp.` });
+  }
+});
+
+// Regreso de la página de tarjeta de Openpay: consulta el cobro y, si está pagado, registra el pedido.
+app.get('/api/verify-openpay', async (req, res) => {
+  if (!OPENPAY) { res.status(503).json({ error: 'Pagos no configurados.' }); return; }
+  const id = String(req.query.id || '').replace(/[^\w-]/g, '');
+  if (!id) { res.status(400).json({ error: 'Falta el id del cobro.' }); return; }
+  try {
+    const charge = await openpayRequest('GET', `/charges/${id}`);
+    const order = finalizeOpenpayCharge(charge);
+    if (order && order.payment?.status === 'paid') { res.json({ paid: true, id: order.id, key: order.accessKey }); return; }
+    if (['charge_pending', 'in_progress'].includes(charge.status)) { res.json({ pending: true }); return; }
+    res.json({ failed: true, status: charge.status, message: charge.error_message || 'El pago no se completó.' });
+  } catch (err) {
+    res.status(502).json({ error: 'No se pudo verificar el pago. Si ya pagaste, escríbenos por WhatsApp con tu correo.' });
+  }
+});
+
+// Webhook de Openpay: avisa cobros completados (SPEI, tienda y tarjeta). Nunca se confía en el cuerpo: se consulta el cobro.
+app.post('/api/openpay/webhook', express.json({ limit: '200kb' }), async (req, res) => {
+  const user = process.env.OPENPAY_WEBHOOK_USER;
+  const pass = process.env.OPENPAY_WEBHOOK_PASS;
+  if (user && pass) {
+    const expected = `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`;
+    if (req.headers.authorization !== expected) { res.status(401).end(); return; }
+  }
+  const ev = req.body || {};
+  if (ev.type === 'verification') {
+    console.log(`Openpay webhook: código de verificación ${ev.verification_code}`);
+    res.status(200).json({ ok: true });
+    return;
+  }
+  res.status(200).json({ ok: true }); // responder rápido; el trabajo sigue abajo
+  if (!OPENPAY || !ev.transaction?.id) return;
+  try {
+    const charge = await openpayRequest('GET', `/charges/${String(ev.transaction.id).replace(/[^\w-]/g, '')}`);
+    if (charge.status === 'completed') finalizeOpenpayCharge(charge);
+    else if (['failed', 'cancelled', 'refunded', 'chargeback_pending'].includes(charge.status)) {
+      const orders = getOrders();
+      const order = orders.find((o) => o.payment?.chargeId === charge.id);
+      if (order && order.payment.status !== 'paid') { order.payment.status = 'failed'; order.payment.chargeStatus = charge.status; saveOrders(orders); }
+      else if (order && charge.status === 'refunded') { order.payment.status = 'refunded'; order.payment.chargeStatus = charge.status; saveOrders(orders); }
+    }
+  } catch (err) {
+    console.error('Openpay webhook:', err.message);
+  }
+});
+
+// Estado de un pedido para la página de gracias (requiere la clave que solo conoce quien lo creó).
+app.get('/api/orders/:id/status', (req, res) => {
+  const order = getOrders().find((o) => o.id === req.params.id);
+  if (!order || !order.accessKey || String(req.query.k || '') !== order.accessKey) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
+  const p = order.payment || {};
+  res.set('Cache-Control', 'no-store');
+  res.json({ id: order.id, status: order.status, totalCents: order.totalCents, email: order.customerEmail, items: order.items.map((i) => ({ name: i.name, size: i.size, quantity: i.quantity })), payment: { method: p.method, status: p.status, clabe: p.clabe, bank: p.bank, beneficiary: p.beneficiary, agreement: p.agreement, reference: p.reference, barcodeUrl: p.barcodeUrl, dueDate: p.dueDate, sandbox: Boolean(OPENPAY?.sandbox) } });
+});
 
 function publicOrigin(req) {
   return CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;

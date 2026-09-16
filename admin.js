@@ -862,7 +862,7 @@ document.getElementById('exportOrdersBtn').addEventListener('click', () => {
   const rows = orders.map((o) => [
     o.id,
     new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }),
-    o.source === 'stripe' ? 'Tarjeta' : 'WhatsApp',
+    o.source === 'stripe' ? 'Tarjeta' : o.source === 'openpay' ? `Openpay ${o.payment?.method || ''}` : 'WhatsApp',
     STATUS_LABELS[o.status] || o.status,
     o.customerName || '',
     o.customerPhone || '',
@@ -899,7 +899,7 @@ function renderOrders(orders) {
   ordersTableBody.innerHTML = orders.map((o) => {
     const date = new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
     const itemsSummary = o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join(', ');
-    const sourceLabel = o.source === 'stripe' ? `<span class="admin-source">${icon('card', 14)} Tarjeta</span>` : `<span class="admin-source">${icon('chat', 14)} WhatsApp</span>`;
+    const sourceLabel = o.source === 'stripe' ? `<span class="admin-source">${icon('card', 14)} Tarjeta</span>` : o.source === 'openpay' ? `<span class="admin-source">${icon('card', 14)} ${o.payment?.method === 'spei' ? 'SPEI' : o.payment?.method === 'store' ? 'Tienda' : 'Tarjeta'}${o.payment?.status === 'paid' ? '' : ' · <b>pago pendiente</b>'}</span>` : `<span class="admin-source">${icon('chat', 14)} WhatsApp</span>`;
     return `
       <tr data-id="${o.id}">
         <td class="admin-clickable" data-action="view">${date}</td>
@@ -981,13 +981,13 @@ function openOrderDetail(id) {
   activeOrderId = id;
 
   const date = new Date(order.createdAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
-  const sourceLabel = order.source === 'stripe' ? `${icon('card', 14)} Pago con tarjeta` : `${icon('chat', 14)} Pedido por WhatsApp`;
+  const sourceLabel = order.source === 'stripe' ? `${icon('card', 14)} Pago con tarjeta` : order.source === 'openpay' ? `${icon('card', 14)} Openpay · ${order.payment?.method === 'spei' ? 'transferencia SPEI' : order.payment?.method === 'store' ? 'pago en tienda' : 'tarjeta'} · ${order.payment?.status === 'paid' ? 'pagado' : order.payment?.status === 'failed' ? 'pago fallido' : 'pago pendiente'}${order.payment?.clabe ? ` · CLABE ${esc(order.payment.clabe)}` : ''}${order.payment?.reference ? ` · ref. ${esc(order.payment.reference)}` : ''}` : `${icon('chat', 14)} Pedido por WhatsApp`;
 
   orderDetailContent.innerHTML = `
     <p><strong>${sourceLabel}</strong></p>
     <p class="admin-muted">${date}</p>
     <p>${esc(order.customerName) || 'Cliente sin nombre'}${order.customerPhone ? ` · ${esc(order.customerPhone)}` : ''}${order.customerEmail ? ` · ${esc(order.customerEmail)}` : ''}</p>
-    ${order.shipping ? `<p><strong>Envío a:</strong> ${esc([order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', '))}</p>` : ''}
+    ${order.shipping ? `<p><strong>Envío a:</strong> ${esc([order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode, order.shipping.references ? `Ref.: ${order.shipping.references}` : ''].filter(Boolean).join(', '))}</p>` : ''}
     <table class="admin-table admin-detail-table">
       <thead><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
       <tbody>
@@ -1111,7 +1111,7 @@ function orderCard(o) {
     <article class="admin-card" draggable="true" data-id="${o.id}">
       <header>
         <span class="admin-card-date">${date}</span>
-        <span class="admin-card-source">${o.source === 'stripe' ? icon('card', 14) : icon('chat', 14)}</span>
+        <span class="admin-card-source">${o.source === 'stripe' || o.source === 'openpay' ? icon('card', 14) : icon('chat', 14)}</span>
       </header>
       <strong>${esc(o.customerName) || 'Sin nombre'}</strong>
       <p>${esc(items)}</p>
@@ -1507,7 +1507,7 @@ function renderBell() {
     ? newOrdersQueue.map((o) => `
       <button type="button" class="admin-bell-item" data-order="${o.id}">
         <span class="admin-bell-title"><strong>${esc(o.customerName) || 'Sin nombre'}</strong> · ${formatPrice(o.totalCents)}</span>
-        <span>${o.source === 'stripe' ? 'Pago con tarjeta' : 'WhatsApp'} · ${new Date(o.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
+        <span>${o.source === 'stripe' ? 'Pago con tarjeta' : o.source === 'openpay' ? 'Openpay' : 'WhatsApp'} · ${new Date(o.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
       </button>`).join('') + '<button type="button" class="admin-bell-clear" data-action="clear-bell">Marcar como vistos</button>'
     : '<p class="admin-bell-empty">Sin pedidos nuevos.</p>';
 }
