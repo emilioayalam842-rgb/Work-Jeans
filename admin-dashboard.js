@@ -20,7 +20,7 @@
 
   function lineChart(el, points, prev) {
     if (!el) return;
-    const w = 720; const h = 200; const padL = 46; const padR = 10; const padT = 14; const padB = 28;
+    const w = 720; const h = 200; const padL = 58; const padR = 10; const padT = 14; const padB = 28;
     const innerW = w - padL - padR; const innerH = h - padT - padB;
     const max = Math.max(1, ...points.map((p) => p.value), ...prev.map((v) => v));
     const x = (i) => padL + (i / (points.length - 1)) * innerW;
@@ -29,7 +29,7 @@
     const cur = points.map((p) => p.value);
     const area = `${path(cur)} L${x(cur.length - 1).toFixed(1)},${(padT + innerH).toFixed(1)} L${x(0).toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
     const ticks = [0, 0.5, 1].map((t) => ({ y: y(max * t), v: max * t }));
-    const fmt = (v) => formatPrice(v).replace(/\.00$/, '');
+    const fmt = (v) => (v >= 100000 ? `$${(v / 100000).toFixed(v >= 1000000 ? 0 : 1)}k` : formatPrice(v).replace(/\.00$/, ''));
     const labels = points.map((p, i) => (i % 5 === 0 || i === points.length - 1 ? `<text x="${x(i).toFixed(1)}" y="${h - 8}" text-anchor="middle" font-size="10" fill="#888">${p.label}</text>` : '')).join('');
     const dots = points.map((p, i) => (p.value ? `<circle cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3.5" fill="#ffd600" stroke="#0f0f0f" stroke-width="1.5"><title>${p.label}: ${formatPrice(p.value)}</title></circle>` : '')).join('');
     el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" class="admin-chart" role="img">

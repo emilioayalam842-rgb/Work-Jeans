@@ -1032,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260917s';
+const ASSET_V = '20260917t';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -2277,7 +2277,7 @@ app.get('/api/admin/orders', requireAdmin, perm('pedidos.ver'), (req, res) => {
 
 app.post('/api/admin/orders', requireAdmin, perm('pedidos.editar'), (req, res) => {
   try {
-    const { customerName, customerPhone, customerEmail, notes, items, invoice } = req.body;
+    const { customerName, customerPhone, customerEmail, notes, items, invoice, shipping, paymentMethod } = req.body;
     if (!Array.isArray(items) || items.length === 0) {
       res.status(400).json({ error: 'Agrega al menos un producto al pedido.' });
       return;
@@ -2336,6 +2336,10 @@ app.post('/api/admin/orders', requireAdmin, perm('pedidos.editar'), (req, res) =
       subtotalCents,
       totalCents,
     };
+    if (shipping && typeof shipping === 'object' && ['line1', 'city', 'state', 'postalCode'].some((k) => String(shipping[k] || '').trim())) {
+      order.shipping = { name: cleanText(customerName, 120), line1: cleanText(shipping.line1, 160), line2: cleanText(shipping.line2, 120), city: cleanText(shipping.city, 80), state: cleanText(shipping.state, 60), postalCode: String(shipping.postalCode || '').replace(/\D/g, '').slice(0, 5), country: 'MX', references: cleanText(shipping.references, 200) };
+    }
+    if (['efectivo', 'transferencia', 'tarjeta', 'pendiente'].includes(paymentMethod)) order.payment = { method: paymentMethod, status: 'pending' };
 
     const orders = getOrders();
     orders.push(order);
@@ -2387,6 +2391,19 @@ app.put('/api/admin/orders/:id', requireAdmin, perm('pedidos.editar'), (req, res
     order.status = status;
   }
   if (notes !== undefined) order.notes = cleanText(notes, 1000);
+  if (req.body.customer && typeof req.body.customer === 'object') {
+    const c = req.body.customer;
+    if (c.name !== undefined) order.customerName = cleanText(c.name, 120);
+    if (c.phone !== undefined) order.customerPhone = cleanText(c.phone, 40);
+    if (c.email !== undefined) order.customerEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(c.email || '').trim()) ? cleanText(c.email, 120).toLowerCase() : '';
+  }
+  if (req.body.shipping !== undefined) {
+    const sh = req.body.shipping;
+    const hasAny = sh && ['line1', 'line2', 'city', 'state', 'postalCode', 'references'].some((k) => String(sh[k] || '').trim());
+    order.shipping = hasAny
+      ? { ...(order.shipping || {}), name: cleanText(sh.name || order.shipping?.name || order.customerName, 120), line1: cleanText(sh.line1, 160), line2: cleanText(sh.line2, 120), city: cleanText(sh.city, 80), state: cleanText(sh.state, 60), postalCode: String(sh.postalCode || '').replace(/\D/g, '').slice(0, 5), country: 'MX', references: cleanText(sh.references, 200) }
+      : null;
+  }
   if (req.body.invoice !== undefined) {
     const inv = req.body.invoice;
     const { invoice: normalized } = normalizeInvoice(inv);

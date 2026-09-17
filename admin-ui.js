@@ -30,6 +30,19 @@
     tab.insertAdjacentHTML('afterbegin', `<svg class="admin-svg admin-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`);
   });
 
+  // ---- Tablas más anchas que la pantalla: sombra y aviso para deslizar ----
+  function checkOverflow() {
+    document.querySelectorAll('.admin-table-wrap').forEach((w) => {
+      const over = w.scrollWidth > w.clientWidth + 4;
+      w.classList.toggle('has-overflow', over);
+      w.classList.toggle('at-end', over && w.scrollLeft + w.clientWidth >= w.scrollWidth - 4);
+    });
+  }
+  window.addEventListener('resize', checkOverflow);
+  document.addEventListener('scroll', (e) => { if (e.target.classList?.contains('admin-table-wrap')) checkOverflow(); }, true);
+  new MutationObserver(() => requestAnimationFrame(checkOverflow)).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+  setTimeout(checkOverflow, 600);
+
   // ---- Buscador global ----
   const header = document.querySelector('.admin-header-right');
   if (!header) return;

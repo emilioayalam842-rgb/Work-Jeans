@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260917s">
-  <link rel="stylesheet" href="admin.css?v=20260917s">
+  <link rel="stylesheet" href="styles.css?v=20260917t">
+  <link rel="stylesheet" href="admin.css?v=20260917t">
 </head>
 <body class="admin-body">
 
@@ -676,7 +676,7 @@
           <input type="number" id="settingLowStock" name="lowStockThreshold" min="0" step="1" placeholder="5">
 
           <h3 class="admin-section-spacer">Envíos por código postal</h3>
-          <p class="admin-help">Cada zona cubre un rango de códigos postales. Si dejas el costo vacío, la tienda muestra "te confirmamos el costo antes de enviar" y no cobra envío al pagar con tarjeta. Cuando pongas el costo, se suma al total y se cobra en Stripe.</p>
+          <p class="admin-help">Cada zona cubre un rango de códigos postales. Si dejas el costo vacío, la tienda muestra "te confirmamos el costo antes de enviar" y no cobra envío al pagar con tarjeta. Cuando pongas el costo, se suma al total y se cobra al pagar en línea.</p>
           <div class="admin-table-wrap admin-table-wrap--flat">
             <table class="admin-table admin-zones-table">
               <thead><tr><th>Zona</th><th>CP desde</th><th>CP hasta</th><th>Costo (MXN)</th><th>Tiempo estimado</th><th></th></tr></thead>
@@ -919,6 +919,27 @@
       <input type="text" id="orderCustomerPhone" placeholder="Opcional">
       <label for="orderCustomerEmail">Correo del cliente</label>
       <input type="email" id="orderCustomerEmail" placeholder="Opcional: recibe confirmación y avisos de envío">
+
+      <details class="admin-invoice" id="orderShipBox">
+        <summary>Dirección de envío (opcional; déjala vacía si recoge en tienda)</summary>
+        <label for="osLine1">Calle y número</label>
+        <input type="text" id="osLine1" maxlength="160">
+        <div class="admin-field-grid">
+          <div><label for="osLine2">Colonia</label><input type="text" id="osLine2" maxlength="120"></div>
+          <div><label for="osZip">Código postal</label><input type="text" id="osZip" maxlength="5" inputmode="numeric"></div>
+          <div><label for="osCity">Ciudad</label><input type="text" id="osCity" maxlength="80"></div>
+          <div><label for="osState">Estado</label><input type="text" id="osState" maxlength="60"></div>
+        </div>
+        <label for="osRefs">Referencias</label>
+        <input type="text" id="osRefs" maxlength="200">
+      </details>
+      <label for="orderPayMethod">Forma de pago acordada</label>
+      <select id="orderPayMethod" class="admin-filter">
+        <option value="pendiente">Por confirmar</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="efectivo">Efectivo en tienda</option>
+        <option value="tarjeta">Tarjeta en tienda</option>
+      </select>
 
       <label>Productos</label>
       <div id="orderItems" class="admin-order-items"></div>
@@ -1325,7 +1346,29 @@
         </datalist>
         <label for="orderTrackingNumber">Número de guía</label>
         <input type="text" id="orderTrackingNumber" placeholder="Opcional">
+        <label for="orderTrackingUrl">Enlace de rastreo de la paquetería</label>
+        <input type="url" id="orderTrackingUrl" placeholder="https://… (opcional, va en el correo al cliente)">
       </div>
+
+      <details class="admin-invoice" id="orderCustomerBox">
+        <summary>Datos del cliente y dirección de envío</summary>
+        <div class="admin-field-grid">
+          <div><label for="ocName">Nombre</label><input type="text" id="ocName" maxlength="120"></div>
+          <div><label for="ocPhone">Teléfono / WhatsApp</label><input type="text" id="ocPhone" maxlength="40"></div>
+        </div>
+        <label for="ocEmail">Correo (recibe confirmación y avisos)</label>
+        <input type="email" id="ocEmail" maxlength="120">
+        <label for="ocLine1">Calle y número</label>
+        <input type="text" id="ocLine1" maxlength="160">
+        <div class="admin-field-grid">
+          <div><label for="ocLine2">Colonia</label><input type="text" id="ocLine2" maxlength="120"></div>
+          <div><label for="ocZip">Código postal</label><input type="text" id="ocZip" maxlength="5" inputmode="numeric"></div>
+          <div><label for="ocCity">Ciudad</label><input type="text" id="ocCity" maxlength="80"></div>
+          <div><label for="ocState">Estado</label><input type="text" id="ocState" maxlength="60"></div>
+        </div>
+        <label for="ocRefs">Referencias</label>
+        <input type="text" id="ocRefs" maxlength="200">
+      </details>
 
       <details class="admin-invoice" id="orderInvoiceBox">
         <summary>Factura</summary>
@@ -1354,17 +1397,17 @@
     </div>
   </div>
 
-  <script src="admin.js?v=20260917s"></script>
-  <script src="admin-catalogo.js?v=20260917s"></script>
-  <script src="admin-compras.js?v=20260917s"></script>
-  <script src="admin-marketing.js?v=20260917s"></script>
-  <script src="admin-reportes.js?v=20260917s"></script>
-  <script src="admin-dashboard.js?v=20260917s"></script>
-  <script src="admin-pedidos.js?v=20260917s"></script>
-  <script src="admin-ui.js?v=20260917s"></script>
-  <script src="admin-seguridad.js?v=20260917s"></script>
-  <script src="admin-leads.js?v=20260917s"></script>
-  <script src="admin-resenas.js?v=20260917s"></script>
-  <script src="admin-contenido.js?v=20260917s"></script>
+  <script src="admin.js?v=20260917t"></script>
+  <script src="admin-catalogo.js?v=20260917t"></script>
+  <script src="admin-compras.js?v=20260917t"></script>
+  <script src="admin-marketing.js?v=20260917t"></script>
+  <script src="admin-reportes.js?v=20260917t"></script>
+  <script src="admin-dashboard.js?v=20260917t"></script>
+  <script src="admin-pedidos.js?v=20260917t"></script>
+  <script src="admin-ui.js?v=20260917t"></script>
+  <script src="admin-seguridad.js?v=20260917t"></script>
+  <script src="admin-leads.js?v=20260917t"></script>
+  <script src="admin-resenas.js?v=20260917t"></script>
+  <script src="admin-contenido.js?v=20260917t"></script>
 </body>
 </html>

@@ -38,12 +38,13 @@
     if (!el) return;
     const max = Math.max(1, ...points.map((p) => p.value));
     const w = 720;
-    const padL = 44;
+    const padL = 58;
     const padB = 26;
     const innerW = w - padL - 8;
     const innerH = height - padB - 10;
     const bw = innerW / points.length;
-    const fmt = (v) => (money ? formatPrice(v).replace(/\.00$/, '') : v);
+    const fmtK = (v) => (v >= 100000 ? `$${(v / 100000).toFixed(v >= 1000000 ? 0 : 1)}k` : formatPrice(v).replace(/\.00$/, ''));
+    const fmt = (v) => (money ? fmtK(v) : v);
     const ticks = [0, 0.5, 1].map((t) => ({ y: 10 + innerH - innerH * t, v: max * t }));
     const bars = points.map((p, i) => {
       const h = (p.value / max) * innerH;

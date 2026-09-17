@@ -268,7 +268,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 480px;
+  max-width: 820px;
   margin-bottom: 24px;
 }
 
@@ -1287,3 +1287,38 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 .admin-chart-stat span { font-size: 0.74rem; color: var(--muted); }
 .admin-chart-stat.is-up b { color: #2e7d32; }
 .admin-chart-stat.is-down b { color: #b00020; }
+
+/* Correcciones de auditoría ---------------------------------------------- */
+/* 1) Zonas de envío: campos legibles */
+.admin-zones-table th, .admin-zones-table td { padding: 8px 6px; }
+.admin-zones-table input { width: 100%; min-width: 0; }
+.admin-zones-table .zone-name { min-width: 150px; }
+.admin-zones-table .zone-from, .admin-zones-table .zone-to { min-width: 84px; }
+.admin-zones-table .zone-cost { min-width: 96px; }
+.admin-zones-table .zone-days { min-width: 150px; }
+/* 6) Configuración: mismo ancho en todos los bloques */
+#tabConfiguracion .admin-panel-box, #tabConfiguracion .admin-backup-box, #tabConfiguracion .admin-settings-form { max-width: 820px; }
+#tabConfiguracion > h2:first-child, #tabConfiguracion .admin-section-spacer { margin-top: 0; }
+/* 3) Tablas anchas: sombra a la derecha y aviso */
+.admin-table-wrap { position: relative; }
+.admin-table-wrap.has-overflow::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 36px; pointer-events: none; background: linear-gradient(to right, rgba(255,255,255,0), rgba(0,0,0,0.08)); border-radius: 0 14px 14px 0; }
+.admin-table-wrap.has-overflow.at-end::after { display: none; }
+.admin-table-wrap.has-overflow::before { content: 'Desliza para ver más →'; position: absolute; top: 6px; right: 12px; z-index: 2; font-family: var(--label); font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); background: #fff; padding: 2px 6px; border-radius: 6px; pointer-events: none; }
+.admin-table-wrap.has-overflow.at-end::before { display: none; }
+/* 4) Formulario de producto: un solo scroll y campos de variante legibles */
+.admin-form .admin-table-wrap { max-height: none; overflow: visible; }
+.admin-form:has(.admin-variants-table) { max-width: 1100px; }
+.admin-variants-table input { min-width: 64px; }
+.admin-variants-table .size-row-price, .admin-variants-table .size-row-cost, .admin-variants-table input[type="number"] { min-width: 88px; }
+/* 5) Nuevo pedido: talla completa e importe por línea */
+.admin-order-item-row { grid-template-columns: 1.3fr 1fr 70px auto auto; }
+.admin-order-item-row select { min-width: 0; }
+.order-item-price { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+@media (max-width: 700px) { .admin-order-item-row { grid-template-columns: 1fr 1fr; } .order-item-price { grid-column: 1 / -1; } }
+/* 7) Barra lateral: nunca más alta que la ventana */
+@media (min-width: 961px) { .admin-side { max-height: calc(100vh - 32px); overflow-y: auto; } }
+#orderForm { max-width: 720px; }
+.admin-order-item-row { grid-template-columns: 2fr 1.2fr 64px auto auto; }
+#orderCustomerBox label, #orderShipBox label { display: block; margin: 8px 0 4px; font-size: 0.8rem; color: #444; }
+#orderCustomerBox input, #orderShipBox input { width: 100%; }
+#orderCustomerBox .admin-field-grid, #orderShipBox .admin-field-grid { gap: 0 14px; }

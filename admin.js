@@ -1031,6 +1031,17 @@ function openOrderDetail(id) {
   document.getElementById('orderDetailStatus').value = order.status;
   document.getElementById('orderTrackingCarrier').value = order.tracking?.carrier || '';
   document.getElementById('orderTrackingNumber').value = order.tracking?.number || '';
+  document.getElementById('orderTrackingUrl').value = order.tracking?.url || '';
+  document.getElementById('ocName').value = order.customerName || '';
+  document.getElementById('ocPhone').value = order.customerPhone || '';
+  document.getElementById('ocEmail').value = order.customerEmail || '';
+  document.getElementById('ocLine1').value = order.shipping?.line1 || '';
+  document.getElementById('ocLine2').value = order.shipping?.line2 || '';
+  document.getElementById('ocZip').value = order.shipping?.postalCode || '';
+  document.getElementById('ocCity').value = order.shipping?.city || '';
+  document.getElementById('ocState').value = order.shipping?.state || '';
+  document.getElementById('ocRefs').value = order.shipping?.references || '';
+  document.getElementById('orderCustomerBox').open = false;
   document.getElementById('orderDetailError').textContent = '';
   document.getElementById('orderWhatsappBtn').disabled = !whatsappDigits(order.customerPhone);
   const inv = order.invoice;
@@ -1112,7 +1123,10 @@ document.getElementById('saveOrderNotesBtn').addEventListener('click', async () 
       tracking: {
         carrier: document.getElementById('orderTrackingCarrier').value,
         number: document.getElementById('orderTrackingNumber').value,
+        url: document.getElementById('orderTrackingUrl').value.trim(),
       },
+      customer: { name: document.getElementById('ocName').value, phone: document.getElementById('ocPhone').value, email: document.getElementById('ocEmail').value },
+      shipping: { line1: document.getElementById('ocLine1').value, line2: document.getElementById('ocLine2').value, postalCode: document.getElementById('ocZip').value, city: document.getElementById('ocCity').value, state: document.getElementById('ocState').value, references: document.getElementById('ocRefs').value },
       invoice: {
         rfc: document.getElementById('orderInvoiceRfc').value,
         name: document.getElementById('orderInvoiceName').value,
@@ -1605,7 +1619,8 @@ function addOrderItemRow() {
       ${productsCache.map((p) => `<option value="${p.id}">${p.name}</option>`).join('')}
     </select>
     <select class="order-item-size"></select>
-    <input type="number" class="order-item-qty" value="1" min="1" max="50">
+    <input type="number" class="order-item-qty" value="1" min="1" max="50" aria-label="Cantidad">
+    <span class="order-item-price" aria-label="Importe">—</span>
     ${iconBtn('remove-item', 'close', 'Quitar producto')}
   `;
   orderItemsContainer.appendChild(row);
@@ -1638,7 +1653,13 @@ function updateOrderTotal() {
     const productId = row.querySelector('.order-item-product').value;
     const qty = parseInt(row.querySelector('.order-item-qty').value, 10) || 0;
     const product = productsCache.find((p) => p.id === productId);
-    if (product) total += product.priceCents * qty;
+    const sizeLabel = row.querySelector('.order-item-size').value;
+    const variant = product ? product.sizes.find((v) => variantLabel(v) === sizeLabel) : null;
+    const unit = product ? (variant?.priceCents || product.priceCents) : 0;
+    const line = unit * qty;
+    const priceEl = row.querySelector('.order-item-price');
+    if (priceEl) priceEl.textContent = product ? `${formatPrice(unit)} × ${qty} = ${formatPrice(line)}` : '—';
+    total += line;
   });
   orderFormTotal.textContent = formatPrice(total);
 }
@@ -1685,6 +1706,8 @@ orderForm.addEventListener('submit', async (e) => {
       notes: document.getElementById('orderNotes').value,
       code: document.getElementById('orderCode').value.trim(),
       discountMxn: document.getElementById('orderDiscount').value,
+      paymentMethod: document.getElementById('orderPayMethod').value,
+      shipping: { line1: document.getElementById('osLine1').value, line2: document.getElementById('osLine2').value, postalCode: document.getElementById('osZip').value, city: document.getElementById('osCity').value, state: document.getElementById('osState').value, references: document.getElementById('osRefs').value },
       items,
     }),
   });
