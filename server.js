@@ -1032,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260917m';
+const ASSET_V = '20260917n';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1101,8 +1101,8 @@ function renderProductPage(product, req) {
   }
 
   const distinct = [...new Set(product.sizes.map((v) => v.priceCents || product.priceCents))];
-  const priceHtml = `${product.comparePriceCents && product.comparePriceCents > product.priceCents ? `<s class="price-compare">${money(product.comparePriceCents)}</s>` : ''}${distinct.length > 1 ? '<span class="pdp-from">desde</span> ' : ''}${money(product.priceCents)} <small>MXN · IVA incluido</small>`;
-  const priceBySize = distinct.length > 1 ? `<p class="pdp-price-sizes">${distinct.sort((a, b) => a - b).map((cents) => `${product.sizes.filter((v) => (v.priceCents || product.priceCents) === cents).map((v) => v.size).join(' · ')}: <b>${money(cents)}</b>`).join(' &nbsp;|&nbsp; ')}</p>` : '';
+  const priceHtml = `${product.comparePriceCents && product.comparePriceCents > product.priceCents ? `<s class="price-compare">${money(product.comparePriceCents)}</s>` : ''}${distinct.length > 1 ? '<span class="pdp-from">desde</span>' : ''}<span class="pdp-amount">${money(product.priceCents)}</span><small>MXN · IVA incluido</small>`;
+  const priceBySize = distinct.length > 1 ? `<p class="pdp-price-sizes">${distinct.sort((a, b) => a - b).map((cents) => { const sizes = product.sizes.filter((v) => (v.priceCents || product.priceCents) === cents).map((v) => v.size); const label = sizes.length > 2 ? `${sizes[0]} a ${sizes[sizes.length - 1]}` : sizes.join(' y '); return `<span><span class="pdp-price-sizes-range">Tallas ${escapeHtml(label)}</span><b>${money(cents)}</b></span>`; }).join('')}</p>` : '';
   const wholesaleLine = product.wholesale ? `<p class="pdp-wholesale">Mayoreo: <b>${money(product.wholesale.priceCents)}</b> por pieza a partir de ${product.wholesale.minQty} piezas. <a href="/empresas">Cotizar para empresa</a></p>` : '';
 
   // Secciones (solo con información real)
