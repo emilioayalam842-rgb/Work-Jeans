@@ -415,7 +415,7 @@ a { color: inherit; }
   letter-spacing: 0;
 }
 
-.hero-figure figcaption strong span { color: var(--yellow); -webkit-text-stroke: 1px var(--black); }
+.hero-figure figcaption strong span { background: var(--yellow); padding: 0 6px; box-decoration-break: clone; }
 
 /* Cinta de texto --------------------------------------------------------- */
 
@@ -705,6 +705,7 @@ a { color: inherit; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
+  align-items: start;
 }
 
 .size-block {
@@ -2356,6 +2357,12 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 @media (min-width: 861px) {
   .navbar { display: grid; grid-template-columns: auto 1fr auto auto; column-gap: 12px; align-items: center; }
   .nav-right { display: contents; }
+  .nav-right > * { justify-self: end; }
   .nav-links, .nav-links--static { justify-self: center; margin: 0; }
   .navbar .checkout-secure { justify-self: end; grid-column: 2 / -1; }
 }
+
+/* Ajustes finos: mapa sin franja vacía, cotizador centrado ---------------- */
+.ubicacion-map .map-placeholder-wrap { min-height: 360px; height: 100%; }
+.ubicacion-map .map-placeholder { border: 0; }
+.cotizador-head { display: flex; flex-direction: column; justify-content: center; }
