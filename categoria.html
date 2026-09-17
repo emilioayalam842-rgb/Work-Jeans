@@ -22,7 +22,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="assets/fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=20260915f">
+  <link rel="stylesheet" href="styles.css?v=20260917a">
   <script type="application/ld+json">{{JSONLD}}</script>
 </head>
 <body>
@@ -36,8 +36,8 @@
         <ul class="nav-links nav-links--static">
           <li><a href="/pantalones-de-trabajo">Pantalones</a></li>
           <li><a href="/camisas-de-trabajo">Camisas</a></li>
-          <li><a href="/#mayoreo">Mayoreo</a></li>
-          <li><a href="/#medidas">Medidas</a></li>
+          <li><a href="/empresas">Empresas</a></li>
+          <li><a href="/guia-de-tallas">Guía de tallas</a></li>
           <li><a href="/#contacto">Contacto</a></li>
         </ul>
         <a class="btn btn-primary nav-cta" href="/#productos">Ver catálogo</a>
@@ -50,14 +50,29 @@
       <nav class="breadcrumbs" aria-label="Ruta">
         <a href="/">Inicio</a> <span>/</span> <span aria-current="page">{{H1}}</span>
       </nav>
-      <div class="section-head">
-        <div>
+      <div class="category-hero">
+        <div class="category-hero-text">
           <span class="kicker">{{KICKER}}</span>
           <h1>{{H1_HTML}}</h1>
+          <p class="category-intro">{{INTRO}}</p>
+          <div class="category-hero-actions">
+            <a href="#catalogo" class="btn btn-primary">Ver modelos</a>
+            <a href="/empresas" class="btn btn-secondary">Cotizar para empresa</a>
+          </div>
         </div>
-        <p>{{INTRO}}</p>
+        <aside class="category-panel" aria-label="Datos clave">
+          <span class="num" aria-hidden="true">{{PANEL_NUM}}</span>
+          <span class="category-panel-kicker">Ficha rápida</span>
+          <dl class="category-facts">
+            {{FACTS}}
+          </dl>
+          <div class="category-panel-foot">
+            <strong>Hecho en <span>Monterrey</span></strong>
+            <span>Envíos a todo México</span>
+          </div>
+        </aside>
       </div>
-      <div class="products-grid products-grid--static">
+      <div class="products-grid products-grid--static" id="catalogo">
         {{CARDS}}
       </div>
       <section class="category-text">
@@ -81,7 +96,7 @@
     </ul>
     <p class="footer-copy">Monterrey · México · &copy; 2026 Works Jeans</p>
   </footer>
-  <script src="analytics.js?v=20260915f" defer></script>
-  <script src="cookies.js?v=20260915f" defer></script>
+  <script src="analytics.js?v=20260917a" defer></script>
+  <script src="cookies.js?v=20260917a" defer></script>
 </body>
 </html>

@@ -1032,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260916a';
+const ASSET_V = '20260917a';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1226,6 +1226,8 @@ const CATEGORY_PAGES = {
   'pantalones-de-trabajo': {
     category: 'Pantalones',
     kicker: 'Pantalones de trabajo · Work jeans',
+    panelNum: '01',
+    facts: [['Tela', 'Mezclilla 100% algodón'], ['Tallas', '28 a 50'], ['Bolsas', 'Cinco, reforzadas'], ['Reflejante', 'Verde o naranja, opcional'], ['Compra', 'Desde una pieza']],
     h1: 'Pantalones de trabajo',
     h1Html: 'Pantalones<br>de trabajo.',
     title: 'Pantalones de Trabajo de Mezclilla (Work Jeans) | Works Jeans Monterrey',
@@ -1268,6 +1270,8 @@ const CATEGORY_PAGES = {
   'camisas-de-trabajo': {
     category: 'Camisas',
     kicker: 'Camisas de trabajo · Mezclilla',
+    panelNum: '02',
+    facts: [['Tela', 'Mezclilla 100% algodón'], ['Tallas', 'XCH a 5XG'], ['Botones', 'Reforzados'], ['Reflejante', 'Verde o naranja, opcional'], ['Compra', 'Desde una pieza']],
     h1: 'Camisas de trabajo',
     h1Html: 'Camisas<br>de trabajo.',
     title: 'Camisas de Trabajo de Mezclilla con Reflejante | Works Jeans Monterrey',
@@ -1359,6 +1363,8 @@ function renderCategoryPage(req, res, slug, page) {
     H1: escapeHtml(page.h1),
     H1_HTML: page.h1Html,
     INTRO: escapeHtml(page.intro),
+    PANEL_NUM: escapeHtml(page.panelNum || String(products.length).padStart(2, '0')),
+    FACTS: (page.facts || [['Tela', 'Mezclilla 100% algodón'], ['Modelos', String(products.length)], ['Compra', 'Desde una pieza']]).map(([k, v]) => `<div><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd></div>`).join(''),
     CARDS: products.map((p) => productCardStatic(p, origin)).join('') || '<p class="products-loading">Pronto tendremos productos en esta categoría.</p>',
     SEO_TEXT: page.seoText + faqHtml,
   };
