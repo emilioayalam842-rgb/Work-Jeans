@@ -59,6 +59,7 @@ async function loadSettings() {
       whatsappFloat: 'Hola, me interesa la ropa de trabajo de Works Jeans.',
       mayoreoWhatsapp: 'Hola, quiero cotizar un pedido por mayoreo de Works Jeans.',
       contactWhatsapp: '',
+      faqWhatsapp: 'Hola, tengo una duda sobre la ropa de trabajo de Works Jeans.',
     };
     Object.entries(waLinks).forEach(([id, msg]) => {
       const el = document.getElementById(id);
