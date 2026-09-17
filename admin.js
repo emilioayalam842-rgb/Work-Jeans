@@ -284,6 +284,25 @@ function marginText(sales, profit) {
   return `${Math.round((profit / sales) * 100)}% de margen`;
 }
 
+// Etiqueta cada celda con el encabezado de su columna (data-label) para que las tablas se lean como tarjetas en celular.
+function labelTableCells(tbody) {
+  const table = tbody.closest('table');
+  const heads = table ? Array.from(table.querySelectorAll('thead th')).map((th) => th.textContent.trim()) : [];
+  if (!heads.length) return;
+  tbody.querySelectorAll('tr').forEach((tr) => {
+    Array.from(tr.children).forEach((td, i) => {
+      if (td.hasAttribute('colspan')) return;
+      if (!td.dataset.label) td.dataset.label = heads[i] || '';
+    });
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.admin-table tbody').forEach((tb) => {
+    labelTableCells(tb);
+    new MutationObserver(() => labelTableCells(tb)).observe(tb, { childList: true });
+  });
+});
+
 function showTab(name) {
   document.querySelectorAll('.admin-tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.admin-tab-panel').forEach((panel) => { panel.hidden = true; });
@@ -310,6 +329,7 @@ function showTab(name) {
   if (name === 'configuracion') loadSettingsForm();
   if (name === 'usuarios') window.loadUsers?.();
   if (name === 'actividad') window.loadAudit?.();
+  if (window.matchMedia('(max-width: 700px)').matches) document.querySelector('.admin-side .admin-tab.active')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
 }
 
 document.querySelectorAll('.admin-tab').forEach((tab) => {

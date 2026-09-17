@@ -1690,7 +1690,7 @@ body.modal-open { overflow: hidden; }
 .products-grid--static { margin-top: 8px; }
 .product-card--static { text-decoration: none; color: inherit; }
 .product-card--static h2 { font-size: clamp(1.25rem, 2vw, 1.5rem); line-height: 1.05; padding: 22px 26px 0; }
-.product-card--static .btn { margin: 16px 26px 26px; text-align: center; }
+.product-card--static .btn { margin: 16px 26px 26px; text-align: center; width: calc(100% - 52px); }
 .category-text { max-width: 780px; margin-top: 72px; }
 .category-text h2 { font-size: 1.5rem; margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--line-2); }
 .category-text p { margin-top: 14px; line-height: 1.75; }

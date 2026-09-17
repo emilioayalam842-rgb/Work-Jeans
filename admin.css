@@ -1109,3 +1109,61 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 .admin-table th { font-family: var(--label); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
 .admin-table td { border-bottom: 1px solid #efefef; }
 .admin-table tbody tr:hover td { background: #fafafa; }
+
+/* Panel en celular ------------------------------------------------------- */
+@media (max-width: 700px) {
+  .admin-header { padding: 10px 12px; gap: 8px; }
+  .admin-logo-link span { display: none; }
+  .admin-header-logo { height: 30px; }
+  .admin-header-right { gap: 8px; }
+  .admin-link { margin-right: 0; font-size: 0; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #3a3a3a; border-radius: 10px; }
+  .admin-link .admin-svg { width: 18px; height: 18px; }
+  .admin-user-role { display: none; }
+  .admin-user-chip { padding: 0 12px; }
+  .admin-logout { padding: 0 12px; font-size: 0.7rem; letter-spacing: 0.04em; }
+  .admin-bell-menu { left: auto; right: 0; width: min(320px, calc(100vw - 24px)); }
+
+  .admin-main { padding: 10px 12px 48px; gap: 12px; }
+  .admin-side { position: sticky; top: 0; z-index: 30; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding: 8px; border-radius: 12px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .admin-side::-webkit-scrollbar { display: none; }
+  .admin-side-group { flex-wrap: nowrap; gap: 6px; padding-left: 8px; margin-left: 2px; border-top: 0; border-left: 1px solid var(--line); }
+  .admin-side .admin-tab { white-space: nowrap; padding: 8px 12px; font-size: 0.84rem; }
+
+  .admin-body h1 { font-size: 1.5rem; }
+  .admin-stats { grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 20px; }
+  .admin-stat-card { padding: 14px 14px; }
+  .admin-stat-value { font-size: 1.3rem; }
+  .admin-panel-box { padding: 16px; }
+  .admin-dashboard-grid { gap: 12px; margin-bottom: 12px; }
+  .admin-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .admin-toolbar-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .admin-toolbar-actions .btn { width: 100%; padding: 0 10px; font-size: 0.74rem; }
+  .admin-search-box, .admin-search-box input, .admin-filter { width: 100%; }
+
+  /* Tablas como tarjetas */
+  .admin-table-wrap { overflow: visible; background: transparent; box-shadow: none; border-radius: 0; }
+  .admin-table, .admin-table tbody { display: block; width: 100%; min-width: 0; background: transparent; }
+  .admin-table thead { display: none; }
+  .admin-table tbody tr { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; padding: 12px 14px; margin-bottom: 10px; background: #fff; border-radius: 12px; box-shadow: var(--admin-shadow); }
+  .admin-table tbody tr[hidden] { display: none; }
+  .admin-table tbody td { display: block; min-width: 0; padding: 4px 0; border: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+  .admin-table tbody td::before { content: attr(data-label); display: block; margin-bottom: 2px; font-family: var(--label); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .admin-table tbody td[data-label=""]::before, .admin-table tbody td:not([data-label])::before { display: none; }
+  .admin-table tbody td[colspan], .admin-table .admin-order-items-cell, .admin-table tbody td[data-label="Productos"], .admin-table tbody td[data-label="Nombre"], .admin-table tbody td[data-label="Cliente"], .admin-table tbody td[data-label="Estado"] { grid-column: 1 / -1; }
+  .admin-table tbody td:last-child { text-align: left; }
+  .admin-table-actions { grid-column: 1 / -1; display: flex !important; justify-content: flex-end; gap: 8px; padding-top: 10px !important; margin-top: 4px; border-top: 1px solid #f0f0f0 !important; }
+  .admin-table tbody td[data-label="Foto"] { grid-row: span 2; }
+  .admin-status-select { width: 100%; }
+  .admin-table .admin-order-items-cell { max-width: none; }
+  .admin-table-photo { width: 48px; height: 60px; }
+  .admin-order-btns { display: none !important; }
+  .admin-stock-row td { display: block; }
+  .admin-stock-row td::before { display: none; }
+
+  /* Detalle y formularios como hoja inferior */
+  .admin-overlay { padding: 0; align-items: flex-end; }
+  .admin-form, .admin-overlay .admin-form { max-width: 100%; max-height: 94vh; border-radius: 16px 16px 0 0; padding: 18px 16px 24px; }
+  .admin-form-actions { padding-top: 10px; }
+  .admin-field-grid { grid-template-columns: 1fr; }
+  .admin-form-actions .btn { min-height: 46px; }
+}
