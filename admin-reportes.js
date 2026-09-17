@@ -240,6 +240,26 @@
     document.getElementById('repOrders').textContent = orders.length;
     document.getElementById('repTicket').textContent = orders.length ? formatPrice(sales / orders.length) : '—';
 
+    // Comparación con el periodo anterior de la misma duración
+    const spanMs = from ? Date.now() - from.getTime() : 0;
+    const prevFrom = from ? new Date(from.getTime() - spanMs) : null;
+    const prev = from ? validOrders().filter((o) => { const t = new Date(o.createdAt); return t >= prevFrom && t < from; }) : [];
+    const prevSales = prev.reduce((s, o) => s + o.totalCents, 0);
+    const prevPieces = prev.reduce((s, o) => s + orderPieces(o), 0);
+    const deltaEl = (id, now, before, money) => {
+      let el = document.getElementById(id);
+      if (!el) { el = document.createElement('p'); el.id = id; el.className = 'admin-stat-note'; document.getElementById(id.replace('Delta', '')).insertAdjacentElement('afterend', el); }
+      if (!from) { el.textContent = 'Todo el historial'; el.className = 'admin-stat-note'; return; }
+      if (!before) { el.textContent = 'Sin datos del periodo anterior'; el.className = 'admin-stat-note'; return; }
+      const p = Math.round(((now - before) / before) * 100);
+      el.textContent = `${p >= 0 ? '+' : ''}${p}% vs periodo anterior (${money ? formatPrice(before) : before})`;
+      el.className = `admin-stat-note ${p >= 0 ? 'is-up' : 'is-down'}`;
+    };
+    deltaEl('repSalesDelta', sales, prevSales, true);
+    deltaEl('repOrdersDelta', orders.length, prev.length, false);
+    deltaEl('repTicketDelta', orders.length ? sales / orders.length : 0, prev.length ? prevSales / prev.length : 0, true);
+    deltaEl('repPiecesDelta', pieces, prevPieces, false);
+
     // Ventas por día (o por mes si el periodo es largo)
     const span = from ? (Date.now() - from.getTime()) / DAY : 365;
     const points = [];

@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260917v">
-  <link rel="stylesheet" href="admin.css?v=20260917v">
+  <link rel="stylesheet" href="styles.css?v=20260917w">
+  <link rel="stylesheet" href="admin.css?v=20260917w">
 </head>
 <body class="admin-body">
 
@@ -573,6 +573,7 @@
               <option value="year">Este año</option>
               <option value="all">Todo</option>
             </select>
+            <button type="button" class="btn btn-secondary admin-btn-icon" id="exportReportBtn">Exportar a Excel</button>
             <button type="button" class="btn btn-secondary admin-btn-icon" data-report-print><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="6" y="14" width="12" height="7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg> Imprimir</button>
           </div>
         </div>
@@ -666,7 +667,7 @@
 
           <label for="settingNotifyEmail">Correo para avisos de pedidos y stock bajo</label>
           <input type="email" id="settingNotifyEmail" name="notifyEmail" placeholder="tucorreo@ejemplo.com">
-          <p class="admin-help">Requiere la llave RESEND_API_KEY en Railway. <button type="button" id="testEmailBtn" class="admin-inline-btn">Enviar correo de prueba</button> <span id="testEmailStatus"></span></p>
+          <p class="admin-help">Requiere la llave RESEND_API_KEY en Railway. <button type="button" id="testEmailBtn" class="admin-inline-btn">Enviar correo de prueba</button> <button type="button" id="emailPreviewBtn" class="admin-inline-btn">Ver cómo se ven los correos al cliente</button> <span id="testEmailStatus"></span></p>
 
           <label class="admin-check"><input type="checkbox" id="settingCustomerEmails"> <span><strong>Enviar correos al cliente</strong> (pedido recibido, enviado, entregado, cancelado y confirmación de cotización). Requiere la llave de Resend y un remitente con dominio verificado.</span></label>
 
@@ -1399,18 +1400,18 @@
     </div>
   </div>
 
-  <script src="admin.js?v=20260917v"></script>
-  <script src="admin-catalogo.js?v=20260917v"></script>
-  <script src="admin-compras.js?v=20260917v"></script>
-  <script src="admin-marketing.js?v=20260917v"></script>
-  <script src="admin-reportes.js?v=20260917v"></script>
-  <script src="admin-dashboard.js?v=20260917v"></script>
-  <script src="admin-pedidos.js?v=20260917v"></script>
-  <script src="admin-ui.js?v=20260917v"></script>
-  <script src="admin-mas.js?v=20260917v"></script>
-  <script src="admin-seguridad.js?v=20260917v"></script>
-  <script src="admin-leads.js?v=20260917v"></script>
-  <script src="admin-resenas.js?v=20260917v"></script>
-  <script src="admin-contenido.js?v=20260917v"></script>
+  <script src="admin.js?v=20260917w"></script>
+  <script src="admin-catalogo.js?v=20260917w"></script>
+  <script src="admin-compras.js?v=20260917w"></script>
+  <script src="admin-marketing.js?v=20260917w"></script>
+  <script src="admin-reportes.js?v=20260917w"></script>
+  <script src="admin-dashboard.js?v=20260917w"></script>
+  <script src="admin-pedidos.js?v=20260917w"></script>
+  <script src="admin-ui.js?v=20260917w"></script>
+  <script src="admin-mas.js?v=20260917w"></script>
+  <script src="admin-seguridad.js?v=20260917w"></script>
+  <script src="admin-leads.js?v=20260917w"></script>
+  <script src="admin-resenas.js?v=20260917w"></script>
+  <script src="admin-contenido.js?v=20260917w"></script>
 </body>
 </html>

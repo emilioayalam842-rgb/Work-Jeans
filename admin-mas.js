@@ -20,6 +20,81 @@
     });
   };
 
+  // ---- Existencias: historial de una talla ----
+  document.getElementById('stockTableBody')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action="stk-history"]');
+    if (!btn) return;
+    const tr = btn.closest('tr');
+    const productId = tr.dataset.product; const label = tr.dataset.size;
+    const res = await fetch('/api/admin/inventory?limit=500');
+    const log = res.ok ? await res.json() : [];
+    const rows = log.filter((m) => m.productId === productId && (m.size === label || (label || '').startsWith(m.size || '\u0000')));
+    let ov = document.getElementById('stockHistoryOverlay');
+    if (!ov) { ov = document.createElement('div'); ov.className = 'admin-overlay'; ov.id = 'stockHistoryOverlay'; ov.hidden = true; document.body.appendChild(ov); ov.addEventListener('click', (ev) => { if (ev.target === ov) ov.hidden = true; }); }
+    const name = tr.children[0]?.textContent || productId;
+    const inQty = rows.filter((m) => m.delta > 0).reduce((s, m) => s + m.delta, 0);
+    const outQty = rows.filter((m) => m.delta < 0).reduce((s, m) => s - m.delta, 0);
+    ov.innerHTML = `<div class="admin-form" style="max-width:720px">
+      <div class="admin-detail-id"><span class="admin-kicker">Historial</span><b>${esc(name)} · ${esc(label)}</b></div>
+      <div class="admin-chart-stats"><div class="admin-chart-stat"><b>${inQty}</b><span>entradas</span></div><div class="admin-chart-stat"><b>${outQty}</b><span>salidas</span></div><div class="admin-chart-stat"><b>${rows.length}</b><span>movimientos</span></div></div>
+      ${rows.length ? `<table class="admin-table admin-detail-table"><thead><tr><th>Fecha</th><th>Cambio</th><th>Quedan</th><th>Motivo</th></tr></thead><tbody>${rows.map((m) => `<tr><td class="admin-nowrap">${new Date(m.at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td><td class="${m.delta > 0 ? 'admin-profit' : 'admin-stock-low'}">${m.delta > 0 ? '+' : ''}${m.delta}</td><td>${m.stockAfter ?? '—'}</td><td>${esc(m.reason || '')}${m.orderId ? ` <button type="button" class="admin-inline-btn admin-small" data-open-order="${esc(m.orderId)}">Ver pedido</button>` : ''}${m.warehouse ? ` <span class="admin-muted admin-small">· ${esc(m.warehouse)}</span>` : ''}</td></tr>`).join('')}</tbody></table>` : '<p class="admin-muted">Sin movimientos registrados para esta talla (los últimos 500 movimientos).</p>'}
+      <div class="admin-form-actions"><button type="button" class="btn btn-secondary" data-close>Cerrar</button></div>
+    </div>`;
+    ov.hidden = false;
+    ov.querySelector('[data-close]').addEventListener('click', () => { ov.hidden = true; });
+    ov.querySelectorAll('[data-open-order]').forEach((b) => b.addEventListener('click', () => { ov.hidden = true; showTab('pedidos'); setTimeout(() => openOrderDetail(b.dataset.openOrder), 150); }));
+  });
+
+  // ---- Reportes: exportar a Excel (todas las tablas y cifras de la pestaña) ----
+  document.getElementById('exportReportBtn')?.addEventListener('click', () => {
+    const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [];
+    const period = document.getElementById('reportPeriod');
+    lines.push([`Reporte Works Jeans`, period.options[period.selectedIndex]?.text || '', new Date().toLocaleString('es-MX')].map(cell).join(';'));
+    lines.push('');
+    document.querySelectorAll('#tabReportes .admin-stat-card').forEach((c) => { const l = c.querySelector('.admin-stat-label')?.textContent.trim(); const v = c.querySelector('.admin-stat-value')?.textContent.trim(); if (l) lines.push([l, v].map(cell).join(';')); });
+    document.querySelectorAll('#tabReportes .admin-panel-box').forEach((box) => {
+      const title = box.querySelector('h3')?.textContent.trim();
+      const table = box.querySelector('table');
+      if (!title || !table) return;
+      lines.push(''); lines.push(cell(title));
+      table.querySelectorAll('tr').forEach((tr) => { const cells = Array.from(tr.children).map((td) => td.textContent.trim().replace(/\s+/g, ' ')); if (cells.some(Boolean)) lines.push(cells.map(cell).join(';')); });
+    });
+    const csv = '\ufeff' + lines.join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `reporte-works-jeans-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+
+  // ---- Configuración: vista previa de los correos al cliente ----
+  document.getElementById('emailPreviewBtn')?.addEventListener('click', () => {
+    let ov = document.getElementById('emailPreviewOverlay');
+    if (!ov) { ov = document.createElement('div'); ov.className = 'admin-overlay'; ov.id = 'emailPreviewOverlay'; ov.hidden = true; document.body.appendChild(ov); ov.addEventListener('click', (ev) => { if (ev.target === ov) ov.hidden = true; }); }
+    ov.innerHTML = `<div class="admin-form" style="max-width:760px">
+      <div class="admin-detail-id"><span class="admin-kicker">Vista previa</span><b>Correos al cliente</b></div>
+      <p class="admin-muted admin-small">Así se ven con el pedido más reciente. Se envían solos al confirmar, enviar, entregar o cancelar un pedido (si el pedido tiene correo).</p>
+      <div class="admin-subtabs" id="emailPreviewTabs">${[['confirmacion', 'Confirmación'], ['enviado', 'Enviado'], ['entregado', 'Entregado'], ['cancelado', 'Cancelado']].map(([k, v], i) => `<button type="button" class="admin-subtab ${i === 0 ? 'active' : ''}" data-type="${k}">${v}</button>`).join('')}</div>
+      <iframe id="emailPreviewFrame" title="Vista previa del correo" style="width:100%;height:60vh;border:1px solid #e5e5e5;border-radius:12px;background:#f3f3f3"></iframe>
+      <div class="admin-form-actions"><button type="button" class="btn btn-secondary" data-close>Cerrar</button></div>
+    </div>`;
+    const frame = ov.querySelector('#emailPreviewFrame');
+    const load = (type) => { frame.src = `/api/admin/email-preview?type=${type}&t=${Date.now()}`; };
+    ov.querySelectorAll('[data-type]').forEach((b) => b.addEventListener('click', () => { ov.querySelectorAll('[data-type]').forEach((x) => x.classList.toggle('active', x === b)); load(b.dataset.type); }));
+    ov.querySelector('[data-close]').addEventListener('click', () => { ov.hidden = true; });
+    ov.hidden = false;
+    load('confirmacion');
+  });
+
+  // ---- Escape cierra formularios, fichas y menús ----
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const open = Array.from(document.querySelectorAll('.admin-overlay')).filter((o) => !o.hidden);
+    if (open.length) { open[open.length - 1].hidden = true; e.preventDefault(); return; }
+    const bell = document.getElementById('bellMenu'); if (bell && !bell.hidden) bell.hidden = true;
+    const gs = document.getElementById('gSearchMenu'); if (gs && !gs.hidden) gs.hidden = true;
+  });
+
   // ---- Clientes: buscador ----
   const search = document.getElementById('customersSearch');
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');

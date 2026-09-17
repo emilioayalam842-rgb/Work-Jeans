@@ -1556,15 +1556,19 @@ function beep() {
 function renderBell() {
   const count = document.getElementById('bellCount');
   const menu = document.getElementById('bellMenu');
-  count.textContent = newOrdersQueue.length;
-  count.hidden = newOrdersQueue.length === 0;
-  menu.innerHTML = newOrdersQueue.length
+  const extras = window.bellExtras || { leadsNew: 0, reviewsPending: 0 };
+  const total = newOrdersQueue.length + (extras.leadsNew || 0) + (extras.reviewsPending || 0);
+  count.textContent = total;
+  count.hidden = total === 0;
+  const extrasHtml = `${extras.leadsNew ? `<button type="button" class="admin-bell-item admin-bell-item--lead" data-goto="cotizaciones"><span class="admin-bell-title"><strong>${extras.leadsNew}</strong> cotización${extras.leadsNew === 1 ? '' : 'es'} sin responder</span><span>Ventas → Cotizaciones</span></button>` : ''}${extras.reviewsPending ? `<button type="button" class="admin-bell-item admin-bell-item--review" data-goto="resenas"><span class="admin-bell-title"><strong>${extras.reviewsPending}</strong> reseña${extras.reviewsPending === 1 ? '' : 's'} por aprobar</span><span>Ventas → Reseñas</span></button>` : ''}`;
+  if (!newOrdersQueue.length && extrasHtml) { menu.innerHTML = extrasHtml; return; }
+  menu.innerHTML = (newOrdersQueue.length ? extrasHtml : '') + (newOrdersQueue.length
     ? newOrdersQueue.map((o) => `
       <button type="button" class="admin-bell-item" data-order="${o.id}">
         <span class="admin-bell-title"><strong>${esc(o.customerName) || 'Sin nombre'}</strong> · ${formatPrice(o.totalCents)}</span>
         <span>${o.source === 'stripe' ? 'Pago con tarjeta' : o.source === 'openpay' ? 'Openpay' : 'WhatsApp'} · ${new Date(o.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
       </button>`).join('') + '<button type="button" class="admin-bell-clear" data-action="clear-bell">Marcar como vistos</button>'
-    : '<p class="admin-bell-empty">Sin pedidos nuevos.</p>';
+    : '<p class="admin-bell-empty">Sin pedidos nuevos.</p>');
 }
 
 async function pollNewOrders() {
@@ -1573,6 +1577,10 @@ async function pollNewOrders() {
     const res = await fetch(`/api/admin/orders-summary${lastSeenAt ? `?since=${encodeURIComponent(lastSeenAt)}` : ''}`);
     if (!res.ok) return;
     const data = await res.json();
+    const prevLeads = (window.bellExtras || {}).leadsNew || 0;
+    window.bellExtras = { leadsNew: data.leadsNew || 0, reviewsPending: data.reviewsPending || 0 };
+    if (lastSeenAt && data.newLeads?.length && data.leadsNew > prevLeads) { beep(); if (document.querySelector('.admin-tab.active')?.dataset.tab === 'cotizaciones') loadLeads(); }
+    if (!(lastSeenAt && data.newOrders.length)) renderBell();
     if (lastSeenAt && data.newOrders.length) {
       data.newOrders.forEach((o) => { if (!newOrdersQueue.some((q) => q.id === o.id)) newOrdersQueue.unshift(o); });
       renderBell();
@@ -1596,6 +1604,7 @@ document.getElementById('bellBtn').addEventListener('click', () => {
   menu.hidden = !menu.hidden;
 });
 document.getElementById('bellMenu').addEventListener('click', (e) => {
+  if (e.target.closest('[data-goto]')) { document.getElementById('bellMenu').hidden = true; return; }
   const item = e.target.closest('[data-order]');
   if (item) {
     document.getElementById('bellMenu').hidden = true;

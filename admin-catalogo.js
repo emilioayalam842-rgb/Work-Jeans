@@ -245,6 +245,7 @@
         <td>${formatPrice(r.stock * (r.costCents || 0))}</td>
         <td class="admin-table-actions">
           <div class="admin-stock-controls">
+            <button type="button" class="admin-stock-btn" data-action="stk-history" title="Historial de esta talla" aria-label="Historial de esta talla">${icon('eye', 14)}</button>
             <button type="button" class="admin-stock-btn" data-action="stk-adjust" data-delta="-1" aria-label="Quitar una pieza">−</button>
             <button type="button" class="admin-stock-btn" data-action="stk-adjust" data-delta="1" aria-label="Agregar una pieza">+</button>
           </div>

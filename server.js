@@ -1032,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260917v';
+const ASSET_V = '20260917w';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -2543,11 +2543,30 @@ app.get('/api/admin/orders-summary', requireAdmin, perm('pedidos.ver'), (req, re
   const orders = getOrders();
   const since = req.query.since ? new Date(req.query.since) : null;
   const recent = since ? orders.filter((o) => new Date(o.createdAt) > since) : [];
+  let leads = []; let reviews = [];
+  try { leads = getLeads(); } catch { leads = []; }
+  try { reviews = getReviews(); } catch { reviews = []; }
   res.json({
     count: orders.length,
     latestAt: orders.reduce((max, o) => (o.createdAt > max ? o.createdAt : max), ''),
     newOrders: recent.map((o) => ({ id: o.id, createdAt: o.createdAt, customerName: o.customerName, totalCents: o.totalCents, source: o.source })),
+    leadsNew: leads.filter((l) => l.status === 'nuevo').length,
+    reviewsPending: reviews.filter((r) => r.status === 'pendiente').length,
+    newLeads: since ? leads.filter((l) => new Date(l.createdAt) > since).map((l) => ({ id: l.id, company: l.company || l.name, totalPieces: l.totalPieces || 0, createdAt: l.createdAt })) : [],
   });
+});
+
+// Vista previa de los correos que recibe el cliente, con el pedido más reciente (o uno de muestra).
+app.get('/api/admin/email-preview', requireAdmin, perm('configuracion.ver'), (req, res) => {
+  const type = String(req.query.type || 'confirmacion');
+  const tpl = CUSTOMER_EMAILS[type];
+  if (!tpl) { res.status(400).json({ error: 'Tipo de correo no válido.' }); return; }
+  const orders = getOrders();
+  const sample = orders[orders.length - 1] || { id: 'ord_ejemplo', createdAt: new Date().toISOString(), source: 'openpay', customerName: 'Cliente de ejemplo', customerEmail: 'cliente@ejemplo.com', items: [{ name: 'Pantalón de Trabajo de Mezclilla', size: '32', quantity: 2, priceCents: 22251 }], subtotalCents: 44502, totalCents: 44502, tracking: { carrier: 'Estafeta', number: '1234567890' } };
+  const order = { ...sample, tracking: sample.tracking || { carrier: 'Estafeta', number: '1234567890' } };
+  const t = tpl(order);
+  const trackNote = ['confirmacion', 'enviado'].includes(type) ? `<p style="font-size:14px">Sigue tu pedido en cualquier momento en <a href="https://www.workjeans.mx/rastrear?pedido=${encodeURIComponent(order.id)}">workjeans.mx/rastrear</a> con tu número de pedido y este correo.</p>` : '';
+  res.type('html').send(emailLayout(t.title, `<p>Hola ${escapeHtml((order.customerName || '').split(' ')[0] || '')}.</p><p>${t.intro}</p>${orderSummaryHtml(order)}${t.outro ? `<p>${t.outro}</p>` : ''}${trackNote}`));
 });
 
 app.post('/api/admin/inventory/adjust', requireAdmin, perm('inventario.editar'), (req, res) => {
