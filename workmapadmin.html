@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260917p">
-  <link rel="stylesheet" href="admin.css?v=20260917p">
+  <link rel="stylesheet" href="styles.css?v=20260917q">
+  <link rel="stylesheet" href="admin.css?v=20260917q">
 </head>
 <body class="admin-body">
 
@@ -127,20 +127,50 @@
       <div class="admin-security-banner" id="securityBanner" hidden></div>
 
       <div id="tabDashboard" class="admin-tab-panel">
-        <h2>Resumen</h2>
-        <div class="admin-stats">
-          <div class="admin-stat-card"><p class="admin-stat-label">Ventas de hoy</p><p class="admin-stat-value" id="dSalesToday">$0.00</p></div>
-          <div class="admin-stat-card"><p class="admin-stat-label">Últimos 7 días</p><p class="admin-stat-value" id="dSalesWeek">$0.00</p></div>
-          <div class="admin-stat-card"><p class="admin-stat-label">Este mes</p><p class="admin-stat-value" id="dSalesMonth">$0.00</p></div>
-          <div class="admin-stat-card admin-stat-card--profit"><p class="admin-stat-label">Utilidad del mes</p><p class="admin-stat-value" id="dProfit">$0.00</p><p class="admin-stat-note" id="dProfitNote"></p></div>
-          <div class="admin-stat-card"><p class="admin-stat-label">Pedidos pendientes</p><p class="admin-stat-value" id="dPending">0</p></div>
-          <div class="admin-stat-card"><p class="admin-stat-label">Ticket promedio</p><p class="admin-stat-value" id="dTicket">—</p></div>
-          <div class="admin-stat-card"><p class="admin-stat-label">Piezas vendidas (mes)</p><p class="admin-stat-value" id="dUnits">0</p></div>
-          <div class="admin-stat-card"><p class="admin-stat-label">Devoluciones (mes)</p><p class="admin-stat-value" id="dReturns">0</p></div>
+        <div class="admin-page-head">
+          <div>
+            <span class="admin-kicker">Resumen</span>
+            <h2 id="dGreeting">Hola.</h2>
+            <p class="admin-muted" id="dDateLine"></p>
+          </div>
+          <div class="admin-page-actions">
+            <button type="button" class="btn btn-secondary" data-goto="reportes">Ver reportes</button>
+            <button type="button" class="btn btn-primary" id="dNewOrder">Nuevo pedido</button>
+          </div>
         </div>
-        <div class="admin-panel-box admin-monthly">
-          <h3>Ventas de los últimos 30 días</h3>
-          <div id="dChart" class="admin-chart-wrap"></div>
+
+        <div class="admin-hero-grid">
+          <section class="admin-hero" aria-label="Ventas de hoy">
+            <p class="admin-hero-label">Ventas de hoy</p>
+            <p class="admin-hero-value" id="dSalesToday">$0.00</p>
+            <p class="admin-hero-delta" id="dTodayDelta"></p>
+            <div class="admin-hero-row">
+              <button type="button" data-goto="pedidos"><span>Pedidos hoy</span><b id="dOrdersToday">0</b></button>
+              <button type="button" data-goto="pedidos"><span>Por cobrar</span><b id="dUnpaid">0</b></button>
+              <button type="button" data-goto="tablero"><span>Por enviar</span><b id="dToShip">0</b></button>
+              <button type="button" data-goto="cotizaciones"><span>Cotizaciones nuevas</span><b id="dNewLeads">0</b></button>
+            </div>
+          </section>
+          <div class="admin-kpis">
+            <div class="admin-kpi"><span>Últimos 7 días</span><b id="dSalesWeek">$0.00</b><small id="dWeekDelta"></small></div>
+            <div class="admin-kpi"><span>Este mes</span><b id="dSalesMonth">$0.00</b><small id="dMonthDelta"></small></div>
+            <div class="admin-kpi admin-kpi--profit"><span>Utilidad del mes</span><b id="dProfit">$0.00</b><small id="dProfitNote"></small></div>
+            <div class="admin-kpi"><span>Ticket promedio</span><b id="dTicket">—</b><small>por pedido, este mes</small></div>
+            <div class="admin-kpi"><span>Piezas vendidas</span><b id="dUnits">0</b><small>este mes</small></div>
+            <div class="admin-kpi"><span>Pedidos activos</span><b id="dPending">0</b><small>Devoluciones del mes: <span id="dReturns">0</span></small></div>
+          </div>
+        </div>
+
+        <div class="admin-dashboard-grid admin-dashboard-grid--todo">
+          <div class="admin-panel-box">
+            <div class="admin-box-head"><h3>Qué atender ahora</h3><span class="admin-muted admin-small" id="dTodoCount"></span></div>
+            <ul class="admin-todo" id="dTodo"></ul>
+          </div>
+          <div class="admin-panel-box">
+            <div class="admin-box-head"><h3>Ventas de los últimos 30 días</h3><span class="admin-muted admin-small" id="dChartNote"></span></div>
+            <div id="dChartLine" class="admin-chart-wrap"></div>
+            <div id="dChart" hidden></div>
+          </div>
         </div>
         <div class="admin-alerts admin-alerts--wide" id="dInsights"></div>
         <div class="admin-dashboard-grid">
@@ -1324,14 +1354,17 @@
     </div>
   </div>
 
-  <script src="admin.js?v=20260917p"></script>
-  <script src="admin-catalogo.js?v=20260917p"></script>
-  <script src="admin-compras.js?v=20260917p"></script>
-  <script src="admin-marketing.js?v=20260917p"></script>
-  <script src="admin-reportes.js?v=20260917p"></script>
-  <script src="admin-seguridad.js?v=20260917p"></script>
-  <script src="admin-leads.js?v=20260917p"></script>
-  <script src="admin-resenas.js?v=20260917p"></script>
-  <script src="admin-contenido.js?v=20260917p"></script>
+  <script src="admin.js?v=20260917q"></script>
+  <script src="admin-catalogo.js?v=20260917q"></script>
+  <script src="admin-compras.js?v=20260917q"></script>
+  <script src="admin-marketing.js?v=20260917q"></script>
+  <script src="admin-reportes.js?v=20260917q"></script>
+  <script src="admin-dashboard.js?v=20260917q"></script>
+  <script src="admin-pedidos.js?v=20260917q"></script>
+  <script src="admin-ui.js?v=20260917q"></script>
+  <script src="admin-seguridad.js?v=20260917q"></script>
+  <script src="admin-leads.js?v=20260917q"></script>
+  <script src="admin-resenas.js?v=20260917q"></script>
+  <script src="admin-contenido.js?v=20260917q"></script>
 </body>
 </html>
