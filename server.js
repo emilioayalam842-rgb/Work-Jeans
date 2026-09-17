@@ -1032,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260917g';
+const ASSET_V = '20260917h';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1621,6 +1621,7 @@ app.get('/sitemap.xml', (req, res) => {
     { loc: `${origin}/articulos`, priority: '0.6' },
     ...publishedArticles().map((a) => ({ loc: `${origin}/articulos/${a.slug}`, priority: '0.7', lastmod: a.updatedAt || a.publishedAt })),
     ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8' })),
+    { loc: `${origin}/rastrear`, priority: '0.3' },
     { loc: `${origin}/aviso-de-privacidad.html`, priority: '0.3' },
     { loc: `${origin}/envios-y-devoluciones.html`, priority: '0.3' },
   ];
@@ -2379,6 +2380,7 @@ app.put('/api/admin/orders/:id', requireAdmin, perm('pedidos.editar'), (req, res
       saveProducts(products);
       delete order.cancelledAt;
     }
+    if (status === 'preparacion' && order.status !== 'preparacion') order.preparingAt = new Date().toISOString();
     if (status === 'enviado' && order.status !== 'enviado') order.shippedAt = new Date().toISOString();
     if (status === 'entregado' && order.status !== 'entregado') order.deliveredAt = new Date().toISOString();
     if (status !== order.status && ['enviado', 'entregado', 'cancelado'].includes(status)) req.emailAfterSave = status;
@@ -2670,7 +2672,8 @@ async function emailCustomer(orderId, type, { force = false } = {}) {
   if (!order.customerEmail) return { ok: false, reason: 'el pedido no tiene correo' };
   if (!force && (order.emails || []).some((e) => e.type === type && e.ok)) return { ok: false, reason: 'ya enviado' };
   const t = tpl(order);
-  const html = emailLayout(t.title, `<p>Hola ${escapeHtml((order.customerName || '').split(' ')[0] || '')}.</p><p>${t.intro}</p>${orderSummaryHtml(order)}${t.outro ? `<p>${t.outro}</p>` : ''}`);
+  const trackNote = ['confirmacion', 'enviado'].includes(type) ? `<p style="font-size:14px">Sigue tu pedido en cualquier momento en <a href="https://www.workjeans.mx/rastrear?pedido=${encodeURIComponent(order.id)}">workjeans.mx/rastrear</a> con tu número de pedido y este correo.</p>` : '';
+  const html = emailLayout(t.title, `<p>Hola ${escapeHtml((order.customerName || '').split(' ')[0] || '')}.</p><p>${t.intro}</p>${orderSummaryHtml(order)}${t.outro ? `<p>${t.outro}</p>` : ''}${trackNote}`);
   const result = await sendEmailTo({ to: order.customerEmail, subject: t.subject, html });
   const fresh = getOrders();
   const o2 = fresh.find((o) => o.id === orderId);
@@ -3014,6 +3017,54 @@ app.get('/api/orders/:id/status', (req, res) => {
   const p = order.payment || {};
   res.set('Cache-Control', 'no-store');
   res.json({ id: order.id, status: order.status, totalCents: order.totalCents, email: order.customerEmail, items: order.items.map((i) => ({ name: i.name, size: i.size, quantity: i.quantity })), payment: { method: p.method, status: p.status, clabe: p.clabe, bank: p.bank, beneficiary: p.beneficiary, agreement: p.agreement, reference: p.reference, barcodeUrl: p.barcodeUrl, dueDate: p.dueDate, sandbox: Boolean(OPENPAY?.sandbox) } });
+});
+
+// --- Rastreo público de pedidos: número de pedido + correo o teléfono de la compra (o la llave del pedido) ---
+const TRACK_STATUS_LABELS = { pendiente: 'Pendiente de pago', pagado: 'Pagado', preparacion: 'En preparación', enviado: 'Enviado', entregado: 'Entregado', cancelado: 'Cancelado', devuelto: 'Devuelto' };
+const trackAttempts = new Map(); // ip -> { first, count }
+function trackLimited(ip) {
+  const now = Date.now();
+  const e = trackAttempts.get(ip);
+  if (!e || now - e.first > 15 * 60 * 1000) { trackAttempts.set(ip, { first: now, count: 1 }); return false; }
+  e.count += 1;
+  return e.count > 30;
+}
+app.post('/api/orders/track', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (trackLimited(clientIp(req))) { res.status(429).json({ error: 'Demasiadas consultas. Espera unos minutos e intenta de nuevo.' }); return; }
+  const id = String(req.body?.id || '').trim().toUpperCase().slice(0, 40);
+  const contact = String(req.body?.contact || '').trim().toLowerCase().slice(0, 120);
+  const key = String(req.body?.key || '').trim().slice(0, 40);
+  if (!id) { res.status(400).json({ error: 'Escribe tu número de pedido.' }); return; }
+  const order = getOrders().find((o) => String(o.id).toUpperCase() === id);
+  let ok = false;
+  if (order) {
+    if (key && order.accessKey && key === order.accessKey) ok = true;
+    else if (contact.includes('@')) ok = Boolean(order.customerEmail) && order.customerEmail.toLowerCase() === contact;
+    else if (contact) {
+      const digits = contact.replace(/\D/g, '');
+      const phone = String(order.customerPhone || '').replace(/\D/g, '');
+      ok = digits.length >= 8 && phone.length >= 8 && phone.slice(-10) === digits.slice(-10);
+    }
+  }
+  if (!ok) { res.status(404).json({ error: 'No encontramos un pedido con esos datos. Revisa el número y el correo o teléfono con el que compraste.' }); return; }
+  const dest = order.shipping ? [order.shipping.city, order.shipping.state].filter(Boolean).join(', ') : '';
+  res.json({
+    id: order.id,
+    status: order.status,
+    statusLabel: TRACK_STATUS_LABELS[order.status] || order.status,
+    createdAt: order.createdAt,
+    paidAt: order.payment?.paidAt || (['pagado', 'preparacion', 'enviado', 'entregado'].includes(order.status) && order.source === 'stripe' ? order.createdAt : null),
+    preparingAt: order.preparingAt || null,
+    shippedAt: order.shippedAt || null,
+    deliveredAt: order.deliveredAt || null,
+    cancelledAt: order.cancelledAt || null,
+    paymentMethod: order.payment?.method || null,
+    tracking: order.tracking ? { carrier: order.tracking.carrier || '', number: order.tracking.number || '', url: /^https:\/\//.test(order.tracking.url || '') ? order.tracking.url : '' } : null,
+    destination: dest,
+    items: order.items.map((i) => ({ name: i.name, size: i.size, quantity: i.quantity })),
+    totalCents: order.totalCents,
+  });
 });
 
 function publicOrigin(req) {
@@ -3373,6 +3424,15 @@ app.delete('/api/admin/reviews/:id', requireAdmin, perm('pedidos.eliminar'), (re
   auditLog(req, 'resenas.eliminar', { target: req.params.id });
   res.json({ ok: true });
 });
+// Enlace de rastreo para mandar por WhatsApp: abre /rastrear con el pedido ya identificado (crea la llave si el pedido no la tiene).
+app.post('/api/admin/orders/:id/track-link', requireAdmin, perm('pedidos.editar'), (req, res) => {
+  const orders = getOrders();
+  const order = orders.find((o) => o.id === req.params.id);
+  if (!order) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
+  if (!order.accessKey) { order.accessKey = crypto.randomBytes(8).toString('hex'); saveOrders(orders); }
+  res.json({ url: `${publicOrigin(req)}/rastrear?pedido=${encodeURIComponent(order.id)}&k=${order.accessKey}` });
+});
+
 app.post('/api/admin/orders/:id/review-link', requireAdmin, perm('pedidos.editar'), (req, res) => {
   const token = ensureReviewToken(req.params.id);
   if (!token) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }

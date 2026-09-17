@@ -1005,7 +1005,7 @@ function openOrderDetail(id) {
     </table>
     ${order.discount ? `<p class="admin-muted">Subtotal ${formatPrice(order.subtotalCents || order.totalCents + order.discount.cents)} · Descuento −${formatPrice(order.discount.cents)}${order.discount.code ? ` (cupón ${order.discount.code})` : ''}${order.discount.promotions?.length ? ` · ${order.discount.promotions.map((p) => p.name).join(', ')}` : ''}</p>` : ''}
     <p class="admin-order-total">Total: ${formatPrice(order.totalCents)}</p>
-    <p class="admin-muted admin-small">Correos al cliente: ${(order.emails || []).length ? order.emails.map((e) => `${e.type} ${e.ok ? '✓' : `✗ (${esc(e.reason || 'error')})`}`).join(' · ') : 'ninguno todavía'}${order.customerEmail ? ` · <button type="button" class="admin-inline-btn" data-action="resend-confirmation">Reenviar confirmación</button>` : ' · sin correo del cliente'} · <button type="button" class="admin-inline-btn" data-action="review-link">Copiar enlace para reseña</button></p>
+    <p class="admin-muted admin-small">Correos al cliente: ${(order.emails || []).length ? order.emails.map((e) => `${e.type} ${e.ok ? '✓' : `✗ (${esc(e.reason || 'error')})`}`).join(' · ') : 'ninguno todavía'}${order.customerEmail ? ` · <button type="button" class="admin-inline-btn" data-action="resend-confirmation">Reenviar confirmación</button>` : ' · sin correo del cliente'} · <button type="button" class="admin-inline-btn" data-action="track-link">Copiar enlace de rastreo</button> · <button type="button" class="admin-inline-btn" data-action="review-link">Copiar enlace para reseña</button></p>
   `;
   orderDetailNotes.value = order.notes || '';
   document.getElementById('orderDetailStatus').value = order.status;
@@ -1026,6 +1026,13 @@ function openOrderDetail(id) {
 }
 
 orderDetailContent.addEventListener('click', async (e) => {
+  if (e.target.closest('[data-action="track-link"]')) {
+    const res = await fetch(`/api/admin/orders/${activeOrderId}/track-link`, { method: 'POST' });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) { document.getElementById('orderDetailError').textContent = d.error || 'No se pudo crear el enlace.'; return; }
+    try { await navigator.clipboard.writeText(d.url); document.getElementById('orderDetailError').textContent = 'Enlace de rastreo copiado. Mándaselo al cliente por WhatsApp.'; } catch { prompt('Copia este enlace:', d.url); }
+    return;
+  }
   if (e.target.closest('[data-action="review-link"]')) {
     const res = await fetch(`/api/admin/orders/${activeOrderId}/review-link`, { method: 'POST' });
     const d = await res.json().catch(() => ({}));
