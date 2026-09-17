@@ -1279,3 +1279,11 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
   .admin-detail-table td::before { display: inline !important; margin-right: 6px; }
   .admin-detail-table td:first-child::before { display: none !important; }
 }
+
+/* Resumen de la gráfica: cifras separadas en lugar de una frase corrida */
+.admin-chart-stats { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 10px 0 14px; }
+.admin-chart-stat { display: flex; flex-direction: column; gap: 2px; }
+.admin-chart-stat b { font-family: var(--display); font-weight: 400; font-size: 1.15rem; line-height: 1; }
+.admin-chart-stat span { font-size: 0.74rem; color: var(--muted); }
+.admin-chart-stat.is-up b { color: #2e7d32; }
+.admin-chart-stat.is-down b { color: #b00020; }

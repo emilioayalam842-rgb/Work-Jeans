@@ -1032,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260917r';
+const ASSET_V = '20260917s';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));

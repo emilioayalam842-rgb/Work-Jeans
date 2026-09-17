@@ -107,7 +107,13 @@
     const total30 = cur.reduce((s, p) => s + p.value, 0);
     const prev30 = prev.reduce((s, v) => s + v, 0);
     const daysWithSales = cur.filter((p) => p.value).length;
-    document.getElementById('dChartNote').textContent = `${formatPrice(total30)} en 30 días · promedio ${formatPrice(total30 / 30)} por día · ${daysWithSales} día${daysWithSales === 1 ? '' : 's'} con ventas${prev30 ? ` · ${total30 >= prev30 ? '+' : ''}${Math.round(((total30 - prev30) / prev30) * 100)}% vs los 30 días anteriores` : ''}`;
+    const stats = [
+      [formatPrice(total30), 'en 30 días'],
+      [formatPrice(total30 / 30), 'promedio por día'],
+      [String(daysWithSales), `día${daysWithSales === 1 ? '' : 's'} con ventas`],
+    ];
+    if (prev30) { const p = Math.round(((total30 - prev30) / prev30) * 100); stats.push([`${p >= 0 ? '+' : ''}${p}%`, 'vs. 30 días anteriores', p >= 0 ? 'is-up' : 'is-down']); }
+    document.getElementById('dChartNote').innerHTML = stats.map(([v, l, c]) => `<div class="admin-chart-stat ${c || ''}"><b>${v}</b><span>${l}</span></div>`).join('');
   }
 
   const prevRender = window.renderDashboard;
