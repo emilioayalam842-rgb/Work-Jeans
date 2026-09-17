@@ -1032,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260917n';
+const ASSET_V = '20260917o';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1482,7 +1482,7 @@ try {
   let changed = false;
   for (const [slug, a] of Object.entries(CONTENT.ARTICLES)) {
     if (list.some((x) => x.slug === slug)) continue;
-    list.push({ slug, kicker: a.kicker, h1: a.h1, title: a.title, description: a.description, intro: a.intro, bodySource: a.body.trim(), faq: a.faq || [], productsFilter: STATIC_FILTER_BY_SLUG[slug] || 'none', status: 'publicado', publishedAt: CONTENT.PUBLISHED, updatedAt: CONTENT.PUBLISHED, author: 'Works Jeans' });
+    list.push({ slug, kicker: a.kicker, h1: a.h1, title: a.title, description: a.description, intro: a.intro, bodySource: a.body.trim(), faq: a.faq || [], productsFilter: a.productsFilter || STATIC_FILTER_BY_SLUG[slug] || 'none', status: 'publicado', publishedAt: a.publishedAt || CONTENT.PUBLISHED, updatedAt: a.publishedAt || CONTENT.PUBLISHED, author: 'Works Jeans' });
     changed = true;
   }
   if (changed) saveArticles(list);

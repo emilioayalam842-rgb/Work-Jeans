@@ -515,7 +515,7 @@
   font-family: var(--label);
   font-size: 0.95rem;
   padding: 10px 12px;
-  border: 1.5px solid var(--black);
+  border: 1px solid var(--line-2);
   border-radius: var(--radius);
   background: var(--paper);
   color: var(--black);
@@ -528,7 +528,7 @@
   align-items: center;
   gap: 6px;
   background: var(--paper);
-  border: 1.5px solid var(--black);
+  border: 1px solid var(--line-2);
   border-radius: var(--radius);
   padding: 6px 12px;
   font-family: var(--label);
@@ -618,7 +618,7 @@
 .admin-stock-btn {
   width: 26px;
   height: 26px;
-  border: 1.5px solid var(--black);
+  border: 1px solid var(--line-2);
   background: var(--paper);
   border-radius: var(--radius);
   font-size: 1rem;
@@ -749,7 +749,7 @@
 .admin-bell { position: relative; width: 40px; height: 40px; border: 1.5px solid #444; background: transparent; color: var(--paper); border-radius: var(--radius); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .admin-bell:hover { background: #222; }
 .admin-bell-count { position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; background: var(--yellow); color: var(--black); font-size: 0.72rem; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; }
-.admin-bell-menu { position: absolute; top: 48px; left: 0; width: 320px; background: var(--paper); color: var(--black); border: 1.5px solid var(--black); border-radius: var(--radius); box-shadow: 0 12px 30px rgba(0,0,0,0.25); z-index: 50; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.admin-bell-menu { position: absolute; top: 48px; left: 0; width: 320px; background: var(--paper); color: var(--black); border: 1px solid var(--line-2); border-radius: var(--radius); box-shadow: 0 12px 30px rgba(0,0,0,0.25); z-index: 50; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
 .admin-bell-item { text-align: left; background: #fff7cc; border: 1px solid #f0dc7a; border-radius: var(--radius); padding: 8px 10px; cursor: pointer; font: inherit; display: flex; flex-direction: column; gap: 2px; }
 .admin-bell-item:hover { background: var(--yellow); }
 .admin-bell-item span { font-size: 0.76rem; color: #555; }
@@ -999,9 +999,9 @@ input.admin-filter { background-image: none; padding-right: 14px; cursor: text; 
 .admin-rank-row { display: grid; grid-template-columns: minmax(0, 1.2fr) 1fr auto; gap: 10px; align-items: center; font-size: 0.86rem; }
 .admin-rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-rank-bar { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
-.admin-rank-bar i { display: block; height: 100%; background: var(--yellow); border-right: 2px solid var(--black); }
+.admin-rank-bar i { display: block; height: 100%; background: var(--yellow); border-right: 0; }
 .admin-rank-row .admin-rank-value { white-space: nowrap; font-weight: 600; }
-.admin-section-title { font-family: var(--label); font-size: 0.78rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1.5px solid var(--black); }
+.admin-section-title { font-family: var(--label); font-size: 0.78rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line-2); }
 @media (max-width: 1100px) { .admin-dashboard-grid--3, .admin-dashboard-grid--4 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 700px) { .admin-dashboard-grid--3, .admin-dashboard-grid--4 { grid-template-columns: 1fr; } }
 @media print { .admin-side, .admin-header, .admin-toolbar-actions, .admin-filters { display: none !important; } .admin-main { grid-template-columns: 1fr; } }
@@ -1054,3 +1054,58 @@ body:not(.perm-promociones-editar) :is(#newPromoBtn, #tabPromociones .admin-tabl
 body:not(.perm-configuracion-editar) :is(#settingsForm button[type="submit"], #testEmailBtn),
 body:not(.perm-respaldo) #tabConfiguracion .admin-backup-box { display: none !important; }
 body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-inventario-editar) #tabExistencias .admin-stock-input { pointer-events: none; border-color: transparent; background: transparent; appearance: none; }
+
+
+/* Refinamiento visual del panel: mismo estilo suave que la tienda ---------- */
+.admin-body { --admin-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06); }
+.admin-panel-box, .admin-stat-card, .admin-side, .admin-table-wrap, .admin-form, .admin-monthly, .admin-alert, .admin-security-banner, .admin-bell-menu { border-radius: 14px; box-shadow: var(--admin-shadow); }
+.admin-panel-box { padding: 22px 24px; }
+.admin-dashboard-grid { gap: 20px; margin-bottom: 20px; }
+.admin-dashboard-grid + .admin-dashboard-grid { margin-top: 0; }
+.admin-stats { gap: 16px; }
+.admin-stat-card { padding: 18px 22px; }
+.admin-security-banner { background: #fffbe6; border: 1px solid #f3e39a; border-radius: 14px; box-shadow: none; }
+.admin-section-title { border-bottom: 1px solid var(--line); }
+.admin-rank-bar { background: var(--gray); }
+.admin-rank-bar i { border-radius: 5px; }
+
+/* Botones */
+.admin-body .btn { min-height: 40px; padding: 0 18px; font-size: 0.8rem; letter-spacing: 0.08em; border-radius: 10px; border: 1px solid transparent; }
+.admin-body .btn-primary { background: var(--yellow); color: var(--black); box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 6px 14px rgba(255,214,0,0.25); }
+.admin-body .btn-primary:hover { background: var(--yellow-deep); box-shadow: 0 2px 4px rgba(0,0,0,0.08), 0 8px 18px rgba(255,214,0,0.35); }
+.admin-body .btn-secondary { background: #fff; color: var(--black); border-color: var(--line-2); box-shadow: none; }
+.admin-body .btn-secondary:hover { background: var(--gray); color: var(--black); border-color: var(--black); }
+.admin-body .btn-dark { background: var(--black); color: #fff; }
+.admin-body .btn-dark:hover { background: #2a2a2a; }
+.admin-body .btn:hover { transform: translateY(-1px); }
+.admin-body .btn:active { transform: translateY(0); }
+.admin-logout { background: #fff; color: var(--black); border-radius: 10px; min-height: 36px; padding: 0 14px; letter-spacing: 0.06em; }
+.admin-logout:hover { background: var(--yellow); }
+.admin-bell { border: 1px solid #3a3a3a; border-radius: 10px; }
+.admin-bell:hover { background: #262626; border-color: #555; }
+.admin-header-user { border-radius: 999px; }
+.admin-inline-btn { border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 12px; font-weight: 600; transition: background 0.15s, border-color 0.15s; }
+.admin-inline-btn:hover { background: var(--gray); border-color: var(--black); }
+.admin-stock-btn { border: 1px solid var(--line-2); border-radius: 8px; }
+.admin-stock-btn:hover { background: var(--yellow); border-color: var(--yellow); }
+.admin-body .btn-ghost { border-radius: 10px; }
+
+/* Campos y filtros */
+.admin-filter, .admin-form input, .admin-form select, .admin-form textarea, .admin-settings-form input, .admin-settings-form select, .admin-settings-form textarea, .admin-search-box input, .admin-status-select { border: 1px solid var(--line-2); border-radius: 10px; background: #fff; }
+.admin-filter:focus, .admin-form input:focus, .admin-form select:focus, .admin-form textarea:focus, .admin-settings-form input:focus, .admin-settings-form select:focus, .admin-settings-form textarea:focus, .admin-search-box input:focus { outline: none; border-color: var(--black); box-shadow: 0 0 0 3px rgba(255,214,0,0.4); }
+.admin-filter { padding: 9px 34px 9px 12px; font-size: 0.9rem; appearance: none; -webkit-appearance: none; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23333' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 12px center; }
+.admin-status-select { border-radius: 999px; border-width: 1px; }
+.admin-badge { border-radius: 999px; border-width: 1px; padding: 4px 10px; }
+.admin-chip { border-radius: 999px; }
+
+/* Barra lateral */
+.admin-side { padding: 12px; }
+.admin-side .admin-tab { border-radius: 10px; padding: 9px 12px; }
+.admin-side .admin-tab.active { background: var(--yellow); color: var(--black); font-weight: 700; }
+.admin-side .admin-tab:hover:not(.active) { background: var(--gray); }
+.admin-side-group { border-top: 1px solid var(--line); }
+
+/* Tablas */
+.admin-table th { font-family: var(--label); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+.admin-table td { border-bottom: 1px solid #efefef; }
+.admin-table tbody tr:hover td { background: #fafafa; }

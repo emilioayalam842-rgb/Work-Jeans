@@ -399,4 +399,9 @@ function tableHtml(t) {
   return `<div class="table-scroll"><table class="content-table"><caption>${t.caption}</caption><thead><tr>${t.head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${t.rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 
+// Segunda tanda de páginas y artículos (contenido-extra.js).
+const EXTRA = require('./contenido-extra');
+Object.assign(LANDINGS, EXTRA.LANDINGS_EXTRA);
+Object.assign(ARTICLES, EXTRA.ARTICLES_EXTRA);
+
 module.exports = { PUBLISHED, LANDINGS, ARTICLES, SIZE_TABLES, tableHtml };

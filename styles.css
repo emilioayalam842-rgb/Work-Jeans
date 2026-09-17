@@ -2383,3 +2383,4 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 }
 /* Tarjetas de producto sin numeración (01, 02…) */
 .product-card::before { display: none; }
+.b2b-industries a { color: var(--black); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--yellow); }
