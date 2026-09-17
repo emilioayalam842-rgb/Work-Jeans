@@ -74,6 +74,35 @@
     thumb.setAttribute('aria-current', 'true');
   });
 
+  // Zoom al pasar el mouse sobre la foto principal (solo en dispositivos con puntero fino)
+  const main = document.querySelector('.pdp-main');
+  if (main && photo && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    const hint = document.createElement('span');
+    hint.className = 'pdp-zoom-hint';
+    hint.textContent = 'Pasa el mouse para acercar';
+    main.appendChild(hint);
+    const ZOOM = 2.2;
+    let sizesBefore = photo.sizes;
+    main.addEventListener('mouseenter', () => {
+      sizesBefore = photo.sizes;
+      photo.sizes = '1200px'; // pide la versión más grande para que el acercamiento se vea nítido
+      main.classList.add('is-zooming');
+    });
+    main.addEventListener('mousemove', (e) => {
+      const r = main.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width) * 100;
+      const y = ((e.clientY - r.top) / r.height) * 100;
+      photo.style.transformOrigin = `${x}% ${y}%`;
+      photo.style.transform = `scale(${ZOOM})`;
+    });
+    main.addEventListener('mouseleave', () => {
+      photo.style.transform = '';
+      photo.style.transformOrigin = '';
+      photo.sizes = sizesBefore;
+      main.classList.remove('is-zooming');
+    });
+  }
+
   // Barra fija en móvil cuando los botones de compra salen de la pantalla
   const sticky = document.getElementById('pdpSticky');
   const buyBox = document.getElementById('pdpBuyBox');

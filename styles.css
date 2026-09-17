@@ -2366,3 +2366,14 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 .ubicacion-map .map-placeholder-wrap { min-height: 360px; height: 100%; }
 .ubicacion-map .map-placeholder { border: 0; }
 .cotizador-head { display: flex; flex-direction: column; justify-content: center; }
+
+/* Zoom con el mouse en la foto del producto ------------------------------ */
+@media (hover: hover) and (pointer: fine) {
+  .pdp-main { overflow: hidden; cursor: zoom-in; }
+  .pdp-main img { transition: transform 0.12s ease-out; will-change: transform; }
+  .pdp-zoom-hint { position: absolute; right: 12px; bottom: 12px; z-index: 2; padding: 6px 10px; font-family: var(--label); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--black); background: rgba(255, 255, 255, 0.92); border: 1px solid var(--line-2); border-radius: 999px; pointer-events: none; transition: opacity 0.2s; }
+  .pdp-main.is-zooming .pdp-zoom-hint, .pdp-main.is-zooming .product-tag { opacity: 0; }
+  .product-card .product-photo { transition: transform 0.35s ease; }
+  .product-card:hover .product-photo { transform: scale(1.06); }
+  .product-photo { overflow: hidden; }
+}
