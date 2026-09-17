@@ -1230,7 +1230,7 @@ const CATEGORY_PAGES = {
     h1Html: 'Pantalones<br>de trabajo.',
     title: 'Pantalones de Trabajo de Mezclilla (Work Jeans) | Works Jeans Monterrey',
     description: 'Pantalones de trabajo de mezclilla 100% algodón, corte recto y costuras reforzadas. Con opción de cintas reflejantes. Tallas 28 a 50. Mayoreo con stock inmediato en Monterrey y envíos a todo México.',
-    intro: 'Work jeans hechos en Monterrey para obra, planta y taller: mezclilla pesada 100% algodón, cinco bolsas, costuras reforzadas y cintura ajustada. Tallas de la 28 a la 50.',
+    intro: 'Pantalones de trabajo de mezclilla 100% algodón, hechos en Monterrey para aguantar la obra, la planta y el taller. Cinco bolsas, costuras reforzadas y corte recto que deja moverse. Tallas del 28 al 50: compra desde una pieza o pide la corrida completa para tu cuadrilla.',
     faq: [
       ['¿Qué talla de pantalón de trabajo debo pedir?', 'La misma que usas en un jean normal. Si dudas entre dos, elige la mayor: la mezclilla no encoge y en el trabajo se agradece el espacio. Consulta la guía de tallas para medir un pantalón que te quede bien.'],
       ['¿Aguanta el lavado diario?', 'Sí. Es mezclilla 100% algodón preencogida con costuras dobles. Lava al revés, con agua fría y sin cloro, para que conserve color y costuras por más tiempo.'],
