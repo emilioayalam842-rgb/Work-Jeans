@@ -1322,3 +1322,24 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 #orderCustomerBox label, #orderShipBox label { display: block; margin: 8px 0 4px; font-size: 0.8rem; color: #444; }
 #orderCustomerBox input, #orderShipBox input { width: 100%; }
 #orderCustomerBox .admin-field-grid, #orderShipBox .admin-field-grid { gap: 0 14px; }
+
+/* Encabezados iguales, subpestañas, listas con datos y estados vacíos ------ */
+.admin-page-head { align-items: flex-start; }
+.admin-page-head > div:first-child { min-width: 0; max-width: 720px; }
+.admin-page-desc { margin: 4px 0 0 !important; font-size: 0.88rem !important; color: var(--muted) !important; line-height: 1.5; max-width: 680px; }
+.admin-page-actions { align-items: center; margin-left: auto; }
+.admin-page-actions .admin-filter { min-width: 160px; }
+.admin-side .admin-tab--sub { display: none; }
+.admin-subtabs { display: flex; gap: 4px; flex-wrap: wrap; margin: -6px 0 16px; padding: 4px; background: #e9e9e9; border-radius: 12px; width: fit-content; max-width: 100%; }
+.admin-subtab { border: 0; background: transparent; padding: 8px 14px; border-radius: 9px; font: inherit; font-size: 0.85rem; font-weight: 600; color: #444; cursor: pointer; white-space: nowrap; }
+.admin-subtab:hover { color: var(--black); }
+.admin-subtab.active { background: #fff; color: var(--black); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+.admin-list-stats { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; font-size: 0.8rem; color: var(--muted); }
+.admin-list-stats b { color: var(--black); font-weight: 700; }
+.admin-list-item { padding: 12px 0; }
+.admin-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px 12px 26px; text-align: center; color: var(--muted); white-space: normal; }
+.admin-empty-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--gray); color: var(--muted); margin-bottom: 4px; }
+.admin-empty strong { color: var(--black); font-size: 1rem; }
+.admin-empty p { margin: 0; max-width: 420px; font-size: 0.86rem; line-height: 1.5; }
+.admin-empty .btn { margin-top: 8px; }
+@media (max-width: 700px) { .admin-subtabs { width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; } .admin-page-actions { width: 100%; } }

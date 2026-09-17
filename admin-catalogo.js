@@ -101,16 +101,27 @@
 
   window.renderCategories = function renderCategories() {
     const cats = settingsCache.categories || [];
-    const counts = {};
-    productsCache.forEach((p) => { counts[p.category] = (counts[p.category] || 0) + 1; });
-    document.getElementById('categoriesList').innerHTML = cats.length ? cats.map((c, i) => `
+    const stats = {};
+    const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const sold = {};
+    (typeof ordersCache !== 'undefined' ? ordersCache : []).filter((o) => !['cancelado', 'devuelto'].includes(o.status) && new Date(o.createdAt).getTime() >= since).forEach((o) => o.items.forEach((i) => { sold[i.id] = (sold[i.id] || 0) + i.quantity; }));
+    productsCache.forEach((p) => {
+      const st = stats[p.category] || (stats[p.category] = { products: 0, active: 0, pieces: 0, sold: 0 });
+      st.products += 1;
+      if (p.active !== false && (!p.status || p.status === 'activo')) st.active += 1;
+      st.pieces += p.sizes.reduce((a, v) => a + (v.stock || 0), 0);
+      st.sold += sold[p.id] || 0;
+    });
+    document.getElementById('categoriesList').innerHTML = cats.length ? cats.map((c, i) => { const st = stats[c.name] || { products: 0, active: 0, pieces: 0, sold: 0 }; return `
       <div class="admin-list-item">
-        <div><strong>${c.name}</strong> <span class="admin-muted admin-small">/${c.slug} · ${counts[c.name] || 0} productos</span></div>
+        <div><strong>${c.name}</strong> <span class="admin-muted admin-small">/${c.slug}</span>
+          <div class="admin-list-stats"><span><b>${st.active}</b> activos${st.products !== st.active ? ` · ${st.products - st.active} ocultos` : ''}</span><span><b>${st.pieces}</b> pzas en stock</span><span><b>${st.sold}</b> vendidas en 30 días</span></div>
+        </div>
         <div class="admin-list-actions">
           <a class="admin-inline-btn" href="/${c.slug}" target="_blank" rel="noopener">Ver página</a>
           ${iconBtn('remove-category', 'trash', 'Eliminar', `data-index="${i}"`)}
         </div>
-      </div>`).join('') : '<p class="admin-muted">Sin categorías.</p>';
+      </div>`; }).join('') : '<p class="admin-muted">Sin categorías.</p>';
   };
 
   document.getElementById('categoryForm').addEventListener('submit', async (e) => {
@@ -143,11 +154,11 @@
 
   window.renderCollections = function renderCollections() {
     const cols = settingsCache.collections || [];
-    const counts = {};
-    productsCache.forEach((p) => { if (p.collection) counts[p.collection] = (counts[p.collection] || 0) + 1; });
+    const stats = {};
+    productsCache.forEach((p) => { if (!p.collection) return; const st = stats[p.collection] || (stats[p.collection] = { products: 0, pieces: 0 }); st.products += 1; st.pieces += p.sizes.reduce((a, v) => a + (v.stock || 0), 0); });
     document.getElementById('collectionsList').innerHTML = cols.length ? cols.map((c, i) => `
       <div class="admin-list-item">
-        <div><strong>${c}</strong> <span class="admin-muted admin-small">${counts[c] || 0} productos</span></div>
+        <div><strong>${c}</strong><div class="admin-list-stats"><span><b>${stats[c]?.products || 0}</b> productos</span><span><b>${stats[c]?.pieces || 0}</b> pzas en stock</span></div></div>
         <div class="admin-list-actions">${iconBtn('remove-collection', 'trash', 'Eliminar', `data-index="${i}"`)}</div>
       </div>`).join('') : '<p class="admin-muted">Sin colecciones.</p>';
   };
@@ -361,10 +372,13 @@
   window.renderWarehouses = function renderWarehouses() {
     const names = warehouseList();
     document.getElementById('warehousesList').innerHTML = names.map((n, i) => {
-      const pieces = productsCache.reduce((sum, p) => sum + p.sizes.reduce((s, v) => s + ((v.warehouses ? v.warehouses[n] : (i === 0 ? v.stock : 0)) || 0), 0), 0);
+      let pieces = 0; let variants = 0; let value = 0;
+      productsCache.forEach((p) => p.sizes.forEach((v) => { const q = (v.warehouses ? v.warehouses[n] : (i === 0 ? v.stock : 0)) || 0; if (q > 0) { variants += 1; pieces += q; value += q * (v.costCents || p.costCents || 0); } }));
       return `
       <div class="admin-list-item">
-        <div><strong>${n}</strong> <span class="admin-muted admin-small">${pieces} piezas${i === 0 ? ' · principal' : ''}</span></div>
+        <div><strong>${n}</strong> ${i === 0 ? '<span class="admin-muted admin-small">principal</span>' : ''}
+          <div class="admin-list-stats"><span><b>${pieces}</b> piezas</span><span><b>${variants}</b> tallas con stock</span>${value ? `<span><b>${formatPrice(value)}</b> a costo</span>` : ''}</div>
+        </div>
         <div class="admin-list-actions">${names.length > 1 ? iconBtn('remove-warehouse', 'trash', 'Eliminar', `data-index="${i}"`) : ''}</div>
       </div>`;
     }).join('');

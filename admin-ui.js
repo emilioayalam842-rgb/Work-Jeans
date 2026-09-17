@@ -30,6 +30,112 @@
     tab.insertAdjacentHTML('afterbegin', `<svg class="admin-svg admin-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`);
   });
 
+  // ---- Encabezado igual en todas las secciones: título + descripción a la izquierda, acciones a la derecha ----
+  const GROUP_OF = {};
+  document.querySelectorAll('.admin-side-group').forEach((g) => { const name = g.querySelector('span')?.textContent.trim() || ''; g.querySelectorAll('.admin-tab').forEach((t) => { GROUP_OF[t.dataset.tab] = name; }); });
+  document.querySelectorAll('.admin-tab-panel').forEach((panel) => {
+    if (panel.querySelector(':scope > .admin-page-head')) return;
+    const toolbar = panel.querySelector(':scope > .admin-toolbar');
+    const h2 = toolbar ? toolbar.querySelector('h2') : panel.querySelector(':scope > h2');
+    if (!h2) return;
+    const head = document.createElement('div');
+    head.className = 'admin-page-head';
+    const left = document.createElement('div');
+    const actions = document.createElement('div');
+    actions.className = 'admin-page-actions';
+    const tabName = panel.id.replace(/^tab/, '').toLowerCase();
+    const group = GROUP_OF[tabName];
+    if (group) left.insertAdjacentHTML('beforeend', `<span class="admin-kicker">${group}</span>`);
+    left.appendChild(h2);
+    // Descripción: párrafos de ayuda dentro de la barra o inmediatamente después
+    const descs = [];
+    if (toolbar) {
+      toolbar.querySelectorAll(':scope > p, :scope > div > p').forEach((p) => descs.push(p));
+      const inner = toolbar.querySelector(':scope > div:not(.admin-toolbar-actions)');
+      if (inner && !inner.children.length) inner.remove();
+    }
+    let next = toolbar ? toolbar.nextElementSibling : h2.nextElementSibling;
+    while (next && next.tagName === 'P' && (next.classList.contains('admin-help') || next.classList.contains('admin-muted'))) { const n = next.nextElementSibling; descs.push(next); next = n; }
+    descs.forEach((p) => { p.classList.add('admin-page-desc'); left.appendChild(p); });
+    head.appendChild(left);
+    if (toolbar) {
+      Array.from(toolbar.children).forEach((child) => {
+        if (child === h2 || child.contains(h2)) { if (child !== h2 && !child.children.length) child.remove(); return; }
+        if (child.classList.contains('admin-toolbar-actions')) Array.from(child.children).forEach((c) => actions.appendChild(c));
+        else actions.appendChild(child);
+      });
+      toolbar.replaceWith(head);
+    } else {
+      panel.insertBefore(head, panel.firstChild);
+    }
+    if (actions.children.length) head.appendChild(actions);
+  });
+
+  // ---- Menú más corto: subpestañas dentro de Productos, Existencias, Compras y Configuración ----
+  const SUBTABS = {
+    productos: ['productos', 'variantes', 'categorias', 'colecciones'],
+    existencias: ['existencias', 'inventario', 'almacenes'],
+    compras: ['compras', 'proveedores'],
+    configuracion: ['configuracion', 'usuarios', 'actividad'],
+  };
+  const sideTab = (name) => document.querySelector(`.admin-side .admin-tab[data-tab="${name}"]`);
+  Object.entries(SUBTABS).forEach(([main, tabs]) => {
+    tabs.slice(1).forEach((t) => sideTab(t)?.classList.add('admin-tab--sub'));
+    tabs.forEach((t) => {
+      const panel = document.getElementById(`tab${t.charAt(0).toUpperCase()}${t.slice(1)}`);
+      if (!panel || panel.querySelector('.admin-subtabs')) return;
+      const bar = document.createElement('div');
+      bar.className = 'admin-subtabs';
+      bar.innerHTML = tabs.map((x) => { const st = sideTab(x); return `<button type="button" class="admin-subtab ${x === t ? 'active' : ''}" data-goto="${x}" data-sub-of="${x}">${st ? st.textContent.trim() : x}</button>`; }).join('');
+      panel.insertBefore(bar, panel.firstChild);
+    });
+  });
+  // La subpestaña activa marca también la entrada principal del menú
+  const baseShowTab = window.showTab;
+  window.showTab = function (name) {
+    baseShowTab(name);
+    const main = Object.keys(SUBTABS).find((m) => SUBTABS[m].includes(name));
+    if (main && main !== name) { sideTab(name)?.classList.remove('active'); sideTab(main)?.classList.add('active'); }
+    document.querySelectorAll('.admin-subtab').forEach((b) => { if (sideTab(b.dataset.subOf)?.hidden) b.hidden = true; });
+  };
+
+  // ---- Estados vacíos con explicación y acción ----
+  const EMPTY = {
+    ordersTableBody: { title: 'Sin pedidos por aquí', btn: 'newOrderBtn', label: 'Registrar un pedido' },
+    productsTableBody: { title: 'Aún no hay productos', btn: 'newProductBtn', label: 'Crear el primer producto' },
+    customersTableBody: { title: 'Aún no hay clientes', text: 'Se crean solos con cada pedido; también puedes capturarlos a mano.', btn: 'newCustomerBtn', label: 'Nuevo cliente' },
+    leadsTableBody: { title: 'Sin cotizaciones todavía', text: 'Llegan desde la página de empresas. Compártela con tus clientes.', link: 'https://www.workjeans.mx/empresas', label: 'Copiar enlace de /empresas' },
+    reviewsTableBody: { title: 'Sin reseñas todavía', text: 'Cada cliente recibe un enlace al entregarse su pedido. También puedes copiarlo desde el detalle del pedido.', goto: 'pedidos', label: 'Ir a pedidos' },
+    suppliersTableBody: { title: 'Sin proveedores', btn: 'newSupplierBtn', label: 'Agregar proveedor' },
+    purchasesTableBody: { title: 'Sin órdenes de compra', btn: 'newPoBtn', label: 'Nueva orden' },
+    promotionsTableBody: { title: 'Sin promociones', text: 'Un cupón de bienvenida o envío gratis desde cierto monto suelen ser los primeros.', btn: 'newPromoBtn', label: 'Nueva promoción' },
+    articlesTableBody: { title: 'Sin artículos', btn: 'newArticleBtn', label: 'Escribir el primero' },
+    inventoryTableBody: { title: 'Sin movimientos', text: 'Aquí se registra cada entrada y salida de piezas.', btn: 'newEntryBtn', label: 'Registrar entrada' },
+    returnsTableBody: { title: 'Sin devoluciones', text: 'Buena señal. Cuando haya una, regístrala aquí para que regrese al inventario.', btn: 'newReturnBtn', label: 'Registrar devolución' },
+    auditTableBody: { title: 'Sin actividad registrada' },
+    variantsTableBody: { title: 'Sin variantes con esos filtros' },
+  };
+  function enhanceEmpty(tbody) {
+    const cfg = EMPTY[tbody.id];
+    if (!cfg) return;
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length !== 1) return;
+    const td = rows[0].querySelector('td[colspan]');
+    if (!td || td.querySelector('.admin-empty')) return;
+    const original = td.textContent.trim();
+    const text = cfg.text || (original && !/^(No hay|Sin |Todavía no)/.test(original) ? original : '') || original;
+    let action = '';
+    if (cfg.btn && document.getElementById(cfg.btn) && !document.getElementById(cfg.btn).hidden) action = `<button type="button" class="btn btn-primary btn-sm" data-empty-click="${cfg.btn}">${cfg.label}</button>`;
+    else if (cfg.link) action = `<button type="button" class="btn btn-secondary btn-sm" data-empty-copy="${cfg.link}">${cfg.label}</button>`;
+    else if (cfg.goto) action = `<button type="button" class="btn btn-secondary btn-sm" data-goto="${cfg.goto}">${cfg.label}</button>`;
+    td.innerHTML = `<div class="admin-empty"><span class="admin-empty-icon" aria-hidden="true">${icon('alert', 22)}</span><strong>${cfg.title}</strong>${text ? `<p>${text}</p>` : ''}${action}</div>`;
+  }
+  document.addEventListener('click', async (e) => {
+    const c = e.target.closest('[data-empty-click]'); if (c) { document.getElementById(c.dataset.emptyClick)?.click(); return; }
+    const l = e.target.closest('[data-empty-copy]'); if (l) { try { await navigator.clipboard.writeText(l.dataset.emptyCopy); l.textContent = 'Enlace copiado'; } catch { prompt('Copia este enlace:', l.dataset.emptyCopy); } }
+  });
+  Object.keys(EMPTY).forEach((id) => { const tb = document.getElementById(id); if (!tb) return; enhanceEmpty(tb); new MutationObserver(() => enhanceEmpty(tb)).observe(tb, { childList: true }); });
+
   // ---- Tablas más anchas que la pantalla: sombra y aviso para deslizar ----
   function checkOverflow() {
     document.querySelectorAll('.admin-table-wrap').forEach((w) => {
