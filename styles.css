@@ -1299,7 +1299,8 @@ a { color: inherit; }
 /* Ficha de producto (modal) ---------------------------------------------- */
 
 .product-open { cursor: pointer; }
-.product-card h3.product-open:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.product-card h3 a { color: inherit; text-decoration: none; }
+.product-card h3 a:hover { color: #444; }
 
 body.modal-open { overflow: hidden; }
 
