@@ -606,7 +606,20 @@ async function loadProducts() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// Páginas que no traen el cajón del carrito en su HTML lo cargan del servidor (misma plantilla que el inicio).
+async function ensureCartDrawer() {
+  if (document.getElementById('cartDrawer')) return;
+  try {
+    const res = await fetch('/partials/cart-drawer.html', { cache: 'no-cache' });
+    if (res.ok) document.body.insertAdjacentHTML('beforeend', await res.text());
+  } catch {
+    // Sin cajón: el botón del carrito simplemente lleva al inicio.
+    document.getElementById('cartBtn')?.addEventListener('click', () => { window.location.href = '/#productos'; });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await ensureCartDrawer();
   renderCart();
   loadProducts();
   loadSettings();

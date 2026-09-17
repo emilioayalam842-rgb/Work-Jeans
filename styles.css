@@ -2351,3 +2351,11 @@ html { overflow-x: clip; }
 .cart-invoice-fields .cs-btn, .checkout-fields .cs-btn { font-family: var(--body, inherit); font-size: 0.95rem; letter-spacing: 0; }
 input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px #fff inset; -webkit-text-fill-color: var(--black); transition: background-color 9999s ease-out; }
 .cart-invoice-fields label, .checkout-fields label, .cotizador-field { min-width: 0; }
+
+/* Menú principal: enlaces al centro entre el logo y los botones (escritorio) */
+@media (min-width: 861px) {
+  .navbar { display: grid; grid-template-columns: auto 1fr auto auto; column-gap: 12px; align-items: center; }
+  .nav-right { display: contents; }
+  .nav-links, .nav-links--static { justify-self: center; margin: 0; }
+  .navbar .checkout-secure { justify-self: end; grid-column: 2 / -1; }
+}

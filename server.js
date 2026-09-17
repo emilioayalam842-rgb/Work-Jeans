@@ -1032,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260917j';
+const ASSET_V = '20260917k';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3065,6 +3065,11 @@ app.post('/api/orders/track', (req, res) => {
     items: order.items.map((i) => ({ name: i.name, size: i.size, quantity: i.quantity })),
     totalCents: order.totalCents,
   });
+});
+
+app.get('/partials/cart-drawer.html', (req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.type('html').send(cartDrawerHtml());
 });
 
 function publicOrigin(req) {
