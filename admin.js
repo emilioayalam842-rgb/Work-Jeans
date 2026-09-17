@@ -769,7 +769,8 @@ function filteredOrders() {
   return ordersCache.filter((o) => {
     if (ordersMonth && monthKey(o.createdAt) !== ordersMonth) return false;
     if (ordersStatus === 'activos' && ['entregado', 'cancelado', 'devuelto'].includes(o.status)) return false;
-    if (ordersStatus && ordersStatus !== 'activos' && o.status !== ordersStatus) return false;
+    if (ordersStatus.startsWith('need:')) { if (!(window.orderNeeds ? window.orderNeeds(o) : []).some((n) => n.key === ordersStatus.slice(5))) return false; }
+    else if (ordersStatus && ordersStatus !== 'activos' && o.status !== ordersStatus) return false;
     if (!q) return true;
     const haystack = [o.id, o.customerName, o.customerPhone, o.customerEmail, o.tracking?.number, ...o.items.map((i) => i.name)].filter(Boolean).join(' ').toLowerCase();
     return haystack.includes(q);
@@ -791,17 +792,21 @@ const CHIP_FILTERS = [
   ['entregado', 'Entregado'],
   ['cancelado', 'Cancelado'],
   ['devuelto', 'Devuelto'],
+  ['need:cobrar', 'Sin pagar'],
+  ['need:enviar', 'Por enviar'],
+  ['need:facturar', 'Pide factura'],
 ];
 
 function chipCount(value) {
   if (!value) return ordersCache.length;
   if (value === 'activos') return ordersCache.filter((o) => !['entregado', 'cancelado'].includes(o.status)).length;
+  if (value.startsWith('need:')) return ordersCache.filter((o) => (window.orderNeeds ? window.orderNeeds(o) : []).some((n) => n.key === value.slice(5))).length;
   return ordersCache.filter((o) => o.status === value).length;
 }
 
 function renderStatusChips() {
   document.getElementById('statusChips').innerHTML = CHIP_FILTERS.map(([value, label]) => `
-    <button type="button" class="admin-chip ${ordersStatus === value ? 'is-active' : ''} ${value ? `chip-${value}` : ''}" data-status="${value}" role="tab" aria-selected="${ordersStatus === value}">
+    <button type="button" class="admin-chip ${ordersStatus === value ? 'is-active' : ''} ${value ? `chip-${value.replace(':', '-')}` : ''}" data-status="${value}" role="tab" aria-selected="${ordersStatus === value}">
       ${label} <span>${chipCount(value)}</span>
     </button>
   `).join('');
@@ -1258,7 +1263,7 @@ async function loadCustomers() {
   }
   body.innerHTML = customers.map((c) => `
     <tr data-key="${esc(c.key)}" data-id="${esc(c.id || '')}" data-search="${esc(c.phone || c.email || c.name)}">
-      <td><strong>${esc(c.name) || 'Sin nombre'}</strong>${c.company ? `<br><span class="admin-muted admin-small">${esc(c.company)}</span>` : ''}${c.manual && !c.orders ? '<br><span class="admin-muted admin-small">Capturado a mano · sin pedidos aún</span>' : ''}</td>
+      <td><strong class="admin-clickable" data-action="customer-profile">${esc(c.name) || 'Sin nombre'}</strong>${c.company ? `<br><span class="admin-muted admin-small">${esc(c.company)}</span>` : ''}${c.manual && !c.orders ? '<br><span class="admin-muted admin-small">Capturado a mano · sin pedidos aún</span>' : ''}</td>
       <td>${[c.phone, c.email].filter(Boolean).map(esc).join('<br>') || '—'}${c.notes ? `<br><span class="admin-muted admin-small" title="${esc(c.notes)}">${esc(c.notes).slice(0, 60)}${c.notes.length > 60 ? '…' : ''}</span>` : ''}</td>
       <td>${c.orders}</td>
       <td>${c.pieces}</td>
@@ -1266,7 +1271,7 @@ async function loadCustomers() {
       <td>${c.lastAt ? new Date(c.lastAt).toLocaleDateString('es-MX', { dateStyle: 'medium' }) : '—'}</td>
       <td class="admin-table-actions">
         ${whatsappDigits(c.phone) ? `<a class="admin-icon-btn" href="https://wa.me/${whatsappDigits(c.phone)}" target="_blank" rel="noopener" title="WhatsApp">${icon('whatsapp')}</a>` : ''}
-        ${c.orders ? `<button type="button" class="admin-icon-btn" data-action="customer-orders" title="Ver pedidos">${icon('eye')}</button>` : ''}
+        <button type="button" class="admin-icon-btn" data-action="customer-profile" title="Ver ficha del cliente">${icon('eye')}</button>
         ${iconBtn('customer-edit', 'edit', c.manual ? 'Editar' : 'Completar datos')}
         ${c.manual ? iconBtn('customer-delete', 'trash', 'Eliminar') : ''}
       </td>
@@ -1317,6 +1322,7 @@ document.getElementById('customersTableBody').addEventListener('click', async (e
     document.getElementById('ordersSearch').value = ordersSearch;
     showTab('pedidos');
   }
+  if (btn.dataset.action === 'customer-profile' && window.openCustomerProfile) window.openCustomerProfile(c);
   if (btn.dataset.action === 'customer-edit') openCustomerForm(c);
   if (btn.dataset.action === 'customer-delete') {
     if (!confirm(`¿Eliminar a ${c.name}? Sus pedidos no se borran.`)) return;

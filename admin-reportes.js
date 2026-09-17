@@ -51,7 +51,7 @@
       const x = padL + i * bw + bw * 0.15;
       const y = 10 + innerH - h;
       const labelEvery = Math.ceil(points.length / 10);
-      return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${p.value ? '#ffd600' : '#e5e5e5'}" stroke="#0f0f0f" stroke-width="${p.value ? 1 : 0}"><title>${p.label}: ${fmt(p.value)}</title></rect>${i % labelEvery === 0 ? `<text x="${(x + bw * 0.35).toFixed(1)}" y="${height - 8}" text-anchor="middle" font-size="10" fill="#666">${p.label}</text>` : ''}</g>`;
+      return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${p.value ? '#ffd600' : '#ececec'}" stroke="none"><title>${p.label}: ${fmt(p.value)}</title></rect>${i % labelEvery === 0 ? `<text x="${(x + bw * 0.35).toFixed(1)}" y="${height - 8}" text-anchor="middle" font-size="10" fill="#666">${p.label}</text>` : ''}</g>`;
     }).join('');
     el.innerHTML = `<svg viewBox="0 0 ${w} ${height}" class="admin-chart" role="img">
       ${ticks.map((t) => `<line x1="${padL}" x2="${w - 8}" y1="${t.y}" y2="${t.y}" stroke="#eee"/><text x="${padL - 6}" y="${t.y + 3}" text-anchor="end" font-size="10" fill="#888">${fmt(Math.round(t.v))}</text>`).join('')}

@@ -24,6 +24,8 @@
     return out;
   }
 
+  window.orderNeeds = needs;
+
   function timelineHtml(o) {
     const special = ['cancelado', 'devuelto'].includes(o.status);
     const current = special ? -1 : (ORDER[o.status] ?? 0);

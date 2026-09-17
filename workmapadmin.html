@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260917u">
-  <link rel="stylesheet" href="admin.css?v=20260917u">
+  <link rel="stylesheet" href="styles.css?v=20260917v">
+  <link rel="stylesheet" href="admin.css?v=20260917v">
 </head>
 <body class="admin-body">
 
@@ -290,7 +290,8 @@
       <div id="tabClientes" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
           <h2>Clientes</h2>
-          <p class="admin-help admin-help--inline">Se arman solos a partir de los pedidos (sin contar cancelados) y también puedes capturarlos a mano. Ordenados por lo que han comprado.</p>
+          <p class="admin-help admin-help--inline">Se arman solos a partir de los pedidos y también puedes capturarlos a mano. Haz clic en un nombre para ver su ficha.</p>
+          <input type="search" id="customersSearch" class="admin-filter" placeholder="Buscar por nombre, teléfono, correo o empresa…" style="min-width:260px">
           <button type="button" id="newCustomerBtn" class="btn btn-primary admin-btn-icon">+ Nuevo cliente</button>
         </div>
         <div class="admin-table-wrap">
@@ -441,7 +442,8 @@
           <h2>Reseñas de clientes</h2>
           <select id="reviewFilter" class="admin-filter"><option value="pendiente">Pendientes</option><option value="">Todas</option><option value="aprobada">Aprobadas</option><option value="rechazada">Rechazadas</option></select>
         </div>
-        <p class="admin-muted">Solo pueden reseñar clientes con pedido entregado, desde el enlace que reciben por correo (o el que copies desde el pedido). Aprueba las que sean reales; se publican en la ficha del producto con nombre de pila e inicial. Con 3 o más aprobadas por modelo, Google puede mostrar estrellas en el resultado. <span id="reviewCounts"></span></p>
+        <p class="admin-muted">Aprueba las reseñas reales; se publican en la ficha del producto. <span id="reviewCounts"></span></p>
+        <details class="admin-howto"><summary>¿Cómo funciona?</summary><p>Solo pueden reseñar clientes con pedido entregado, desde el enlace que reciben por correo (o el que copies desde el detalle del pedido). Se publican con nombre de pila e inicial del apellido. Con 3 o más aprobadas por modelo, Google puede mostrar estrellas en el resultado de búsqueda.</p></details>
         <div class="admin-table-wrap">
           <table class="admin-table">
             <thead><tr><th>Fecha</th><th>Producto</th><th>Reseña</th><th>Cliente</th><th>Estado</th><th></th></tr></thead>
@@ -1397,17 +1399,18 @@
     </div>
   </div>
 
-  <script src="admin.js?v=20260917u"></script>
-  <script src="admin-catalogo.js?v=20260917u"></script>
-  <script src="admin-compras.js?v=20260917u"></script>
-  <script src="admin-marketing.js?v=20260917u"></script>
-  <script src="admin-reportes.js?v=20260917u"></script>
-  <script src="admin-dashboard.js?v=20260917u"></script>
-  <script src="admin-pedidos.js?v=20260917u"></script>
-  <script src="admin-ui.js?v=20260917u"></script>
-  <script src="admin-seguridad.js?v=20260917u"></script>
-  <script src="admin-leads.js?v=20260917u"></script>
-  <script src="admin-resenas.js?v=20260917u"></script>
-  <script src="admin-contenido.js?v=20260917u"></script>
+  <script src="admin.js?v=20260917v"></script>
+  <script src="admin-catalogo.js?v=20260917v"></script>
+  <script src="admin-compras.js?v=20260917v"></script>
+  <script src="admin-marketing.js?v=20260917v"></script>
+  <script src="admin-reportes.js?v=20260917v"></script>
+  <script src="admin-dashboard.js?v=20260917v"></script>
+  <script src="admin-pedidos.js?v=20260917v"></script>
+  <script src="admin-ui.js?v=20260917v"></script>
+  <script src="admin-mas.js?v=20260917v"></script>
+  <script src="admin-seguridad.js?v=20260917v"></script>
+  <script src="admin-leads.js?v=20260917v"></script>
+  <script src="admin-resenas.js?v=20260917v"></script>
+  <script src="admin-contenido.js?v=20260917v"></script>
 </body>
 </html>
