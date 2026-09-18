@@ -1388,3 +1388,12 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 .admin-sys-errors li { padding: 6px 0; border-bottom: 1px dashed #e4e4e4; word-break: break-word; }
 .admin-sys-errors li i { color: #888; }
 @media (max-width: 700px) { .admin-sys > div { grid-template-columns: 1fr; gap: 2px; } }
+
+/* Configuración → Textos del sitio */
+.admin-texts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; margin: 6px 0 14px; }
+.admin-texts-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.admin-texts-field.is-wide { grid-column: 1 / -1; }
+.admin-texts-field label { font-size: 0.82rem; font-weight: 600; color: #444; margin: 0; }
+.admin-texts-field input, .admin-texts-field textarea { width: 100%; margin: 0; }
+.admin-texts-field textarea { resize: vertical; min-height: 72px; }
+@media (max-width: 700px) { .admin-texts-grid { grid-template-columns: 1fr; } }

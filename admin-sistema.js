@@ -58,7 +58,7 @@
     }
   }
 
-  function load() { loaded = true; loadBackups(); loadStatus(); }
+  function load() { loaded = true; loadBackups(); loadStatus(); loadSiteTexts().catch(() => {}); }
 
   $('backupNowBtn').addEventListener('click', async () => {
     $('backupListSuccess').textContent = ''; $('backupListError').textContent = '';
@@ -95,10 +95,52 @@
     if (typeof loadSettingsCache === 'function') loadSettingsCache().then(loadProducts).then(loadOrders);
   });
 
+  // ---- Textos del sitio ----
+  const tf = (id) => document.getElementById(id);
+  let siteTexts = [];
+  async function loadSiteTexts() {
+    const r = await fetch('/api/admin/site-texts');
+    if (!r.ok) { tf('siteTextsFields').innerHTML = '<p class="admin-error">No se pudieron leer los textos.</p>'; return; }
+    siteTexts = (await r.json()).texts;
+    tf('siteTextsFields').innerHTML = `<div class="admin-texts-grid">${siteTexts.map((t) => `<div class="admin-texts-field ${t.multiline || t.key === 'promo' ? 'is-wide' : ''}"><label for="st_${t.key}">${esc(t.label)}</label>${t.multiline ? `<textarea id="st_${t.key}" rows="${t.key === 'heroTitle' ? 3 : 4}" maxlength="${t.max}" placeholder="${esc(t.defaultText)}">${esc(t.value)}</textarea>` : `<input type="text" id="st_${t.key}" maxlength="${t.max}" placeholder="${esc(t.defaultText)}" value="${esc(t.value)}">`}</div>`).join('')}</div>`;
+  }
+  tf('siteTextsSaveBtn')?.addEventListener('click', async () => {
+    tf('siteTextsError').textContent = ''; tf('siteTextsSuccess').textContent = '';
+    const texts = {};
+    siteTexts.forEach((t) => { texts[t.key] = tf(`st_${t.key}`).value; });
+    const r = await fetch('/api/admin/site-texts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texts }) });
+    if (!r.ok) { tf('siteTextsError').textContent = 'No se pudieron guardar los textos.'; return; }
+    tf('siteTextsSuccess').textContent = 'Textos guardados. Ya se ven en la página de inicio.';
+    loadSiteTexts();
+  });
+  tf('siteTextsResetBtn')?.addEventListener('click', async () => {
+    if (!confirm('¿Volver a los textos originales de la página?')) return;
+    const r = await fetch('/api/admin/site-texts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texts: {} }) });
+    if (!r.ok) { tf('siteTextsError').textContent = 'No se pudo restablecer.'; return; }
+    tf('siteTextsSuccess').textContent = 'Textos originales restablecidos.';
+    loadSiteTexts();
+  });
+
+  // ---- Resumen diario ----
+  tf('dailySummaryPreviewBtn')?.addEventListener('click', () => window.open('/api/admin/daily-summary/preview', '_blank', 'noopener'));
+  tf('dailySummarySendBtn')?.addEventListener('click', async () => {
+    const st = tf('dailySummaryStatus'); st.textContent = 'Enviando…';
+    const r = await fetch('/api/admin/daily-summary/send', { method: 'POST' });
+    const d = await r.json().catch(() => ({}));
+    st.textContent = r.ok ? 'Enviado al correo de avisos.' : (d.error || 'No se pudo enviar.');
+  });
+
+  // ---- Etiqueta de envío ----
+  tf('orderLabelBtn')?.addEventListener('click', () => {
+    if (typeof activeOrderId !== 'undefined' && activeOrderId) window.open(`etiqueta.html?id=${encodeURIComponent(activeOrderId)}`, '_blank', 'noopener');
+  });
+
   const baseShowTab = window.showTab;
   window.showTab = function (name) {
     baseShowTab(name);
-    if (name === 'configuracion' && document.body.classList.contains('perm-respaldo')) load();
+    if (name !== 'configuracion') return;
+    if (document.body.classList.contains('perm-respaldo')) load();
+    else if (document.body.classList.contains('perm-configuracion-ver')) loadSiteTexts().catch(() => {});
   };
   // Si el panel abre directo en Configuración
   if (document.querySelector('.admin-side .admin-tab[data-tab="configuracion"].active')) setTimeout(() => { if (!loaded && document.body.classList.contains('perm-respaldo')) load(); }, 800);

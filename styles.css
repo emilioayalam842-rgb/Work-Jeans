@@ -2437,3 +2437,7 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 /* Tarjetas alineadas: la descripción absorbe el espacio y talla, cantidad y botón quedan al fondo */
 .product-card .product-desc { flex: 1 1 auto; }
 .product-card .card-row { margin-top: auto; }
+
+/* Barra de promoción editable desde el panel (Configuración → Textos del sitio) */
+.promo-bar { background: var(--yellow, #ffd600); color: #0f0f0f; text-align: center; font-weight: 600; font-size: 0.86rem; letter-spacing: 0.02em; padding: 9px 16px; border-bottom: 1px solid rgba(0,0,0,0.12); }
+.promo-bar a { color: inherit; }

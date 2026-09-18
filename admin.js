@@ -1852,6 +1852,7 @@ async function loadSettingsForm() {
   document.getElementById('settingGa4').value = settings.ga4Id || '';
   document.getElementById('settingCustomerEmails').checked = settings.customerEmails !== false;
   document.getElementById('settingPaymentReminders').checked = settings.paymentReminders !== false;
+  document.getElementById('settingDailySummary').checked = settings.dailySummary !== false;
   const ship = settings.shipping || {};
   document.getElementById('settingFreeFrom').value = ship.freeFromCents ? (ship.freeFromCents / 100).toFixed(0) : '';
   document.getElementById('settingQuoteFromQty').value = ship.quoteFromQty || '';
@@ -1928,6 +1929,7 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     ga4Id: document.getElementById('settingGa4').value.trim().toUpperCase(),
     customerEmails: document.getElementById('settingCustomerEmails').checked,
     paymentReminders: document.getElementById('settingPaymentReminders').checked,
+    dailySummary: document.getElementById('settingDailySummary').checked,
   };
 
   const res = await fetch('/api/admin/settings', {

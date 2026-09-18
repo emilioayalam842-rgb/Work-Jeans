@@ -158,6 +158,27 @@ test('panel: respaldo automático, lista y descarga', async () => {
   assert.equal(status.json.data.writable, true);
 });
 
+test('panel: textos del inicio editables y etiqueta de envío', async () => {
+  const before = await api('/');
+  assert.match(before.text, /data-t="heroTitle">Pantalones<br>de trabajo<br>de mezclilla\./);
+  assert.doesNotMatch(before.text, /class="promo-bar"[^>]*>[^<]/);
+  const put = await api('/api/admin/site-texts', { method: 'PUT', body: { texts: { heroTitle: 'Uniformes\nque aguantan.', promo: 'Envío gratis esta semana <b>x</b>' /* las etiquetas se eliminan */ } } });
+  assert.equal(put.status, 200, put.text);
+  const after = await api('/');
+  assert.match(after.text, /data-t="heroTitle">Uniformes<br>que aguantan\.</);
+  assert.match(after.text, /class="promo-bar" data-t="promo">Envío gratis esta semana bx\/b</);
+  assert.match(after.text, /data-t="heroLead">Pantalones y camisas/);
+  await api('/api/admin/site-texts', { method: 'PUT', body: { texts: {} } });
+  assert.match((await api('/')).text, /data-t="heroTitle">Pantalones<br>/);
+  const orders = (await api('/api/admin/orders')).json;
+  const list = Array.isArray(orders) ? orders : orders.orders;
+  const et = await api(`/api/admin/orders/${list[0].id}/etiqueta`);
+  assert.equal(et.status, 200, et.text);
+  assert.ok(et.json.qr.startsWith('data:image/png'));
+  assert.match(et.json.trackUrl, /\/rastrear\?pedido=/);
+  assert.equal((await api('/etiqueta.html')).status, 200);
+});
+
 test('panel: cerrar sesión', async () => {
   const r = await api('/api/admin/logout', { method: 'POST' });
   assert.ok(r.status === 200 || r.status === 204);

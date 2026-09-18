@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260918b">
-  <link rel="stylesheet" href="admin.css?v=20260918b">
+  <link rel="stylesheet" href="styles.css?v=20260918c">
+  <link rel="stylesheet" href="admin.css?v=20260918c">
 </head>
 <body class="admin-body">
 
@@ -676,6 +676,7 @@
           <p class="admin-help">Solo se carga cuando el visitante acepta todas las cookies. La medición propia del embudo funciona sin esto.</p>
 
           <label class="admin-check"><input type="checkbox" id="settingPaymentReminders" checked> Recordar por correo los pedidos sin pagar (a las 24 h y a las 72 h; solo pedidos con correo)</label>
+          <label class="admin-check"><input type="checkbox" id="settingDailySummary" checked> <span><strong>Resumen diario por correo</strong> a las 8:00: ventas de ayer, pedidos por cobrar o enviar, cotizaciones sin responder y stock bajo. <button type="button" id="dailySummaryPreviewBtn" class="admin-inline-btn">Ver ejemplo</button> <button type="button" id="dailySummarySendBtn" class="admin-inline-btn">Enviármelo ahora</button> <em id="dailySummaryStatus"></em></span></label>
           <label for="settingLowStock">Avisar cuando una talla tenga estas piezas o menos</label>
           <input type="number" id="settingLowStock" name="lowStockThreshold" min="0" step="1" placeholder="5">
 
@@ -699,6 +700,18 @@
           <p class="admin-error" id="settingsError"></p>
           <p class="admin-success" id="settingsSuccess"></p>
         </form>
+
+        <h2 class="admin-section-spacer">Textos del sitio</h2>
+        <div class="admin-panel-box admin-settings-form" id="siteTextsBox">
+          <p class="admin-help">Cambia los textos principales de la página de inicio sin tocar código: la franja de arriba, la portada y el pie. Deja un campo vacío para volver al texto original (se muestra en gris).</p>
+          <div id="siteTextsFields"><p class="admin-muted">Cargando…</p></div>
+          <div class="admin-form-actions">
+            <button type="button" class="btn btn-secondary" id="siteTextsResetBtn">Volver a los originales</button>
+            <button type="button" class="btn btn-primary" id="siteTextsSaveBtn">Guardar textos</button>
+          </div>
+          <p class="admin-error" id="siteTextsError"></p>
+          <p class="admin-success" id="siteTextsSuccess"></p>
+        </div>
 
         <h2 class="admin-section-spacer admin-backup-box">Respaldo</h2>
         <div class="admin-backup-box admin-panel-box admin-settings-form">
@@ -1410,6 +1423,7 @@
 
       <div class="admin-form-actions admin-form-actions--wrap">
         <button type="button" id="orderWhatsappBtn" class="btn btn-secondary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L4 20l1.1-4.2A8.5 8.5 0 1 1 21 11.5Z"/></svg> WhatsApp al cliente</button>
+        <button type="button" id="orderLabelBtn" class="btn btn-secondary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg> Etiqueta de envío</button>
         <button type="button" id="orderPrintBtn" class="btn btn-secondary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="6" y="14" width="12" height="7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg> Imprimir nota</button>
         <button type="button" id="closeOrderDetailBtn" class="btn btn-secondary">Cerrar</button>
         <button type="button" id="saveOrderNotesBtn" class="btn btn-primary">Guardar cambios</button>
@@ -1418,19 +1432,19 @@
     </div>
   </div>
 
-  <script src="admin.js?v=20260918b"></script>
-  <script src="admin-catalogo.js?v=20260918b"></script>
-  <script src="admin-compras.js?v=20260918b"></script>
-  <script src="admin-marketing.js?v=20260918b"></script>
-  <script src="admin-reportes.js?v=20260918b"></script>
-  <script src="admin-dashboard.js?v=20260918b"></script>
-  <script src="admin-pedidos.js?v=20260918b"></script>
-  <script src="admin-ui.js?v=20260918b"></script>
-  <script src="admin-mas.js?v=20260918b"></script>
-  <script src="admin-seguridad.js?v=20260918b"></script>
-  <script src="admin-leads.js?v=20260918b"></script>
-  <script src="admin-resenas.js?v=20260918b"></script>
-  <script src="admin-contenido.js?v=20260918b"></script>
-  <script src="admin-sistema.js?v=20260918b"></script>
+  <script src="admin.js?v=20260918c"></script>
+  <script src="admin-catalogo.js?v=20260918c"></script>
+  <script src="admin-compras.js?v=20260918c"></script>
+  <script src="admin-marketing.js?v=20260918c"></script>
+  <script src="admin-reportes.js?v=20260918c"></script>
+  <script src="admin-dashboard.js?v=20260918c"></script>
+  <script src="admin-pedidos.js?v=20260918c"></script>
+  <script src="admin-ui.js?v=20260918c"></script>
+  <script src="admin-mas.js?v=20260918c"></script>
+  <script src="admin-seguridad.js?v=20260918c"></script>
+  <script src="admin-leads.js?v=20260918c"></script>
+  <script src="admin-resenas.js?v=20260918c"></script>
+  <script src="admin-contenido.js?v=20260918c"></script>
+  <script src="admin-sistema.js?v=20260918c"></script>
 </body>
 </html>

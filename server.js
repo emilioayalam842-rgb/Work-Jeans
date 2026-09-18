@@ -1082,7 +1082,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260918b';
+const ASSET_V = '20260918c';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1693,6 +1693,13 @@ if (USES_EXTERNAL_DATA) {
   app.use('/assets/products', express.static(PRODUCTS_IMG_DIR, { maxAge: '30d' }));
 }
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '30d', dotfiles: 'deny' }));
+// El inicio se sirve con los textos editables del panel (va antes del estático para que no lo gane index.html).
+app.get(['/', '/index.html'], (req, res) => {
+  const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
+  res.set('Cache-Control', 'public, max-age=0, must-revalidate');
+  res.type('html').send(applySiteTexts(html));
+});
+
 app.use(express.static(__dirname, {
   dotfiles: 'deny',
   extensions: ['html'],
@@ -2176,6 +2183,47 @@ app.get('/api/sat-catalogs', (req, res) => {
 });
 
 // Para monitoreo externo (UptimeRobot, Railway): responde 200 si el servidor y los datos están accesibles.
+// --- Textos del inicio editables desde el panel (settings.texts). Los originales viven en index.html
+// marcados con data-t="clave"; si el panel guarda un texto, se sustituye al servir la página.
+const SITE_TEXTS = [
+  ['promo', 'Barra de promoción (arriba de todo; vacío = no se muestra)', { max: 160 }],
+  ['announce1', 'Franja superior · texto 1', { max: 60 }],
+  ['announce2', 'Franja superior · texto 2', { max: 60 }],
+  ['announce3', 'Franja superior · texto 3', { max: 60 }],
+  ['heroEyebrow', 'Portada · línea pequeña', { max: 80 }],
+  ['heroTitle', 'Portada · título (una línea por renglón)', { max: 120, multiline: true }],
+  ['heroLead', 'Portada · párrafo', { max: 400, multiline: true }],
+  ['heroBtn1', 'Portada · botón 1', { max: 40 }],
+  ['heroBtn2', 'Portada · botón 2', { max: 40 }],
+  ['footerKicker', 'Pie de página · línea pequeña', { max: 60 }],
+  ['footerEyebrow', 'Pie de página · frase', { max: 80 }],
+];
+function siteTextDefaults() {
+  const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
+  const out = {};
+  SITE_TEXTS.forEach(([key]) => {
+    const m = html.match(new RegExp(`<(\\w+)([^>]*\\sdata-t="${key}"[^>]*)>([\\s\\S]*?)</\\1>`));
+    out[key] = m ? m[3].replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim() : '';
+  });
+  return out;
+}
+function textToHtml(text) {
+  return escapeHtml(String(text)).split('\n').map((l) => l.trim()).filter(Boolean).join('<br>');
+}
+function applySiteTexts(html) {
+  let texts;
+  try { texts = getSettings().texts || {}; } catch { texts = {}; }
+  let out = html;
+  SITE_TEXTS.forEach(([key]) => {
+    const value = typeof texts[key] === 'string' ? texts[key].trim() : '';
+    if (!value && key !== 'promo') return;
+    out = out.replace(new RegExp(`<(\\w+)([^>]*\\sdata-t="${key}"[^>]*)>([\\s\\S]*?)</\\1>`), (m, tag, attrs) => {
+      if (key === 'promo') return value ? `<${tag}${attrs.replace(/\s+hidden\b/, '')}>${textToHtml(value)}</${tag}>` : m;
+      return `<${tag}${attrs}>${textToHtml(value)}</${tag}>`;
+    });
+  });
+  return out;
+}
 app.get('/health', (req, res) => {
   let ok = true;
   try { getSettings(); getProducts(); } catch { ok = false; }
@@ -2193,6 +2241,26 @@ app.put('/api/admin/settings', requireAdmin, perm('configuracion.editar'), (req,
   const updated = { ...current, ...body, security: current.security };
   saveSettings(updated);
   res.json(updated);
+});
+
+app.get('/api/admin/site-texts', requireAdmin, perm('configuracion.ver'), (req, res) => {
+  const defaults = siteTextDefaults();
+  const texts = getSettings().texts || {};
+  res.json({ texts: SITE_TEXTS.map(([key, label, opts]) => ({ key, label, multiline: Boolean(opts.multiline), max: opts.max, defaultText: defaults[key], value: typeof texts[key] === 'string' ? texts[key] : '' })) });
+});
+app.put('/api/admin/site-texts', requireAdmin, perm('configuracion.editar'), (req, res) => {
+  const body = (req.body && req.body.texts) || {};
+  const texts = {};
+  SITE_TEXTS.forEach(([key, , opts]) => {
+    const raw = typeof body[key] === 'string' ? body[key] : '';
+    const clean = raw.replace(/\r/g, '').split('\n').map((l) => cleanText(l, opts.max)).join('\n').replace(/\n{2,}/g, '\n').trim().slice(0, opts.max);
+    if (clean) texts[key] = clean;
+  });
+  const settings = getSettings();
+  settings.texts = texts;
+  saveSettings(settings);
+  auditLog(req, 'textos.editar', { details: Object.keys(texts).join(', ') || 'originales' });
+  res.json({ ok: true, texts });
 });
 
 app.post('/api/admin/test-email', requireAdmin, perm('configuracion.editar'), async (req, res) => {
@@ -3599,6 +3667,20 @@ app.post('/api/admin/orders/:id/track-link', requireAdmin, perm('pedidos.editar'
   res.json({ url: `${publicOrigin(req)}/rastrear?pedido=${encodeURIComponent(order.id)}&k=${order.accessKey}` });
 });
 
+// Datos para la etiqueta de envío y lista de empaque (etiqueta.html).
+app.get('/api/admin/orders/:id/etiqueta', requireAdmin, perm('pedidos.ver'), async (req, res) => {
+  const orders = getOrders();
+  const order = orders.find((o) => o.id === req.params.id);
+  if (!order) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
+  if (!order.accessKey) { order.accessKey = crypto.randomBytes(8).toString('hex'); saveOrders(orders); }
+  const trackUrl = `${publicOrigin(req)}/rastrear?pedido=${encodeURIComponent(order.id)}&k=${order.accessKey}`;
+  let qr = '';
+  try { qr = await QRCode.toDataURL(trackUrl, { margin: 1, width: 180 }); } catch { qr = ''; }
+  const s = getSettings();
+  res.set('Cache-Control', 'no-store');
+  res.json({ order, trackUrl, qr, store: { name: s.storeName || 'Works Jeans', address: s.address || '', phone: s.phoneDisplay || '', whatsapp: s.whatsappNumber || '' } });
+});
+
 app.post('/api/admin/orders/:id/review-link', requireAdmin, perm('pedidos.editar'), (req, res) => {
   const token = ensureReviewToken(req.params.id);
   if (!token) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
@@ -4245,11 +4327,66 @@ async function emailWeeklyBackup(force = false) {
   if (ok) { fs.mkdirSync(BACKUPS_DIR, { recursive: true }); writeFileSafe(BACKUP_MAIL_MARK, new Date().toISOString()); }
   return { ok, reason: ok ? null : 'no se pudo enviar' };
 }
+// --- Resumen diario por correo (a las 8:00 de Monterrey): ventas de ayer, qué falta atender y stock bajo ---
+const DAILY_MARK = path.join(DATA_DIR, 'resumen-diario.txt');
+function dailySummaryHtml() {
+  const orders = getOrders();
+  const tz = 'America/Monterrey';
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+  const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA', { timeZone: tz });
+  const dayOf = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: tz });
+  const live = orders.filter((o) => !['cancelado', 'devuelto'].includes(o.status));
+  const yest = live.filter((o) => dayOf(o.createdAt) === yesterday);
+  const yestTotal = yest.reduce((a, o) => a + (o.totalCents || 0), 0);
+  const cobrar = live.filter((o) => o.status === 'pendiente').length;
+  const enviar = live.filter((o) => ['pagado', 'preparacion'].includes(o.status)).length;
+  const facturar = live.filter((o) => o.invoice?.requested && !o.invoice.issued && o.status !== 'pendiente').length;
+  let leadsNew = 0; let reviewsPending = 0;
+  try { leadsNew = getLeads().filter((l) => l.status === 'nuevo').length; } catch { /* sin leads */ }
+  try { reviewsPending = getReviews().filter((r) => r.status === 'pendiente').length; } catch { /* sin reseñas */ }
+  const limit = lowStockThreshold();
+  const low = [];
+  getProducts().forEach((p) => (p.sizes || []).forEach((v) => { if (v.stock <= limit) low.push(`${p.name} talla ${v.size || variantLabel(v)}: ${v.stock}`); }));
+  const li = (n, label) => (n ? `<li><b>${n}</b> ${label}</li>` : '');
+  const pending = [li(cobrar, `pedido${cobrar === 1 ? '' : 's'} por cobrar`), li(enviar, `pedido${enviar === 1 ? '' : 's'} por enviar`), li(facturar, `por facturar`), li(leadsNew, `${leadsNew === 1 ? 'cotización' : 'cotizaciones'} sin responder`), li(reviewsPending, `reseña${reviewsPending === 1 ? '' : 's'} por aprobar`)].join('');
+  const todayLabel = new Date().toLocaleDateString('es-MX', { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long' });
+  const html = `<p>Buenos días. Así amanece la tienda hoy, <b>${todayLabel}</b>.</p>
+<h3 style="margin:18px 0 6px">Ayer</h3><p>${yest.length ? `<b>${yest.length}</b> pedido${yest.length === 1 ? '' : 's'} por <b>${formatMxn(yestTotal)}</b>.` : 'Sin pedidos nuevos.'}</p>
+<h3 style="margin:18px 0 6px">Por atender</h3>${pending ? `<ul style="padding-left:18px;margin:0">${pending}</ul>` : '<p>Nada pendiente. 👌</p>'}
+<h3 style="margin:18px 0 6px">Stock bajo (${limit} pzas o menos)</h3>${low.length ? `<ul style="padding-left:18px;margin:0">${low.slice(0, 20).map((x) => `<li>${escapeHtml(x)}</li>`).join('')}${low.length > 20 ? `<li>… y ${low.length - 20} más</li>` : ''}</ul>` : '<p>Todas las tallas con existencia.</p>'}
+<p style="margin-top:22px"><a href="https://www.workjeans.mx/workmapadmin.html" style="display:inline-block;padding:12px 18px;background:#ffd600;color:#0f0f0f;text-decoration:none;font-weight:700;border:1.5px solid #0f0f0f">Abrir el panel</a></p>
+<p style="color:#777;font-size:0.85rem">Este resumen se envía cada mañana; puedes desactivarlo en Configuración.</p>`;
+  return { subject: `Resumen de Works Jeans · ${todayLabel}${yest.length ? ` · ${yest.length} pedido${yest.length === 1 ? '' : 's'} ayer` : ''}`, html: emailLayout('Resumen del día', html), pending: cobrar + enviar + facturar + leadsNew + reviewsPending, sales: yest.length };
+}
+async function sendDailySummary(force = false) {
+  if (!force && getSettings().dailySummary === false) return { ok: false, reason: 'desactivado' };
+  if (!notifyTarget()) return { ok: false, reason: 'sin correo' };
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
+  const hour = parseInt(new Date().toLocaleString('en-US', { timeZone: 'America/Monterrey', hour: 'numeric', hour12: false }), 10);
+  let last = '';
+  try { last = fs.readFileSync(DAILY_MARK, 'utf-8').trim(); } catch { /* nunca */ }
+  if (!force && (hour < 8 || last === today)) return { ok: false, reason: 'no toca' };
+  const { subject, html } = dailySummaryHtml();
+  const ok = await sendEmail({ subject, html });
+  if (ok) writeFileSafe(DAILY_MARK, today);
+  return { ok };
+}
+app.post('/api/admin/daily-summary/send', requireAdmin, perm('configuracion.editar'), async (req, res) => {
+  const r = await sendDailySummary(true);
+  if (!r.ok) { res.status(400).json({ error: r.reason === 'sin correo' ? 'Guarda primero un correo para avisos y la llave de Resend.' : 'No se pudo enviar.' }); return; }
+  res.json({ ok: true });
+});
+app.get('/api/admin/daily-summary/preview', requireAdmin, perm('configuracion.ver'), (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.type('html').send(dailySummaryHtml().html);
+});
+
 async function backupTick() {
   try { runAutoBackup(); } catch (err) { logError('respaldo', err); }
   try { await emailWeeklyBackup(); } catch (err) { logError('respaldo.correo', err); }
+  try { await sendDailySummary(); } catch (err) { logError('resumen.diario', err); }
 }
-setInterval(() => { backupTick(); }, 60 * 60 * 1000);
+setInterval(() => { backupTick(); }, 20 * 60 * 1000);
 setTimeout(() => { backupTick(); }, 30 * 1000);
 
 app.get('/api/admin/backups', requireAdmin, perm('respaldo'), (req, res) => {

@@ -31,7 +31,7 @@
   <link rel="preload" href="assets/fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/oswald-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=20260918b">
+  <link rel="stylesheet" href="styles.css?v=20260918c">
 
   <script type="application/ld+json">
   {
@@ -85,9 +85,10 @@
 </head>
 <body>
   <a class="skip-link" href="#productos">Ir al catálogo</a>
+  <div class="promo-bar" data-t="promo" hidden></div>
   <div class="announcement" role="note">
     <div class="announcement-track">
-      <span>Envíos a todo México</span><i>·</i><span>Mayoreo con stock inmediato</span><i>·</i><span>Bordado y DTF con tu logotipo</span><i>·</i><a id="announcementWhatsapp" href="https://wa.me/528128613551">WhatsApp 81 2861 3551</a>
+      <span data-t="announce1">Envíos a todo México</span><i>·</i><span data-t="announce2">Mayoreo con stock inmediato</span><i>·</i><span data-t="announce3">Bordado y DTF con tu logotipo</span><i>·</i><a id="announcementWhatsapp" href="https://wa.me/528128613551">WhatsApp 81 2861 3551</a>
     </div>
   </div>
   <div class="hazard" aria-hidden="true"></div>
@@ -170,12 +171,12 @@
     <section class="hero">
       <div class="hero-inner">
         <div class="hero-content">
-          <span class="eyebrow">Works Jeans · Hechos en Monterrey</span>
-          <h1>Pantalones<br>de trabajo<br>de mezclilla.</h1>
-          <p class="hero-lead">Pantalones y camisas de trabajo de mezclilla 100% algodón, hechos en Monterrey para la obra, la planta y el taller. Tallas del 28 al 50, compra desde una pieza y cotización para empresas.</p>
+          <span class="eyebrow" data-t="heroEyebrow">Works Jeans · Hechos en Monterrey</span>
+          <h1 data-t="heroTitle">Pantalones<br>de trabajo<br>de mezclilla.</h1>
+          <p class="hero-lead" data-t="heroLead">Pantalones y camisas de trabajo de mezclilla 100% algodón, hechos en Monterrey para la obra, la planta y el taller. Tallas del 28 al 50, compra desde una pieza y cotización para empresas.</p>
           <div class="hero-actions">
-            <a href="/pantalones-de-trabajo" class="btn btn-primary">Comprar pantalones</a>
-            <a href="/empresas" class="btn btn-secondary">Cotizar para empresa</a>
+            <a href="/pantalones-de-trabajo" class="btn btn-primary" data-t="heroBtn1">Comprar pantalones</a>
+            <a href="/empresas" class="btn btn-secondary" data-t="heroBtn2">Cotizar para empresa</a>
           </div>
         </div>
         <figure class="hero-figure">
@@ -583,8 +584,8 @@
   <footer class="footer">
     <div class="hazard" aria-hidden="true" style="margin:-72px -24px 56px"></div>
     <img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="footer-logo" width="150" height="70" loading="lazy">
-    <span class="kicker">Workwear industrial</span>
-    <span class="eyebrow">Para los que trabajan duro.</span>
+    <span class="kicker" data-t="footerKicker">Workwear industrial</span>
+    <span class="eyebrow" data-t="footerEyebrow">Para los que trabajan duro.</span>
     <br>
     <a class="footer-url" href="https://www.workjeans.mx/">www.workjeans.mx</a>
 
@@ -603,11 +604,11 @@
     <span>WhatsApp</span>
   </a>
 
-  <script src="cart.js?v=20260918b" defer></script>
-  <script src="filtros.js?v=20260918b" defer></script>
-  <script src="select.js?v=20260918b" defer></script>
-  <script src="script.js?v=20260918b" defer></script>
-  <script src="analytics.js?v=20260918b" defer></script>
-  <script src="cookies.js?v=20260918b" defer></script>
+  <script src="cart.js?v=20260918c" defer></script>
+  <script src="filtros.js?v=20260918c" defer></script>
+  <script src="select.js?v=20260918c" defer></script>
+  <script src="script.js?v=20260918c" defer></script>
+  <script src="analytics.js?v=20260918c" defer></script>
+  <script src="cookies.js?v=20260918c" defer></script>
 </body>
 </html>

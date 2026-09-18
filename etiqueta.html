@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Etiqueta de envío | Works Jeans</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; color: #0f0f0f; background: #f3f3f3; }
+    .actions { max-width: 720px; margin: 24px auto 0; display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+    .actions button, .actions a { font: inherit; font-weight: 600; padding: 10px 18px; border: 1.5px solid #0f0f0f; background: #ffd600; cursor: pointer; text-decoration: none; color: #0f0f0f; }
+    .actions a { background: #fff; }
+    .actions label { font-size: 0.86rem; margin-right: auto; display: flex; gap: 6px; align-items: center; }
+    .sheet { max-width: 720px; margin: 16px auto; background: #fff; border: 1.5px solid #0f0f0f; }
+    .label { padding: 26px 30px; display: grid; grid-template-columns: 1fr 190px; gap: 20px; min-height: 5.2in; }
+    .hazard { height: 10px; background: repeating-linear-gradient(-45deg, #111 0 14px, #ffd600 14px 28px); }
+    .from { font-size: 0.78rem; color: #444; line-height: 1.5; border-bottom: 1.5px solid #0f0f0f; padding-bottom: 12px; margin-bottom: 14px; display: flex; gap: 14px; align-items: flex-start; }
+    .from img { height: 40px; }
+    .from b { display: block; color: #0f0f0f; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 2px; }
+    .to b { display: block; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6a6a6a; margin-bottom: 6px; }
+    .to .name { font-size: 1.5rem; font-weight: 800; line-height: 1.15; margin-bottom: 6px; }
+    .to .addr { font-size: 1.08rem; line-height: 1.5; }
+    .to .cp { font-size: 1.35rem; font-weight: 800; margin-top: 6px; }
+    .to .phone { margin-top: 8px; font-size: 1rem; }
+    .to .refs { margin-top: 8px; font-size: 0.86rem; color: #444; }
+    .side { border-left: 1.5px solid #0f0f0f; padding-left: 18px; display: flex; flex-direction: column; gap: 10px; font-size: 0.82rem; }
+    .side .id { font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 0.95rem; word-break: break-all; }
+    .side .badge { display: inline-block; background: #ffd600; padding: 4px 8px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+    .side img { width: 150px; height: 150px; }
+    .side small { color: #555; line-height: 1.4; }
+    .fragile { margin-top: auto; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #444; }
+    .packing { padding: 26px 30px; border-top: 3px dashed #999; }
+    .packing h2 { margin: 0 0 4px; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .packing p { margin: 0 0 12px; color: #555; font-size: 0.86rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th { text-align: left; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6a6a6a; border-bottom: 1.5px solid #0f0f0f; padding: 8px 6px; }
+    td { padding: 9px 6px; border-bottom: 1px solid #dcdcdc; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    td.chk { width: 34px; font-size: 1.2rem; }
+    .sum { display: flex; justify-content: space-between; margin-top: 12px; font-weight: 700; }
+    .notes { margin-top: 12px; font-size: 0.88rem; color: #444; border-top: 1px solid #dcdcdc; padding-top: 10px; white-space: pre-wrap; }
+    .sign { margin-top: 26px; display: flex; gap: 40px; font-size: 0.8rem; color: #555; }
+    .sign span { flex: 1; border-top: 1px solid #0f0f0f; padding-top: 6px; }
+    .error { max-width: 720px; margin: 40px auto; text-align: center; color: #b00020; }
+    @page { size: letter; margin: 10mm; }
+    @media print {
+      body { background: #fff; }
+      .actions { display: none; }
+      .sheet { margin: 0; border: 0; max-width: none; }
+      .label { min-height: 5.3in; page-break-after: always; }
+      .packing { border-top: 0; page-break-inside: avoid; }
+      body.solo-etiqueta .packing { display: none; }
+      body.solo-etiqueta .label { page-break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions">
+    <label><input type="checkbox" id="soloEtiqueta"> Solo la etiqueta (sin lista de empaque)</label>
+    <a href="workmapadmin.html">← Volver al panel</a>
+    <button type="button" onclick="window.print()">Imprimir</button>
+  </div>
+  <div class="sheet" id="sheet" hidden>
+    <div class="hazard"></div>
+    <section class="label">
+      <div>
+        <div class="from"><img src="assets/img/works-jeans-logo.png" alt="Works Jeans"><div><b>Remitente</b><span id="from"></span></div></div>
+        <div class="to">
+          <b>Destinatario</b>
+          <div class="name" id="toName"></div>
+          <div class="addr" id="toAddr"></div>
+          <div class="cp" id="toCp"></div>
+          <div class="phone" id="toPhone"></div>
+          <div class="refs" id="toRefs" hidden></div>
+        </div>
+      </div>
+      <aside class="side">
+        <span class="badge">Pedido</span>
+        <span class="id" id="orderId"></span>
+        <span id="pieces"></span>
+        <span id="carrier" hidden></span>
+        <img id="qr" alt="Código QR para rastrear el pedido" hidden>
+        <small>Escanea para rastrear tu pedido en workjeans.mx</small>
+        <span class="fragile">Ropa de trabajo · No requiere cuidado especial</span>
+      </aside>
+    </section>
+    <section class="packing">
+      <h2>Lista de empaque</h2>
+      <p id="packMeta"></p>
+      <table>
+        <thead><tr><th></th><th>Producto</th><th>Talla</th><th class="num">Cant.</th></tr></thead>
+        <tbody id="items"></tbody>
+      </table>
+      <div class="sum"><span>Total de piezas</span><span id="totalPieces"></span></div>
+      <div class="notes" id="notes" hidden></div>
+      <div class="sign"><span>Empacó</span><span>Revisó</span><span>Fecha</span></div>
+    </section>
+    <div class="hazard"></div>
+  </div>
+  <p class="error" id="error" hidden></p>
+
+  <script>
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const id = new URLSearchParams(location.search).get('id');
+    document.getElementById('soloEtiqueta').addEventListener('change', (e) => document.body.classList.toggle('solo-etiqueta', e.target.checked));
+
+    async function load() {
+      const r = await fetch(`/api/admin/orders/${encodeURIComponent(id)}/etiqueta`);
+      if (r.status === 401) throw new Error('Inicia sesión en el panel para ver la etiqueta.');
+      if (!r.ok) throw new Error('Pedido no encontrado.');
+      const { order, qr, store } = await r.json();
+      const sh = order.shipping || {};
+      document.getElementById('from').innerHTML = [store.name, store.address, store.phone ? `Tel. ${store.phone}` : ''].filter(Boolean).map(esc).join('<br>');
+      document.getElementById('toName').textContent = sh.name || order.customerName || 'Sin nombre';
+      const addr = [sh.line1, sh.line2, [sh.city, sh.state].filter(Boolean).join(', ')].filter(Boolean);
+      document.getElementById('toAddr').innerHTML = addr.length ? addr.map(esc).join('<br>') : '<em>Sin dirección: entrega en tienda o por confirmar</em>';
+      document.getElementById('toCp').textContent = sh.postalCode ? `C.P. ${sh.postalCode}` : '';
+      document.getElementById('toPhone').textContent = (order.customerPhone || sh.phone) ? `Tel. ${order.customerPhone || sh.phone}` : '';
+      if (sh.references) { const el = document.getElementById('toRefs'); el.textContent = `Referencias: ${sh.references}`; el.hidden = false; }
+      document.getElementById('orderId').textContent = order.id;
+      const pieces = order.items.reduce((a, i) => a + i.quantity, 0);
+      document.getElementById('pieces').textContent = `${pieces} pieza${pieces === 1 ? '' : 's'}`;
+      if (order.tracking && (order.tracking.carrier || order.tracking.number)) { const el = document.getElementById('carrier'); el.innerHTML = `<b>${esc(order.tracking.carrier || '')}</b><br>${esc(order.tracking.number || '')}`; el.hidden = false; }
+      if (qr) { const img = document.getElementById('qr'); img.src = qr; img.hidden = false; }
+      document.getElementById('packMeta').textContent = `Pedido ${order.id} · ${new Date(order.createdAt).toLocaleDateString('es-MX', { dateStyle: 'long' })} · ${order.customerName || ''}`;
+      document.getElementById('items').innerHTML = order.items.map((i) => `<tr><td class="chk">☐</td><td>${esc(i.name)}</td><td>${esc(i.size) || '—'}</td><td class="num">${i.quantity}</td></tr>`).join('');
+      document.getElementById('totalPieces').textContent = pieces;
+      if (order.notes) { const el = document.getElementById('notes'); el.textContent = `Notas: ${order.notes}`; el.hidden = false; }
+      document.title = `Etiqueta ${order.id} | Works Jeans`;
+      document.getElementById('sheet').hidden = false;
+    }
+    load().catch((err) => { const el = document.getElementById('error'); el.textContent = err.message; el.hidden = false; });
+  </script>
+</body>
+</html>
