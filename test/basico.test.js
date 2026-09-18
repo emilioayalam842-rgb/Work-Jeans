@@ -85,6 +85,19 @@ test('seo: la ficha declara envío, tiempo de entrega y devoluciones para Google
   assert.match((await api('/feed/google-merchant.xml')).text, /<g:return_policy_days>15<\/g:return_policy_days>/);
 });
 
+test('seo: títulos y descripciones dentro del límite de Google', async () => {
+  const sitemap = (await api('/sitemap.xml')).text;
+  const rutas = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+  const largos = [];
+  for (const ruta of rutas) {
+    const html = (await api(ruta === '/' ? '/' : ruta)).text;
+    const t = (html.match(/<title>([\s\S]*?)<\/title>/) || [, ''])[1].trim();
+    const d = (html.match(/<meta name="description" content="([\s\S]*?)"/) || [, ''])[1].trim();
+    if (t.length > 60 || d.length > 158 || d.length < 100) largos.push(`${ruta} título ${t.length} descripción ${d.length}`);
+  }
+  assert.deepEqual(largos, [], `fuera de rango:\n${largos.join('\n')}`);
+});
+
 test('tienda: 404 y archivos privados bloqueados', async () => {
   assert.equal((await api('/pagina-que-no-existe')).status, 404);
   assert.equal((await api('/orders.json')).status, 404);
@@ -92,10 +105,28 @@ test('tienda: 404 y archivos privados bloqueados', async () => {
   assert.equal((await api('/backups/respaldo-2026-01-01.json')).status, 404);
 });
 
+test('seo: una sola dirección por página (las .html redirigen)', async () => {
+  for (const name of ['aviso-de-privacidad', 'envios-y-devoluciones']) {
+    const r = await api(`/${name}.html`);
+    assert.equal(r.status, 301, `${name}.html debería redirigir`);
+    assert.equal(r.headers.get('location'), `/${name}`);
+    const limpia = await api(`/${name}`);
+    assert.equal(limpia.status, 200);
+    assert.match(limpia.text, new RegExp(`rel="canonical" href="[^"]*/${name}"`));
+  }
+  const home = await api('/index.html');
+  assert.equal(home.status, 301);
+  assert.equal(home.headers.get('location'), '/');
+});
+
 test('seo: sitemap y robots', async () => {
   const s = await api('/sitemap.xml');
   assert.equal(s.status, 200);
   assert.match(s.text, /<loc>[^<]*\/pantalones-de-trabajo<\/loc>/);
+  assert.doesNotMatch(s.text, /<loc>[^<]*\.html<\/loc>/, 'el sitemap no debe listar direcciones .html');
+  assert.doesNotMatch(s.text, /<loc>[^<]*\/rastrear<\/loc>/, 'la página de rastreo no va en el sitemap');
+  const fechas = [...s.text.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map((m) => m[1]);
+  assert.ok(fechas.every((f) => /^\d{4}-\d{2}-\d{2}$/.test(f)), 'fechas con formato de día');
   assert.equal((await api('/robots.txt')).status, 200);
 });
 
@@ -103,7 +134,7 @@ test('caché: css versionado se guarda un año, html se revalida', async () => {
   const css = await api('/styles.css?v=prueba');
   assert.equal(css.status, 200);
   assert.match(css.headers.get('cache-control'), /max-age=31536000/);
-  const html = await api('/index.html');
+  const html = await api('/');
   assert.match(html.headers.get('cache-control'), /max-age=0/);
 });
 

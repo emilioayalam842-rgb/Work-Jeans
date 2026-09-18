@@ -21,8 +21,8 @@ const INDUSTRIAS = {
     kicker: 'Construcción · Obra',
     h1: 'Uniformes de mezclilla para construcción',
     h1Html: 'Uniformes para<br>construcción.',
-    title: 'Uniformes de Mezclilla para Construcción y Obra | Works Jeans Monterrey',
-    description: 'Pantalones y camisas de mezclilla 100% algodón para cuadrillas de construcción: costuras reforzadas, cinco bolsas, opción de cinta reflejante y tallas 28 a 50. Corridas completas con stock en Monterrey y envío a todo México.',
+    title: 'Uniformes de Mezclilla para Construcción | Works Jeans',
+    description: 'Pantalones y camisas de mezclilla para cuadrillas de obra: costuras reforzadas, cinco bolsas, opción reflejante y tallas 28 a 50. Corridas con stock.',
     intro: 'La obra castiga la ropa: concreto, varilla, rodillas en el piso. Por eso nuestros uniformes son de mezclilla 100% algodón con costuras dobles, no de tela delgada.',
     products: () => true,
     body: `
@@ -45,8 +45,8 @@ const INDUSTRIAS = {
     kicker: 'Manufactura · Planta',
     h1: 'Uniformes de mezclilla para manufactura y planta',
     h1Html: 'Uniformes para<br>manufactura<br>y planta.',
-    title: 'Uniformes de Mezclilla para Manufactura y Planta Industrial | Works Jeans',
-    description: 'Camisas y pantalones de mezclilla para líneas de producción y plantas industriales: corte sin partes sueltas, tallas hasta 50 y 5XG, opción reflejante para áreas con montacargas. Mayoreo con stock en Monterrey.',
+    title: 'Uniformes de Mezclilla para Manufactura | Works Jeans',
+    description: 'Camisas y pantalones de mezclilla para líneas de producción: corte sin partes sueltas, tallas hasta 50 y 5XG, opción reflejante. Mayoreo desde Monterrey.',
     intro: 'Uniformar una planta es uniformar a cientos de personas de todas las tallas. Tenemos la corrida completa en stock y un solo patrón para todos.',
     products: () => true,
     body: `
@@ -69,8 +69,8 @@ const INDUSTRIAS = {
     kicker: 'Mantenimiento · Talleres',
     h1: 'Uniformes de mezclilla para mantenimiento y talleres',
     h1Html: 'Uniformes para<br>mantenimiento<br>y talleres.',
-    title: 'Uniformes de Mezclilla para Mantenimiento y Talleres Mecánicos | Works Jeans',
-    description: 'Ropa de trabajo de mezclilla para técnicos de mantenimiento y talleres: resistente a grasa y lavado frecuente, cinco bolsas, costuras reforzadas y tallas completas. Compra desde una pieza o por mayoreo desde Monterrey.',
+    title: 'Uniformes de Mezclilla para Talleres | Works Jeans',
+    description: 'Ropa de trabajo de mezclilla para técnicos y talleres: resiste grasa y lavado frecuente, cinco bolsas y costuras reforzadas. Desde una pieza o mayoreo.',
     intro: 'Grasa, aceite y lavadas cada dos días. La mezclilla 100% algodón asienta el color en vez de destiñirse a manchones, y las costuras dobles aguantan el uso diario.',
     products: () => true,
     body: `
@@ -93,8 +93,8 @@ const INDUSTRIAS = {
     kicker: 'Logística · Patios · Transporte',
     h1: 'Uniformes reflejantes para logística y patios',
     h1Html: 'Uniformes para<br>logística<br>y patios.',
-    title: 'Uniformes Reflejantes para Logística, Almacén y Patios de Maniobras | Works Jeans',
-    description: 'Camisas y pantalones de mezclilla con cinta reflejante verde o naranja para almacenes, patios de maniobras y transporte. Tallas 28 a 50 y XCH a 5XG. Mayoreo con stock en Monterrey y envío a todo México.',
+    title: 'Uniformes Reflejantes para Logística | Works Jeans',
+    description: 'Camisas y pantalones de mezclilla con cinta reflejante para almacenes, patios de maniobras y transporte. Tallas completas y mayoreo con stock en Monterrey.',
     intro: 'Entre montacargas y tráileres lo primero es que te vean. Cinta reflejante cosida sobre mezclilla que aguanta el turno completo.',
     products: (p) => /reflejante/.test(p.id),
     body: `
@@ -117,12 +117,14 @@ const INDUSTRIAS = {
 // --- Páginas por ciudad (zona metropolitana de Monterrey) -----------------
 
 function ciudad(slug, nombre, contexto, faqLocal) {
+  // El título y la descripción se cortan en los resultados de Google: nombre corto para que quepan.
+  const corto = { 'San Nicolás de los Garza': 'San Nicolás', 'General Escobedo': 'Escobedo' }[nombre] || nombre;
   return {
     kicker: `${nombre} · Nuevo León`,
     h1: `Ropa de trabajo en ${nombre}`,
     h1Html: `Ropa de trabajo<br>en ${nombre}.`,
-    title: `Ropa de Trabajo en ${nombre}, N.L.: Pantalones y Camisas de Mezclilla | Works Jeans`,
-    description: `Pantalones y camisas de trabajo de mezclilla 100% algodón para empresas y trabajadores de ${nombre}, Nuevo León. Fabricados en Monterrey, con stock inmediato, mayoreo, bordado de logotipo y entrega por paquetería o recolección en tienda.`,
+    title: `Ropa de Trabajo en ${corto}, N.L. | Works Jeans${corto.length > 11 ? '' : ' Monterrey'}`,
+    description: `Pantalones y camisas de trabajo de mezclilla para empresas y trabajadores de ${corto}, N.L. Stock inmediato, mayoreo, bordado y entrega desde Monterrey.`,
     intro: `Atendemos a empresas y trabajadores de ${nombre} desde nuestra tienda en Monterrey: stock de todas las tallas, cotización por WhatsApp y entrega sin semanas de espera.`,
     products: () => true,
     body: `
@@ -171,8 +173,8 @@ const PRODUCTO_Y_CLIENTE = {
     kicker: 'Camisa · Reflejante',
     h1: 'Camisa de mezclilla con reflejante',
     h1Html: 'Camisa de<br>mezclilla con<br>reflejante.',
-    title: 'Camisa de Mezclilla con Reflejante Verde o Naranja | Works Jeans Monterrey',
-    description: 'Camisa de trabajo de mezclilla 100% algodón con cintas reflejantes cosidas en pecho, espalda y mangas, en verde o naranja. Botones reforzados, bolsillo frontal y tallas XCH a 5XG. Compra desde una pieza o por mayoreo.',
+    title: 'Camisa de Mezclilla con Reflejante | Works Jeans Monterrey',
+    description: 'Camisa de trabajo de mezclilla con cinta reflejante en pecho, espalda y mangas, verde o naranja. Tallas XCH a 5XG. Desde una pieza o por mayoreo.',
     intro: 'La misma camisa de trabajo de mezclilla, con cintas reflejantes cosidas para que te vean en planta, patio o vialidad.',
     products: (p) => p.category === 'Camisas' && /reflejante/.test(p.id),
     body: `
@@ -195,8 +197,8 @@ const PRODUCTO_Y_CLIENTE = {
     kicker: 'Pantalón · Reflejante',
     h1: 'Pantalón de mezclilla con reflejante',
     h1Html: 'Pantalón de<br>mezclilla con<br>reflejante.',
-    title: 'Pantalón de Mezclilla con Reflejante Verde o Naranja | Works Jeans Monterrey',
-    description: 'Pantalón de trabajo de mezclilla 100% algodón con dos cintas reflejantes cosidas en cada pierna, verde o naranja. Cinco bolsas, costuras reforzadas y tallas 28 a 50. Compra desde una pieza o por mayoreo desde Monterrey.',
+    title: 'Pantalón de Mezclilla con Reflejante | Works Jeans',
+    description: 'Pantalón de trabajo de mezclilla con dos cintas reflejantes en cada pierna, verde o naranja. Cinco bolsas y tallas 28 a 50. Desde una pieza o mayoreo.',
     intro: 'El pantalón de trabajo de mezclilla con cintas reflejantes en las piernas: visible de noche y en patios, resistente como un jean.',
     products: (p) => p.category === 'Pantalones' && /reflejante/.test(p.id),
     body: `
@@ -219,8 +221,8 @@ const PRODUCTO_Y_CLIENTE = {
     kicker: 'Tallas grandes · Hasta 50 y 5XG',
     h1: 'Ropa de trabajo en tallas grandes',
     h1Html: 'Ropa de trabajo<br>en tallas<br>grandes.',
-    title: 'Ropa de Trabajo en Tallas Grandes: Pantalón hasta 50 y Camisa hasta 5XG | Works Jeans',
-    description: 'Pantalones de trabajo de mezclilla hasta talla 50 y camisas hasta 5XG, con el mismo patrón y precio por grupo de tallas. Guía de medidas en pulgadas, stock en Monterrey y envío a todo México.',
+    title: 'Ropa de Trabajo en Tallas Grandes | Works Jeans Monterrey',
+    description: 'Pantalones de trabajo de mezclilla hasta talla 50 y camisas hasta 5XG, con el mismo patrón y precio. Medidas en pulgadas y stock en Monterrey.',
     intro: 'Una cuadrilla no viene en un solo tamaño. Fabricamos la corrida completa: pantalón del 28 al 50 y camisa de la XCH a la 5XG, sin pedidos especiales.',
     products: () => true,
     body: `
@@ -243,8 +245,8 @@ const PRODUCTO_Y_CLIENTE = {
     kicker: 'Fabricante · Monterrey',
     h1: 'Fabricantes de ropa de trabajo en Monterrey',
     h1Html: 'Fabricantes de<br>ropa de trabajo<br>en Monterrey.',
-    title: 'Fabricantes de Ropa de Trabajo en Monterrey: Works Jeans, Mezclilla 100% Algodón',
-    description: 'Works Jeans fabrica en Monterrey pantalones y camisas de trabajo de mezclilla 100% algodón. Venta directa de fábrica a empresas, distribuidores y público: stock inmediato, precio por volumen, bordado y factura.',
+    title: 'Fabricante de Ropa de Trabajo en Monterrey | Works Jeans',
+    description: 'Works Jeans fabrica en Monterrey pantalones y camisas de trabajo de mezclilla 100% algodón. Venta directa de fábrica con stock, mayoreo y bordado.',
     intro: 'Fabricamos en Monterrey y vendemos directo, sin intermediarios: por eso tenemos stock, precio por volumen y reposiciones rápidas.',
     products: () => true,
     body: `
@@ -272,8 +274,8 @@ const PRODUCTO_Y_CLIENTE = {
     kicker: 'Distribuidores · Revendedores',
     h1: 'Distribuidores de ropa de trabajo',
     h1Html: 'Distribuidores<br>de ropa<br>de trabajo.',
-    title: 'Distribuidores de Ropa de Trabajo: Precio de Distribuidor y Socio | Works Jeans',
-    description: 'Si revendes ropa de trabajo o uniformas a varias empresas, Works Jeans te da precio de distribuidor o de socio por grupo de tallas, stock inmediato en Monterrey, etiquetas por talla y envío a todo México.',
+    title: 'Distribuidores de Ropa de Trabajo | Works Jeans',
+    description: 'Precio de distribuidor en ropa de trabajo de mezclilla: stock inmediato en Monterrey, etiquetas por talla, factura y envío a todo México.',
     intro: 'Precio de distribuidor y de socio, corridas completas en stock y prendas etiquetadas por talla, listas para tu almacén o tu punto de venta.',
     products: () => true,
     body: `
@@ -300,8 +302,8 @@ const PRODUCTO_Y_CLIENTE = {
     kicker: 'Uniformes · Mezclilla',
     h1: 'Uniformes de mezclilla para trabajo',
     h1Html: 'Uniformes<br>de mezclilla.',
-    title: 'Uniformes de Mezclilla para Trabajo: Camisa y Pantalón 100% Algodón | Works Jeans',
-    description: 'Uniformes de mezclilla 100% algodón para empresas: camisa con botones reforzados y pantalón con costuras dobles, con o sin reflejante, tallas completas y bordado de logotipo. Fabricados en Monterrey, envío a todo México.',
+    title: 'Uniformes de Mezclilla para Trabajo | Works Jeans',
+    description: 'Uniformes de mezclilla 100% algodón para empresas: camisa y pantalón con costuras reforzadas, con o sin reflejante, tallas completas y bordado de logotipo.',
     intro: 'Camisa y pantalón de mezclilla que combinan, en todas las tallas, con o sin reflejante y con tu logotipo. Un uniforme que aguanta y se ve bien.',
     products: () => true,
     body: `
@@ -329,12 +331,12 @@ const APOYO = {
     kicker: 'Ayuda',
     h1: 'Preguntas frecuentes',
     h1Html: 'Preguntas<br>frecuentes.',
-    title: 'Preguntas Frecuentes: Tallas, Envíos, Factura y Mayoreo | Works Jeans',
-    description: 'Respuestas sobre tallas, envíos a todo México, cambios, facturación CFDI, métodos de pago, personalización con logotipo y mayoreo de ropa de trabajo Works Jeans.',
+    title: 'Preguntas Frecuentes de Ropa de Trabajo | Works Jeans',
+    description: 'Respuestas sobre tallas, envíos, cambios, factura CFDI, formas de pago, bordado de logotipo y mayoreo de ropa de trabajo Works Jeans.',
     intro: 'Todo lo que nos preguntan antes de comprar, en un solo lugar. Si falta algo, escríbenos por WhatsApp y te contestamos en horario de tienda.',
     products: null,
     body: `
-      <p>Somos fabricantes de ropa de trabajo de mezclilla en Monterrey. Vendemos en línea a todo México, en nuestra tienda de la colonia Venustiano Carranza y por mayoreo a empresas y distribuidores. Aquí están las dudas más comunes; también puedes revisar la <a href="/guia-de-tallas">guía de tallas</a>, las <a href="/envios-y-devoluciones.html">políticas de envío y cambios</a> y el estado de tu pedido en <a href="/rastrear">Rastrear mi pedido</a>.</p>
+      <p>Somos fabricantes de ropa de trabajo de mezclilla en Monterrey. Vendemos en línea a todo México, en nuestra tienda de la colonia Venustiano Carranza y por mayoreo a empresas y distribuidores. Aquí están las dudas más comunes; también puedes revisar la <a href="/guia-de-tallas">guía de tallas</a>, las <a href="/envios-y-devoluciones">políticas de envío y cambios</a> y el estado de tu pedido en <a href="/rastrear">Rastrear mi pedido</a>.</p>
     `,
     faq: [
       ['¿Manejan mayoreo?', 'Sí. Surtimos uniformes de trabajo a empresas, contratistas y distribuidores con precios de distribuidor y de socio según el volumen, y stock en Monterrey. Cotiza en la página para empresas.'],
@@ -356,8 +358,8 @@ const APOYO = {
     kicker: 'Nosotros',
     h1: 'Nosotros: Works Jeans, ropa de trabajo hecha en Monterrey',
     h1Html: 'Nuestra<br>historia.',
-    title: 'Nosotros: Works Jeans, Fabricante de Ropa de Trabajo en Monterrey',
-    description: 'Works Jeans nació en Monterrey para hacer pantalones y camisas de trabajo de mezclilla que aguanten el día a día. Fabricamos y vendemos directo, con stock en tienda, mayoreo y bordado de logotipo.',
+    title: 'Nosotros: Fabricante en Monterrey | Works Jeans',
+    description: 'Works Jeans nació en Monterrey para hacer ropa de trabajo de mezclilla que aguante el día a día. Fabricamos y vendemos directo, con stock y mayoreo.',
     intro: 'Workwear industrial para los que trabajan duro. Fabricado en Monterrey, vendido directo, sin intermediarios.',
     products: () => true,
     body: `
@@ -375,8 +377,8 @@ const APOYO = {
     kicker: 'Contacto',
     h1: 'Contacto: WhatsApp, teléfono y tienda en Monterrey',
     h1Html: 'Hablemos.',
-    title: 'Contacto Works Jeans: WhatsApp 81 2861 3551, Tienda en Monterrey',
-    description: 'Contacta a Works Jeans por WhatsApp o teléfono al 81 2861 3551, o visita la tienda en Calle Emiliano Zapata 3737, Venustiano Carranza, Monterrey. Lunes a viernes de 9:00 a. m. a 6:00 p. m.',
+    title: 'Contacto: WhatsApp y Tienda en Monterrey | Works Jeans',
+    description: 'Escríbenos por WhatsApp al 81 2861 3551 o visita la tienda en Emiliano Zapata 3737, Monterrey. Lunes a viernes de 9:00 a. m. a 6:00 p. m.',
     intro: 'Escríbenos para cotizaciones, tallas especiales o personalización con tu logotipo. Respondemos por WhatsApp en horario de tienda.',
     products: null,
     body: `
@@ -387,7 +389,7 @@ const APOYO = {
       <h2>Empresas y distribuidores</h2>
       <p>Para pedidos por volumen usa el <a href="/empresas">cotizador para empresas</a>: capturas prenda y cantidades por talla y te respondemos con la cotización formal por escrito, con precio de distribuidor o de socio y factura CFDI.</p>
       <h2>Pedidos en curso</h2>
-      <p>Consulta el estado de tu pedido en <a href="/rastrear">Rastrear mi pedido</a> con tu número de pedido y tu correo o teléfono. Para cambios de talla revisa las <a href="/envios-y-devoluciones.html">políticas de envío y cambios</a>.</p>
+      <p>Consulta el estado de tu pedido en <a href="/rastrear">Rastrear mi pedido</a> con tu número de pedido y tu correo o teléfono. Para cambios de talla revisa las <a href="/envios-y-devoluciones">políticas de envío y cambios</a>.</p>
     `,
     faq: [
       ['¿Responden en fin de semana?', 'Atendemos de lunes a viernes de 9:00 a. m. a 6:00 p. m. Los mensajes que llegan fuera de ese horario se contestan el siguiente día hábil.'],
@@ -399,7 +401,7 @@ const APOYO = {
     h1: 'Términos y condiciones de compra',
     h1Html: 'Términos y<br>condiciones.',
     title: 'Términos y Condiciones de Compra | Works Jeans',
-    description: 'Condiciones de compra en workjeans.mx: precios en pesos con IVA, métodos de pago, envíos, cambios de talla, garantía por defectos, facturación y contacto de Works Jeans, Monterrey.',
+    description: 'Condiciones de compra en workjeans.mx: precios con IVA, formas de pago, envíos, cambios de talla, garantía por defectos y facturación.',
     intro: 'Condiciones claras para comprar en workjeans.mx. Aplican a compras en línea, por WhatsApp y en tienda.',
     products: null,
     body: `
@@ -410,7 +412,7 @@ const APOYO = {
       <h2>3. Pedidos y pago</h2>
       <p>Un pedido queda confirmado cuando recibimos el pago: tarjeta de crédito o débito en línea, transferencia SPEI, pago en tienda de conveniencia con referencia o pago en nuestra tienda. Los pedidos por WhatsApp se confirman al acordar la forma de pago. El costo de envío se calcula con el código postal antes de pagar; cuando una zona no tiene tarifa publicada, se confirma por WhatsApp antes de enviar y no se cobra envío al pagar.</p>
       <h2>4. Envíos y entrega</h2>
-      <p>Preparamos el pedido en 1 a 2 días hábiles y la paquetería entrega en 3 a 7 días hábiles según el destino, con número de guía. Puedes recoger sin costo en la tienda. El detalle está en <a href="/envios-y-devoluciones.html">Envíos y devoluciones</a>.</p>
+      <p>Preparamos el pedido en 1 a 2 días hábiles y la paquetería entrega en 3 a 7 días hábiles según el destino, con número de guía. Puedes recoger sin costo en la tienda. El detalle está en <a href="/envios-y-devoluciones">Envíos y devoluciones</a>.</p>
       <h2>5. Cambios de talla y devoluciones</h2>
       <p>Aceptamos cambio de talla dentro de los 15 días naturales siguientes a la entrega, con la prenda sin usar, sin lavar y con etiquetas. En tienda no tiene costo; por paquetería el cliente cubre el envío de ida y vuelta. Las prendas personalizadas (bordado o DTF) no tienen cambio ni devolución salvo defecto de fabricación. Los reembolsos se hacen por el mismo medio de pago.</p>
       <h2>6. Garantía</h2>
@@ -420,7 +422,7 @@ const APOYO = {
       <h2>8. Facturación</h2>
       <p>Emitimos CFDI con los datos fiscales que el cliente captura al comprar. Los datos deben coincidir con la constancia de situación fiscal; la factura se envía al correo indicado.</p>
       <h2>9. Datos personales</h2>
-      <p>Tratamos tus datos conforme a nuestro <a href="/aviso-de-privacidad.html">aviso de privacidad</a>.</p>
+      <p>Tratamos tus datos conforme a nuestro <a href="/aviso-de-privacidad">aviso de privacidad</a>.</p>
       <h2>10. Ley aplicable</h2>
       <p>Estos términos se rigen por las leyes de los Estados Unidos Mexicanos, incluida la Ley Federal de Protección al Consumidor. Para cualquier controversia, las partes se someten a la Procuraduría Federal del Consumidor y a los tribunales competentes de Monterrey, Nuevo León.</p>
       <p><em>Última actualización: 17 de septiembre de 2026.</em></p>
@@ -437,8 +439,8 @@ const ARTICLES_EXTRA = {
     kicker: 'Artículo',
     h1: 'Verde o naranja: qué color de reflejante conviene según el trabajo',
     h1Html: 'Verde o naranja:<br>qué reflejante<br>conviene.',
-    title: 'Verde o Naranja: Qué Color de Cinta Reflejante Conviene | Works Jeans',
-    description: 'Cuándo elegir cinta reflejante verde y cuándo naranja en ropa de trabajo: fondo, horario, tipo de operación y reglamento interno. Guía corta para decidir antes de uniformar.',
+    title: 'Reflejante Verde o Naranja: Cuál Elegir | Works Jeans',
+    description: 'Cuándo elegir cinta reflejante verde y cuándo naranja: fondo, horario, tipo de operación y reglamento interno. Guía corta para decidir antes de uniformar.',
     intro: 'Los dos colores reflejan igual de noche. La diferencia está de día y en el fondo donde trabaja tu gente.',
     productsFilter: 'reflejante',
     publishedAt: PUBLISHED_2,
@@ -460,8 +462,8 @@ const ARTICLES_EXTRA = {
     kicker: 'Artículo',
     h1: 'Cuántos uniformes necesita cada trabajador y cada cuánto se reponen',
     h1Html: 'Cuántos uniformes<br>por trabajador.',
-    title: 'Cuántos Uniformes Necesita Cada Trabajador y Cada Cuánto Reponerlos | Works Jeans',
-    description: 'Cómo calcular juegos de uniforme por persona según turnos y lavado, cuándo reponer y cómo dejar tallas extra para ingresos. Guía práctica para compras de uniformes de trabajo.',
+    title: 'Cuántos Uniformes Necesita Cada Trabajador | Works Jeans',
+    description: 'Cómo calcular juegos de uniforme por persona según turnos y lavado, cuándo reponer y cómo dejar tallas extra para nuevos ingresos.',
     intro: 'Una regla sencilla: un juego puesto, uno en la lavadora y uno listo. A partir de ahí, ajusta por turno y por tipo de trabajo.',
     productsFilter: 'all',
     publishedAt: PUBLISHED_2,
@@ -486,8 +488,8 @@ const ARTICLES_EXTRA = {
     kicker: 'Artículo',
     h1: 'Qué debe incluir una cotización de uniformes (y qué preguntar antes de aceptarla)',
     h1Html: 'Qué debe incluir<br>una cotización<br>de uniformes.',
-    title: 'Qué Debe Incluir una Cotización de Uniformes de Trabajo | Works Jeans',
-    description: 'Lista de lo que una cotización seria de uniformes debe traer: prenda, tela, tallas, precio por talla, personalización, tiempo de entrega, envío, factura y política de cambios. Úsala para comparar proveedores.',
+    title: 'Qué Debe Incluir una Cotización de Uniformes | Works Jeans',
+    description: 'Lo que una cotización seria de uniformes debe traer: tela, tallas, precio, personalización, entrega, envío, factura y cambios. Úsala para comparar.',
     intro: 'Una cotización que solo dice "uniforme: $X" no sirve para comparar. Esto es lo que debe traer por escrito.',
     productsFilter: 'all',
     publishedAt: PUBLISHED_2,
@@ -512,7 +514,7 @@ const ARTICLES_EXTRA = {
     kicker: 'Artículo',
     h1: 'Cómo cuidar la cinta reflejante de la ropa de trabajo para que no pierda brillo',
     h1Html: 'Cómo cuidar<br>la cinta<br>reflejante.',
-    title: 'Cómo Cuidar la Cinta Reflejante de la Ropa de Trabajo | Works Jeans',
+    title: 'Cómo Cuidar la Cinta Reflejante | Works Jeans',
     description: 'Lavado, secado y almacenamiento de camisas y pantalones con cinta reflejante: qué hacer y qué evitar para que la cinta siga reflejando y no se cuartee.',
     intro: 'La cinta reflejante se desgasta más por el lavado que por el trabajo. Con tres hábitos dura mucho más.',
     productsFilter: 'reflejante',
@@ -533,8 +535,8 @@ const ARTICLES_EXTRA = {
     kicker: 'Artículo',
     h1: 'Camisa de trabajo o camisola: diferencias y cuándo usar cada una',
     h1Html: 'Camisa de trabajo<br>o camisola.',
-    title: 'Camisa de Trabajo o Camisola: Diferencias y Cuándo Usar Cada Una | Works Jeans',
-    description: 'Qué diferencia hay entre una camisa de trabajo de mezclilla y una camisola, en tela, cierre, bolsas y uso, y cuál conviene para obra, planta, taller o servicio.',
+    title: 'Camisa de Trabajo o Camisola: Diferencias | Works Jeans',
+    description: 'Diferencias entre una camisa de trabajo de mezclilla y una camisola, en tela, cierre, bolsas y uso, y cuál conviene para obra, planta o taller.',
     intro: 'Se usan como sinónimos, pero no son lo mismo. La diferencia está en la tela, el cierre y para qué se pensó cada una.',
     productsFilter: 'camisas',
     publishedAt: PUBLISHED_2,
@@ -557,8 +559,8 @@ const ARTICLES_EXTRA = {
     kicker: 'Artículo',
     h1: 'Tallas grandes de ropa de trabajo: cómo medir y pedir sin equivocarte',
     h1Html: 'Tallas grandes:<br>cómo medir<br>y pedir.',
-    title: 'Tallas Grandes de Ropa de Trabajo: Cómo Medir y Pedir | Works Jeans',
-    description: 'Cómo tomar medidas para pantalón 44 a 50 y camisa 2XG a 5XG, qué talla elegir si estás entre dos y cómo pedirlas en una corrida de uniformes. Con las medidas reales en pulgadas.',
+    title: 'Tallas Grandes: Cómo Medir y Pedir | Works Jeans',
+    description: 'Cómo tomar medidas para pantalón 44 a 50 y camisa 2XG a 5XG, qué talla elegir si estás entre dos y cómo pedirlas en una corrida de uniformes.',
     intro: 'En tallas grandes equivocarse cuesta más, porque hay menos dónde escoger. Mide con la tabla y pide con calma.',
     productsFilter: 'all',
     publishedAt: PUBLISHED_2,
@@ -577,8 +579,8 @@ const ARTICLES_EXTRA = {
     kicker: 'Artículo',
     h1: 'Bordado en mezclilla: tamaños, posiciones y colores que sí se ven',
     h1Html: 'Bordado en<br>mezclilla: tamaños<br>y posiciones.',
-    title: 'Bordado en Mezclilla: Tamaños, Posiciones y Colores que Sí se Ven | Works Jeans',
-    description: 'Dónde poner el logotipo bordado en una camisa o pantalón de mezclilla, qué tamaño funciona, qué colores contrastan con el índigo y qué mandar al proveedor para que quede bien.',
+    title: 'Bordado en Mezclilla: Tamaños y Posiciones | Works Jeans',
+    description: 'Dónde poner el logotipo bordado en mezclilla, qué tamaño funciona, qué colores contrastan con el índigo y qué archivo mandar al proveedor.',
     intro: 'Un logotipo bien bordado se ve a metros y dura lo que dura la prenda. Uno mal planeado se pierde en el azul.',
     productsFilter: 'all',
     publishedAt: PUBLISHED_2,
@@ -604,8 +606,8 @@ const ARTICLES_EXTRA = {
     kicker: 'Artículo',
     h1: 'Ropa de trabajo para clima caliente: por qué mezclilla 100% algodón',
     h1Html: 'Ropa de trabajo<br>para clima<br>caliente.',
-    title: 'Ropa de Trabajo para Clima Caliente: Por Qué Mezclilla 100% Algodón | Works Jeans',
-    description: 'Cómo elegir ropa de trabajo para el calor de Monterrey y el norte de México: por qué el algodón respira mejor que el poliéster, qué corte ayuda y cómo cuidar la prenda en verano.',
+    title: 'Ropa de Trabajo para Clima Caliente | Works Jeans',
+    description: 'Cómo elegir ropa de trabajo para el calor del norte de México: por qué el algodón respira mejor que el poliéster y qué corte ayuda en verano.',
     intro: 'En el norte se trabaja a 40 grados. La tela que llevas puesta ocho horas decide qué tan pesado se hace el día.',
     productsFilter: 'all',
     publishedAt: PUBLISHED_2,

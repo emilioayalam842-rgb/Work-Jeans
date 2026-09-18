@@ -62,7 +62,7 @@ document.addEventListener('click', (e) => {
           <button type="button" class="btn btn-primary" data-choice="all">Aceptar todo</button>
           <button type="button" class="btn btn-secondary" data-choice="essential">Solo necesarias</button>
         </div>
-        <a class="cookie-more" href="aviso-de-privacidad.html#cookies">Más información</a>
+        <a class="cookie-more" href="/aviso-de-privacidad#cookies">Más información</a>
       </div>`;
     el.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-choice]');

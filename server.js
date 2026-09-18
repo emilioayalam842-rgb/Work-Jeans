@@ -949,8 +949,11 @@ app.use((req, res, next) => {
   if (req.method !== 'GET' || !/\.(jpe?g|png)$/i.test(req.path)) return next();
   if (!(req.headers.accept || '').includes('image/webp')) return next();
   const rel = path.normalize(decodeURIComponent(req.path)).replace(/^(\.\.[/\\])+/, '');
-  const webpPath = path.join(__dirname, rel.replace(/\.(jpe?g|png)$/i, '.webp'));
-  if (!webpPath.startsWith(__dirname) || !fs.existsSync(webpPath)) return next();
+  // Las fotos de producto pueden vivir en el volumen (DATA_DIR) y no en la carpeta del proyecto.
+  const base = rel.startsWith('/assets/products/') ? PRODUCTS_IMG_DIR : __dirname;
+  const sub = rel.startsWith('/assets/products/') ? rel.slice('/assets/products/'.length) : rel;
+  const webpPath = path.join(base, sub.replace(/\.(jpe?g|png)$/i, '.webp'));
+  if (!webpPath.startsWith(base) || !fs.existsSync(webpPath)) return next();
   res.type('image/webp');
   res.set('Vary', 'Accept');
   res.set('Cache-Control', 'public, max-age=2592000');
@@ -1141,7 +1144,30 @@ function shippingDetailsSchema() {
   return zones.length === 1 ? build(zones[0]) : zones.map(build);
 }
 
-const ASSET_V = '20260918c';
+// Fecha del último cambio de contenido del sitio (para el sitemap). Súbela solo cuando cambien
+// de verdad los textos de las páginas, no en cada despliegue.
+const CONTENT_LASTMOD = '2026-09-18';
+
+// Descripción para buscadores: Google corta alrededor de 160 caracteres, así que se arma con las
+// frases completas que quepan más la cola con tallas y envío.
+function metaDescription(lead, tail, extra = '', max = 158) {
+  const sentences = String(lead || '').trim().split(/(?<=\.)\s+/);
+  let out = '';
+  for (const sentence of sentences) {
+    const next = out ? `${out} ${sentence}` : sentence;
+    if (next.length + 1 + tail.length > max) break;
+    out = next;
+  }
+  if (!out) out = sentences[0].slice(0, Math.max(0, max - tail.length - 2)).replace(/\s+\S*$/, '');
+  const base = `${out} ${tail}`.trim();
+  // La coletilla opcional solo se agrega si cabe, para no pasar del límite que muestra Google.
+  return extra && base.length + 1 + extra.length <= max ? `${base} ${extra}` : base;
+}
+function fileDate(file) {
+  try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
+}
+
+const ASSET_V = '20260918d';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1187,7 +1213,7 @@ function renderProductPage(product, req) {
   const low = lowStockThreshold();
   const simple = product.sizes.every((v) => !v.length && !v.color);
   const title = product.seoTitle || `${product.name} | Works Jeans`;
-  const desc = product.seoDescription || `${product.description} ${money(product.priceCents)} MXN. Tallas ${product.sizes[0]?.size} a ${product.sizes[product.sizes.length - 1]?.size}. Hecho en Monterrey, envío a todo México.`.slice(0, 300);
+  const desc = product.seoDescription || metaDescription(product.description, `Tallas ${product.sizes[0]?.size} a ${product.sizes[product.sizes.length - 1]?.size}. Envío a todo México.`, 'Hecho en Monterrey.');
 
   const avail = totalStock <= 0
     ? { cls: 'is-out', text: 'Agotado por ahora' }
@@ -1229,8 +1255,8 @@ function renderProductPage(product, req) {
   sections.push(['cuidados', 'Cuidados', `<p>${escapeHtml(product.care || 'Lava al revés con agua fría, sin cloro, y seca a la sombra. Plancha a temperatura media si hace falta.')}</p>`]);
   const ship = settings.shipping || {};
   const shipText = ship.summary || 'Enviamos a todo México por paquetería. Preparamos tu pedido en 1 a 2 días hábiles y la entrega tarda de 3 a 7 días hábiles según el destino. También puedes recoger sin costo en la tienda de Monterrey.';
-  sections.push(['envios', 'Envíos', `<p>${escapeHtml(shipText)}</p><p><a class="pdp-link" href="/envios-y-devoluciones.html">Política completa de envíos</a></p>`]);
-  sections.push(['cambios', 'Cambios y devoluciones', `<p>Cambio de talla dentro de 15 días con la prenda sin usar, sin lavar y con etiquetas. En tienda no tiene costo; por paquetería el cliente cubre el envío de ida y vuelta. Las prendas personalizadas (bordado o DTF) no tienen cambio salvo defecto de fabricación.</p><p><a class="pdp-link" href="/envios-y-devoluciones.html#cambios">Cómo solicitar un cambio</a></p>`]);
+  sections.push(['envios', 'Envíos', `<p>${escapeHtml(shipText)}</p><p><a class="pdp-link" href="/envios-y-devoluciones">Política completa de envíos</a></p>`]);
+  sections.push(['cambios', 'Cambios y devoluciones', `<p>Cambio de talla dentro de 15 días con la prenda sin usar, sin lavar y con etiquetas. En tienda no tiene costo; por paquetería el cliente cubre el envío de ida y vuelta. Las prendas personalizadas (bordado o DTF) no tienen cambio salvo defecto de fabricación.</p><p><a class="pdp-link" href="/envios-y-devoluciones#cambios">Cómo solicitar un cambio</a></p>`]);
   sections.push(['facturacion', 'Facturación', '<p>Facturamos (CFDI). Al pagar marca <strong>Necesito factura</strong> en el carrito y captura RFC, razón social, código postal fiscal, régimen y uso de CFDI. La factura llega al correo que indiques.</p>']);
   sections.push(['mayoreo', 'Mayoreo y empresas', `<p>El precio que ves es de cliente final con IVA incluido. ${product.wholesale ? `Precio de mayoreo de <strong>${money(product.wholesale.priceCents)}</strong> por pieza a partir de ${product.wholesale.minQty} piezas. ` : ''}Para distribuidores y compras por volumen manejamos <strong>precios de distribuidor y de socio</strong> por grupo de tallas. Cotizamos corridas para cuadrillas, plantas y talleres, con facturación y entrega a todo México.</p><p><a class="btn btn-primary" href="/empresas">Cotizar para empresa</a></p>`]);
   const rvs = approvedReviews(product.id);
@@ -1341,8 +1367,8 @@ const CATEGORY_PAGES = {
     facts: [['Tela', 'Mezclilla 100% algodón'], ['Tallas', '28 a 50'], ['Bolsas', 'Cinco, reforzadas'], ['Reflejante', 'Verde o naranja, opcional'], ['Compra', 'Desde una pieza']],
     h1: 'Pantalones de trabajo',
     h1Html: 'Pantalones<br>de trabajo.',
-    title: 'Pantalones de Trabajo de Mezclilla (Work Jeans) | Works Jeans Monterrey',
-    description: 'Pantalones de trabajo de mezclilla 100% algodón, corte recto y costuras reforzadas. Con opción de cintas reflejantes. Tallas 28 a 50. Mayoreo con stock inmediato en Monterrey y envíos a todo México.',
+    title: 'Pantalones de Trabajo de Mezclilla | Works Jeans',
+    description: 'Pantalones de trabajo de mezclilla 100% algodón, corte recto y costuras reforzadas. Tallas 28 a 50, con opción reflejante. Mayoreo con stock en Monterrey.',
     intro: 'Pantalones de trabajo de mezclilla 100% algodón, hechos en Monterrey para aguantar la obra, la planta y el taller. Cinco bolsas, costuras reforzadas y corte recto que deja moverse. Tallas del 28 al 50: compra desde una pieza o pide la corrida completa para tu cuadrilla.',
     faq: [
       ['¿Qué talla de pantalón de trabajo debo pedir?', 'La misma que usas en un jean normal. Si dudas entre dos, elige la mayor: la mezclilla no encoge y en el trabajo se agradece el espacio. Consulta la guía de tallas para medir un pantalón que te quede bien.'],
@@ -1385,8 +1411,8 @@ const CATEGORY_PAGES = {
     facts: [['Tela', 'Mezclilla 100% algodón'], ['Tallas', 'XCH a 5XG'], ['Botones', 'Reforzados'], ['Reflejante', 'Verde o naranja, opcional'], ['Compra', 'Desde una pieza']],
     h1: 'Camisas de trabajo',
     h1Html: 'Camisas<br>de trabajo.',
-    title: 'Camisas de Trabajo de Mezclilla con Reflejante | Works Jeans Monterrey',
-    description: 'Camisas de trabajo de mezclilla 100% algodón con botones reforzados y opción de cintas reflejantes. Tallas XCH a 5XG. Mayoreo con stock inmediato en Monterrey y envíos a todo México.',
+    title: 'Camisas de Trabajo de Mezclilla | Works Jeans Monterrey',
+    description: 'Camisas de trabajo de mezclilla 100% algodón con botones reforzados y opción de cinta reflejante. Tallas XCH a 5XG. Mayoreo con stock en Monterrey.',
     intro: 'Camisas de mezclilla para uso industrial: algodón 100%, bolsillo frontal, botones reforzados y acabado preencogido. De la XCH a la 5XG, con o sin reflejante.',
     seoText: `
       <h2>Camisas de mezclilla para uso industrial</h2>
@@ -1634,7 +1660,13 @@ function relatedLinks(currentSlug) {
     ...Object.entries(CONTENT.LANDINGS).map(([slug, p]) => [`/${slug}`, p.h1]),
     ...Object.entries(articlesMap()).map(([slug, p]) => [`/articulos/${slug}`, p.h1]),
   ];
-  return items.filter(([href]) => !href.endsWith(`/${currentSlug}`)).slice(0, 8).map(([href, label]) => `<li><a href="${href}">${escapeHtml(label)}</a></li>`).join('');
+  // Se rota el punto de partida según la página actual: así todas reciben enlaces internos
+  // en vez de que siempre salgan las mismas ocho.
+  const list = items.filter(([href]) => !href.endsWith(`/${currentSlug}`));
+  const seed = [...String(currentSlug)].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const start = list.length ? seed % list.length : 0;
+  const picked = [...list.slice(start), ...list.slice(0, start)].slice(0, 8);
+  return picked.map(([href, label]) => `<li><a href="${href}">${escapeHtml(label)}</a></li>`).join('');
 }
 
 function fmtLongDate(iso) {
@@ -1707,8 +1739,8 @@ app.get('/articulos', (req, res) => {
     kicker: 'Artículos',
     h1: 'Artículos sobre ropa de trabajo',
     h1Html: 'Artículos.',
-    title: 'Artículos sobre Ropa de Trabajo, Uniformes y Seguridad | Works Jeans',
-    description: 'Guías prácticas sobre pantalones de trabajo, work jeans, tallas de uniforme y normas de seguridad en México, escritas por Works Jeans, fabricante en Monterrey.',
+    title: 'Artículos sobre Ropa de Trabajo | Works Jeans',
+    description: 'Guías sobre pantalones de trabajo, tallas de uniforme, reflejantes y normas de seguridad, escritas por Works Jeans, fabricante en Monterrey.',
     intro: 'Guías cortas y prácticas para quien compra o usa ropa de trabajo.',
     products: null,
     body: `<div class="article-list">${list}</div>`,
@@ -1736,21 +1768,24 @@ app.get('/:slug', (req, res, next) => {
 
 app.get('/sitemap.xml', (req, res) => {
   const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
-  const today = new Date().toISOString().slice(0, 10);
+  // La fecha debe ser la del último cambio real del contenido, no la del despliegue: si todo el sitio
+  // dice "modificado hoy" en cada deploy, Google deja de hacerle caso.
+  const productsDate = fileDate(PRODUCTS_PATH) || CONTENT_LASTMOD;
   const urls = [
-    { loc: `${origin}/`, priority: '1.0' },
-    { loc: `${origin}/pantalones-de-trabajo`, priority: '0.9' },
-    { loc: `${origin}/camisas-de-trabajo`, priority: '0.9' },
-    ...Object.keys(CONTENT.LANDINGS).map((slug) => ({ loc: `${origin}/${slug}`, priority: '0.8' })),
-    { loc: `${origin}/empresas`, priority: '0.9' },
-    { loc: `${origin}/articulos`, priority: '0.6' },
+    { loc: `${origin}/`, priority: '1.0', lastmod: CONTENT_LASTMOD },
+    { loc: `${origin}/pantalones-de-trabajo`, priority: '0.9', lastmod: CONTENT_LASTMOD },
+    { loc: `${origin}/camisas-de-trabajo`, priority: '0.9', lastmod: CONTENT_LASTMOD },
+    ...Object.entries(CONTENT.LANDINGS).map(([slug, page]) => ({ loc: `${origin}/${slug}`, priority: '0.8', lastmod: page.updatedAt || page.publishedAt || CONTENT_LASTMOD })),
+    { loc: `${origin}/empresas`, priority: '0.9', lastmod: CONTENT_LASTMOD },
+    { loc: `${origin}/articulos`, priority: '0.6', lastmod: CONTENT_LASTMOD },
     ...publishedArticles().map((a) => ({ loc: `${origin}/articulos/${a.slug}`, priority: '0.7', lastmod: a.updatedAt || a.publishedAt })),
-    ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8' })),
-    { loc: `${origin}/rastrear`, priority: '0.3' },
-    { loc: `${origin}/aviso-de-privacidad.html`, priority: '0.3' },
-    { loc: `${origin}/envios-y-devoluciones.html`, priority: '0.3' },
+    ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8', lastmod: p.updatedAt || productsDate })),
+    { loc: `${origin}/aviso-de-privacidad`, priority: '0.3', lastmod: CONTENT_LASTMOD },
+    { loc: `${origin}/envios-y-devoluciones`, priority: '0.3', lastmod: CONTENT_LASTMOD },
+    { loc: `${origin}/terminos-y-condiciones`, priority: '0.3', lastmod: CONTENT_LASTMOD },
   ];
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod || today}</lastmod><priority>${u.priority}</priority></url>`).join('\n')}\n</urlset>\n`;
+  const day = (v) => String(v || CONTENT_LASTMOD).slice(0, 10);
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${day(u.lastmod)}</lastmod><priority>${u.priority}</priority></url>`).join('\n')}\n</urlset>\n`;
   res.type('application/xml').send(xml);
 });
 
@@ -1766,8 +1801,15 @@ if (USES_EXTERNAL_DATA) {
   app.use('/assets/products', express.static(PRODUCTS_IMG_DIR, { maxAge: '30d' }));
 }
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '30d', dotfiles: 'deny' }));
+// Las páginas legales existían como archivo .html; ahora la dirección buena es la limpia y la vieja
+// redirige, para que Google no vea dos páginas con el mismo contenido.
+app.get(['/aviso-de-privacidad.html', '/envios-y-devoluciones.html', '/terminos-y-condiciones.html', '/index.html'], (req, res) => {
+  const clean = req.path === '/index.html' ? '/' : req.path.replace(/\.html$/, '');
+  res.redirect(301, clean + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''));
+});
+
 // El inicio se sirve con los textos editables del panel (va antes del estático para que no lo gane index.html).
-app.get(['/', '/index.html'], (req, res) => {
+app.get('/', (req, res) => {
   const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
   res.set('Cache-Control', 'public, max-age=0, must-revalidate');
   res.type('html').send(applySiteTexts(html));
@@ -2368,6 +2410,12 @@ const productUpload = upload.fields([{ name: 'image', maxCount: 1 }, { name: 'im
 
 function uploadedImages(req) {
   const files = [...(req.files?.image || []), ...(req.files?.images || [])];
+  // Versión WebP junto a cada foto: pesa mucho menos y el navegador que la acepta la recibe sola.
+  files.forEach((f) => {
+    if (!/\.(jpe?g|png)$/i.test(f.filename)) return;
+    const dest = path.join(PRODUCTS_IMG_DIR, f.filename.replace(/\.(jpe?g|png)$/i, '.webp'));
+    sharp(f.path).webp({ quality: 82 }).toFile(dest).catch((err) => logError('imagen.webp', err, f.filename));
+  });
   return files.map((f) => `assets/products/${f.filename}`);
 }
 
@@ -2931,7 +2979,7 @@ function emailLayout(title, body) {
       <img src="https://www.workjeans.mx/assets/img/works-jeans-logo.png" alt="Works Jeans" width="120" style="display:block;margin-bottom:18px">
       <h1 style="font-size:22px;margin:0 0 14px;text-transform:uppercase;letter-spacing:.02em">${title}</h1>
       ${body}
-      <p style="font-size:13px;color:#6a6a6a;margin-top:28px;border-top:1px solid #ddd;padding-top:14px">Works Jeans · ${escapeHtml(s.address || 'Monterrey, N.L.')}<br>WhatsApp ${escapeHtml(s.phoneDisplay || '')} · <a href="https://www.workjeans.mx" style="color:#0f0f0f">www.workjeans.mx</a><br><a href="https://www.workjeans.mx/envios-y-devoluciones.html" style="color:#6a6a6a">Envíos y cambios</a> · <a href="https://www.workjeans.mx/aviso-de-privacidad.html" style="color:#6a6a6a">Aviso de privacidad</a></p>
+      <p style="font-size:13px;color:#6a6a6a;margin-top:28px;border-top:1px solid #ddd;padding-top:14px">Works Jeans · ${escapeHtml(s.address || 'Monterrey, N.L.')}<br>WhatsApp ${escapeHtml(s.phoneDisplay || '')} · <a href="https://www.workjeans.mx" style="color:#0f0f0f">www.workjeans.mx</a><br><a href="https://www.workjeans.mx/envios-y-devoluciones" style="color:#6a6a6a">Envíos y cambios</a> · <a href="https://www.workjeans.mx/aviso-de-privacidad" style="color:#6a6a6a">Aviso de privacidad</a></p>
     </div>
   </div></body></html>`;
 }
