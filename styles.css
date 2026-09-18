@@ -2386,8 +2386,8 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 .b2b-industries a { color: var(--black); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--yellow); }
 
 /* Vender más: miniatura única oculta, FAQ en tarjetas, filtros de catálogo, calculadora de talla, aviso de stock */
-.product-thumbs:has(> .product-thumb:only-child) { display: none; }
-.product-thumbs:has(> .product-thumb:only-child) + h3 { padding-top: 22px; }
+/* Una sola foto: la fila de miniaturas se oculta pero conserva su altura para que los títulos queden alineados entre tarjetas */
+.product-thumbs:has(> .product-thumb:only-child) { visibility: hidden; }
 .faq-list { border-top: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .faq-item { border-bottom: 0; background: #fff; border: 1px solid var(--line-2); border-radius: var(--radius-card); padding: 0 18px; box-shadow: var(--shadow-soft); align-self: start; transition: border-color 0.15s; }
 .faq-item:hover { border-color: var(--black); }
@@ -2433,3 +2433,7 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 .footer-credit { margin: 8px 0 0; font-family: var(--label); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: #8a8a8a; }
 .footer-credit a { color: inherit; text-decoration: none; border-bottom: 1px solid rgba(0,0,0,0.25); transition: color 0.15s, border-color 0.15s; }
 .footer-credit a:hover { color: var(--black); border-bottom-color: var(--yellow); }
+
+/* Tarjetas alineadas: la descripción absorbe el espacio y talla, cantidad y botón quedan al fondo */
+.product-card .product-desc { flex: 1 1 auto; }
+.product-card .card-row { margin-top: auto; }
