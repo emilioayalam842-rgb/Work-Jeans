@@ -926,7 +926,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/reviews.json', '/stock-alerts.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/reviews.json', '/stock-alerts.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/contenido-extra.js', '/migracion-seo.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -1142,6 +1142,25 @@ function shippingDetailsSchema() {
   };
   if (!zones.length) return build(null);
   return zones.length === 1 ? build(zones[0]) : zones.map(build);
+}
+
+// Los artículos se copian una vez a articles.json y luego manda el panel: esta migración corrige
+// los títulos y descripciones largos de los que nadie ha editado (solo si el texto sigue siendo el viejo).
+function migrarSeoArticulos() {
+  let pares;
+  try { pares = require('./migracion-seo.js'); } catch { return; }
+  let articles;
+  try { articles = getArticles(); } catch { return; }
+  if (!articles.length) return;
+  const mapa = new Map(pares);
+  let cambios = 0;
+  articles.forEach((a) => {
+    for (const campo of ['title', 'description']) {
+      const nuevo = mapa.get(a[campo]);
+      if (nuevo) { a[campo] = nuevo; cambios += 1; }
+    }
+  });
+  if (cambios) { saveArticles(articles); console.log(`SEO: ${cambios} títulos o descripciones de artículos acortados.`); }
 }
 
 // Fecha del último cambio de contenido del sitio (para el sitemap). Súbela solo cuando cambien
@@ -1782,7 +1801,6 @@ app.get('/sitemap.xml', (req, res) => {
     ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8', lastmod: p.updatedAt || productsDate })),
     { loc: `${origin}/aviso-de-privacidad`, priority: '0.3', lastmod: CONTENT_LASTMOD },
     { loc: `${origin}/envios-y-devoluciones`, priority: '0.3', lastmod: CONTENT_LASTMOD },
-    { loc: `${origin}/terminos-y-condiciones`, priority: '0.3', lastmod: CONTENT_LASTMOD },
   ];
   const day = (v) => String(v || CONTENT_LASTMOD).slice(0, 10);
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${day(u.lastmod)}</lastmod><priority>${u.priority}</priority></url>`).join('\n')}\n</urlset>\n`;
@@ -4509,6 +4527,7 @@ async function backupTick() {
 }
 setInterval(() => { backupTick(); }, 20 * 60 * 1000);
 setTimeout(() => { backupTick(); }, 30 * 1000);
+setTimeout(() => { try { migrarSeoArticulos(); } catch (err) { logError('migracion.seo', err); } }, 3000);
 
 app.get('/api/admin/backups', requireAdmin, perm('respaldo'), (req, res) => {
   res.json({ backups: listBackups(), emailWeekly: getSettings().backupEmail !== false, emailConfigured: Boolean(notifyTarget()), lastEmailAt: lastBackupEmailAt() });
