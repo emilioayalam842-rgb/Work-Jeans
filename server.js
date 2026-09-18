@@ -1067,7 +1067,8 @@ function productJsonLd(product, origin, url) {
           availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
           itemCondition: 'https://schema.org/NewCondition',
           seller: { '@id': `${origin}/#negocio` },
-          shippingDetails: { '@type': 'OfferShippingDetails', shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'MX' } },
+          shippingDetails: shippingDetailsSchema(),
+          hasMerchantReturnPolicy: returnPolicySchema(origin),
         },
       },
       {
@@ -1080,6 +1081,64 @@ function productJsonLd(product, origin, url) {
       },
     ],
   };
+}
+
+// --- Envío y devoluciones para los datos estructurados de producto ---
+// Google usa estos campos para mostrar junto al resultado el costo de envío, el tiempo de entrega y
+// los días de devolución. Los tiempos y la política son los publicados en /envios-y-devoluciones;
+// el costo sale de las zonas de envío del panel y solo se declara cuando tiene un precio capturado.
+const RETURN_POLICY_DAYS = 15; // "15 días naturales" para cambios y devoluciones
+const HANDLING_DAYS = [1, 2]; // "los pedidos se preparan en 1 a 2 días hábiles"
+const TRANSIT_DAYS = [3, 7]; // "de 3 a 7 días hábiles según el destino"
+
+function daysRange(text, fallback) {
+  const nums = String(text || '').match(/\d+/g);
+  if (!nums || !nums.length) return fallback;
+  const min = parseInt(nums[0], 10);
+  const max = nums[1] ? parseInt(nums[1], 10) : min;
+  return [min, Math.max(min, max)];
+}
+
+function returnPolicySchema(origin) {
+  return {
+    '@type': 'MerchantReturnPolicy',
+    applicableCountry: 'MX',
+    returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+    merchantReturnDays: RETURN_POLICY_DAYS,
+    returnMethod: ['https://schema.org/ReturnByMail', 'https://schema.org/ReturnInStore'],
+    returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+    merchantReturnLink: `${origin}/envios-y-devoluciones`,
+  };
+}
+
+function ratedZones() {
+  const cfg = getSettings().shipping || {};
+  return (Array.isArray(cfg.zones) ? cfg.zones : []).filter((z) => Number.isFinite(z.costCents) && z.costCents >= 0);
+}
+
+function shippingDetailsSchema() {
+  const zones = ratedZones();
+  const build = (zone) => {
+    const [tMin, tMax] = daysRange(zone && zone.days, TRANSIT_DAYS);
+    return {
+      '@type': 'OfferShippingDetails',
+      shippingDestination: {
+        '@type': 'DefinedRegion',
+        addressCountry: 'MX',
+        ...(zone && /^\d{5}$/.test(String(zone.cpFrom || '')) && /^\d{5}$/.test(String(zone.cpTo || ''))
+          ? { postalCodeRange: { '@type': 'PostalCodeRangeSpecification', postalCodeBegin: String(zone.cpFrom), postalCodeEnd: String(zone.cpTo) } }
+          : {}),
+      },
+      deliveryTime: {
+        '@type': 'ShippingDeliveryTime',
+        handlingTime: { '@type': 'QuantitativeValue', minValue: HANDLING_DAYS[0], maxValue: HANDLING_DAYS[1], unitCode: 'DAY' },
+        transitTime: { '@type': 'QuantitativeValue', minValue: tMin, maxValue: tMax, unitCode: 'DAY' },
+      },
+      ...(zone ? { shippingRate: { '@type': 'MonetaryAmount', value: (zone.costCents / 100).toFixed(2), currency: 'MXN' } } : {}),
+    };
+  };
+  if (!zones.length) return build(null);
+  return zones.length === 1 ? build(zones[0]) : zones.map(build);
 }
 
 const ASSET_V = '20260918c';
@@ -1429,6 +1488,20 @@ app.get('/:slug(pantalones-de-trabajo|camisas-de-trabajo)', (req, res) => render
 
 // --- Feed de productos para Google Merchant Center (RSS 2.0 con espacio de nombres g:) ---
 app.get('/feed/google-merchant.xml', (req, res) => {
+  // Envío por zona (solo las que ya tienen costo capturado en el panel); los tiempos van una sola vez
+  // por producto, con el rango más amplio de las zonas configuradas.
+  const feedZones = ratedZones();
+  const feedTransit = feedZones.length
+    ? feedZones.reduce((acc, z) => { const [a, b] = daysRange(z.days, TRANSIT_DAYS); return [Math.min(acc[0], a), Math.max(acc[1], b)]; }, [99, 0])
+    : TRANSIT_DAYS;
+  const feedShipping = `${feedZones.map((z) => `
+      <g:shipping><g:country>MX</g:country><g:postal_code>${z.cpFrom}-${z.cpTo}</g:postal_code><g:price>${(z.costCents / 100).toFixed(2)} MXN</g:price></g:shipping>`).join('')}
+      <g:min_handling_time>${HANDLING_DAYS[0]}</g:min_handling_time>
+      <g:max_handling_time>${HANDLING_DAYS[1]}</g:max_handling_time>
+      <g:min_transit_time>${feedTransit[0]}</g:min_transit_time>
+      <g:max_transit_time>${feedTransit[1]}</g:max_transit_time>
+      <g:return_policy_days>${RETURN_POLICY_DAYS}</g:return_policy_days>`;
+
   const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
   const x = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
   const items = [];
@@ -1455,7 +1528,7 @@ app.get('/feed/google-merchant.xml', (req, res) => {
       <g:age_group>adult</g:age_group>
       <g:material>Mezclilla 100% algodón</g:material>
       <g:google_product_category>${p.category === 'Pantalones' ? '204' : '212'}</g:google_product_category>
-      <g:product_type>${x(p.category === 'Pantalones' ? 'Ropa de trabajo > Pantalones de trabajo' : 'Ropa de trabajo > Camisas de trabajo')}</g:product_type>
+      <g:product_type>${x(p.category === 'Pantalones' ? 'Ropa de trabajo > Pantalones de trabajo' : 'Ropa de trabajo > Camisas de trabajo')}</g:product_type>${feedShipping}
     </item>`);
     }
   }

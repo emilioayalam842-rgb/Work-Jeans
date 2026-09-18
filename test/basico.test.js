@@ -69,6 +69,22 @@ test('tienda: ficha de producto, categoría, artículos y página de contenido',
   assert.equal((await api('/rastrear.html')).status, 200);
 });
 
+test('seo: la ficha declara envío, tiempo de entrega y devoluciones para Google', async () => {
+  const products = (await api('/products.json')).json;
+  const html = (await api(`/producto/${products[0].id}`)).text;
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+  const product = blocks.flatMap((b) => b['@graph'] || [b]).find((n) => n['@type'] === 'Product');
+  assert.ok(product, 'falta el bloque de producto');
+  const ship = [].concat(product.offers.shippingDetails)[0];
+  assert.equal(ship['@type'], 'OfferShippingDetails');
+  assert.equal(ship.deliveryTime.handlingTime.unitCode, 'DAY');
+  assert.ok(ship.deliveryTime.transitTime.maxValue >= ship.deliveryTime.transitTime.minValue);
+  const ret = product.offers.hasMerchantReturnPolicy;
+  assert.equal(ret.merchantReturnDays, 15);
+  assert.match(ret.merchantReturnLink, /\/envios-y-devoluciones$/);
+  assert.match((await api('/feed/google-merchant.xml')).text, /<g:return_policy_days>15<\/g:return_policy_days>/);
+});
+
 test('tienda: 404 y archivos privados bloqueados', async () => {
   assert.equal((await api('/pagina-que-no-existe')).status, 404);
   assert.equal((await api('/orders.json')).status, 404);
