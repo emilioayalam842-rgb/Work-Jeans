@@ -17,3 +17,7 @@ articles.json
 customers.json
 pending-checkouts.json
 reviews.json
+backups/
+errors.log
+stock-alerts.json
+*.tmp

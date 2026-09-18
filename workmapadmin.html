@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260918a">
-  <link rel="stylesheet" href="admin.css?v=20260918a">
+  <link rel="stylesheet" href="styles.css?v=20260918b">
+  <link rel="stylesheet" href="admin.css?v=20260918b">
 </head>
 <body class="admin-body">
 
@@ -711,6 +711,23 @@
           <p class="admin-success" id="restoreSuccess"></p>
         </div>
 
+        <h2 class="admin-section-spacer admin-backup-box">Respaldos automáticos</h2>
+        <div class="admin-backup-box admin-panel-box admin-settings-form">
+          <p class="admin-help">Cada día se guarda una copia en el servidor (se conservan las últimas 14) y una vez a la semana se envía por correo al correo de avisos. Aun así, descarga una copia a tu computadora de vez en cuando.</p>
+          <label class="admin-check"><input type="checkbox" id="backupEmailToggle" checked> Enviar el respaldo semanal por correo</label>
+          <div class="admin-sys-actions">
+            <button type="button" class="btn btn-secondary btn-sm" id="backupNowBtn">Hacer respaldo ahora</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="backupEmailBtn">Enviarme el último por correo</button>
+            <span class="admin-muted" id="backupEmailInfo"></span>
+          </div>
+          <ul class="admin-backup-list" id="backupList"><li class="admin-muted">Cargando…</li></ul>
+          <p class="admin-error" id="backupListError"></p>
+          <p class="admin-success" id="backupListSuccess"></p>
+        </div>
+
+        <h2 class="admin-section-spacer admin-backup-box">Estado del sistema</h2>
+        <div class="admin-backup-box admin-panel-box" id="systemStatusBox"><p class="admin-muted">Cargando…</p></div>
+
         <h2 class="admin-section-spacer">Cuenta</h2>
         <div class="admin-panel-box">
           <p class="admin-muted">Contraseña, verificación en dos pasos y sesiones abiertas se manejan desde <strong>Mi cuenta</strong> (arriba a la derecha).</p>
@@ -1401,18 +1418,19 @@
     </div>
   </div>
 
-  <script src="admin.js?v=20260918a"></script>
-  <script src="admin-catalogo.js?v=20260918a"></script>
-  <script src="admin-compras.js?v=20260918a"></script>
-  <script src="admin-marketing.js?v=20260918a"></script>
-  <script src="admin-reportes.js?v=20260918a"></script>
-  <script src="admin-dashboard.js?v=20260918a"></script>
-  <script src="admin-pedidos.js?v=20260918a"></script>
-  <script src="admin-ui.js?v=20260918a"></script>
-  <script src="admin-mas.js?v=20260918a"></script>
-  <script src="admin-seguridad.js?v=20260918a"></script>
-  <script src="admin-leads.js?v=20260918a"></script>
-  <script src="admin-resenas.js?v=20260918a"></script>
-  <script src="admin-contenido.js?v=20260918a"></script>
+  <script src="admin.js?v=20260918b"></script>
+  <script src="admin-catalogo.js?v=20260918b"></script>
+  <script src="admin-compras.js?v=20260918b"></script>
+  <script src="admin-marketing.js?v=20260918b"></script>
+  <script src="admin-reportes.js?v=20260918b"></script>
+  <script src="admin-dashboard.js?v=20260918b"></script>
+  <script src="admin-pedidos.js?v=20260918b"></script>
+  <script src="admin-ui.js?v=20260918b"></script>
+  <script src="admin-mas.js?v=20260918b"></script>
+  <script src="admin-seguridad.js?v=20260918b"></script>
+  <script src="admin-leads.js?v=20260918b"></script>
+  <script src="admin-resenas.js?v=20260918b"></script>
+  <script src="admin-contenido.js?v=20260918b"></script>
+  <script src="admin-sistema.js?v=20260918b"></script>
 </body>
 </html>

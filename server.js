@@ -33,6 +33,43 @@ const ANALYTICS_PATH = path.join(DATA_DIR, 'analytics.json');
 const ARTICLES_PATH = path.join(DATA_DIR, 'articles.json');
 const CUSTOMERS_PATH = path.join(DATA_DIR, 'customers.json');
 const REVIEWS_PATH = path.join(DATA_DIR, 'reviews.json');
+const BACKUPS_DIR = path.join(DATA_DIR, 'backups');
+const ERRORS_PATH = path.join(DATA_DIR, 'errors.log');
+const STARTED_AT = new Date().toISOString();
+
+// Escritura segura: primero a un archivo temporal y luego se renombra, para que un corte a media escritura
+// no deje un JSON a medias (y sin pedidos).
+function writeFileSafe(file, data) {
+  const tmp = `${file}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, data);
+  fs.renameSync(tmp, file);
+}
+
+// Registro de errores: en consola (Railway) y en errors.log dentro de DATA_DIR para verlos desde el panel.
+const recentErrors = [];
+function logError(scope, err, extra) {
+  const entry = { at: new Date().toISOString(), scope, message: String((err && err.message) || err || 'error').slice(0, 500) };
+  if (extra) entry.extra = String(extra).slice(0, 300);
+  recentErrors.push(entry);
+  if (recentErrors.length > 200) recentErrors.shift();
+  console.error(`[${scope}] ${entry.message}${extra ? ` · ${entry.extra}` : ''}`);
+  try {
+    fs.appendFileSync(ERRORS_PATH, JSON.stringify(entry) + '\n');
+    if (Math.random() < 0.02) {
+      const lines = fs.readFileSync(ERRORS_PATH, 'utf-8').trim().split('\n');
+      if (lines.length > 1000) writeFileSafe(ERRORS_PATH, lines.slice(-500).join('\n') + '\n');
+    }
+  } catch { /* sin disco: queda en memoria */ }
+}
+function readErrors(hours = 24) {
+  const since = Date.now() - hours * 3600000;
+  let lines = [];
+  try { lines = fs.readFileSync(ERRORS_PATH, 'utf-8').trim().split('\n').filter(Boolean); } catch { /* sin archivo */ }
+  const out = [];
+  for (const l of lines) { try { const e = JSON.parse(l); if (new Date(e.at).getTime() >= since) out.push(e); } catch { /* línea rota */ } }
+  return out;
+}
+const emailState = { lastOkAt: null, lastErrorAt: null, lastError: null };
 
 // Primer arranque con DATA_DIR externo: copiar los datos iniciales del proyecto.
 if (USES_EXTERNAL_DATA) {
@@ -41,7 +78,7 @@ if (USES_EXTERNAL_DATA) {
     const target = path.join(DATA_DIR, name);
     if (!fs.existsSync(target)) {
       const seed = path.join(__dirname, name);
-      fs.writeFileSync(target, fs.existsSync(seed) ? fs.readFileSync(seed) : (name === 'settings.json' ? '{}\n' : '[]\n'));
+      writeFileSafe(target, fs.existsSync(seed) ? fs.readFileSync(seed) : (name === 'settings.json' ? '{}\n' : '[]\n'));
     }
   }
 }
@@ -61,7 +98,7 @@ if (USES_EXTERNAL_DATA) {
     const migrated = Object.keys(OLD_DEFAULTS).filter((k) => current[k] === OLD_DEFAULTS[k] && seed[k] && seed[k] !== current[k]);
     for (const k of migrated) current[k] = seed[k];
     if (missing.length || migrated.length || migrated_hours) {
-      fs.writeFileSync(SETTINGS_PATH, JSON.stringify(current, null, 2) + '\n');
+      writeFileSafe(SETTINGS_PATH, JSON.stringify(current, null, 2) + '\n');
       console.log(`Ajustes actualizados: ${[...missing, ...migrated].join(', ')}`);
     }
   } catch {
@@ -142,7 +179,7 @@ try {
     if (p.name === m.old[0]) { p.name = m.new[0]; changed = true; }
     if (p.description === m.old[1]) { p.description = m.new[1]; changed = true; }
   }
-  if (changed) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
+  if (changed) writeFileSafe(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
 } catch {
   // Sin productos aún; no pasa nada.
 }
@@ -155,7 +192,7 @@ try {
     const fixed = String(p.description || '').replace(/ de alta visibilidad/gi, '').replace(/ alta visibilidad/gi, '').replace(/y alta seguridad\./g, 'y para que te vean.');
     if (fixed !== p.description) { p.description = fixed; changed = true; }
   }
-  if (changed) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
+  if (changed) writeFileSafe(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
 } catch {
   // Sin productos aún.
 }
@@ -210,9 +247,9 @@ try {
   const settings = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
   if (settings.priceListApplied !== PRICE_LIST_ID) {
     const products = JSON.parse(fs.readFileSync(PRODUCTS_PATH, 'utf-8'));
-    if (applyPriceList(products)) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
+    if (applyPriceList(products)) writeFileSafe(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
     settings.priceListApplied = PRICE_LIST_ID;
-    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n');
+    writeFileSafe(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n');
     console.log(`Precios actualizados con la lista ${PRICE_LIST_ID} (cliente final + IVA).`);
   }
 } catch {
@@ -232,7 +269,7 @@ try {
       if (!v.sku || (oldBase && v.sku.startsWith(`${oldBase}-`) && v.sku !== autoSku(p, v))) { v.sku = autoSku(p, v); changed = true; }
     }
   }
-  if (changed) fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
+  if (changed) writeFileSafe(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
 } catch {
   // Sin productos aún.
 }
@@ -546,7 +583,7 @@ function productCost(product, variant) {
 }
 
 function saveProducts(products) {
-  fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
+  writeFileSafe(PRODUCTS_PATH, JSON.stringify(products, null, 2) + '\n');
 }
 
 function getOrders() {
@@ -554,7 +591,7 @@ function getOrders() {
 }
 
 function saveOrders(orders) {
-  fs.writeFileSync(ORDERS_PATH, JSON.stringify(orders, null, 2) + '\n');
+  writeFileSafe(ORDERS_PATH, JSON.stringify(orders, null, 2) + '\n');
 }
 
 // Historial de movimientos de inventario (últimos 2000).
@@ -572,7 +609,7 @@ function logInventory(entries) {
   const log = getInventoryLog();
   const at = new Date().toISOString();
   for (const e of entries) log.push({ id: `mov_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`, at, ...e });
-  fs.writeFileSync(INVENTORY_PATH, JSON.stringify(log.slice(-2000), null, 2) + '\n');
+  writeFileSafe(INVENTORY_PATH, JSON.stringify(log.slice(-2000), null, 2) + '\n');
 }
 
 const ORDER_STATUSES = ['pendiente', 'pagado', 'preparacion', 'enviado', 'entregado', 'cancelado', 'devuelto'];
@@ -588,7 +625,7 @@ function readJsonList(file) {
   }
 }
 function writeJsonList(file, list) {
-  fs.writeFileSync(file, JSON.stringify(list, null, 2) + '\n');
+  writeFileSafe(file, JSON.stringify(list, null, 2) + '\n');
 }
 const getSuppliers = () => readJsonList(SUPPLIERS_PATH);
 const saveSuppliers = (l) => writeJsonList(SUPPLIERS_PATH, l);
@@ -600,9 +637,9 @@ const getPromotions = () => readJsonList(PROMOTIONS_PATH);
 const getLeads = () => readJsonList(LEADS_PATH);
 const getCustomers = () => readJsonList(CUSTOMERS_PATH);
 const getReviews = () => readJsonList(REVIEWS_PATH);
-const saveReviews = (list) => fs.writeFileSync(REVIEWS_PATH, JSON.stringify(list, null, 2) + '\n');
-const saveCustomers = (list) => fs.writeFileSync(CUSTOMERS_PATH, JSON.stringify(list, null, 2) + '\n');
-const saveLeads = (list) => fs.writeFileSync(LEADS_PATH, JSON.stringify(list, null, 2) + '\n');
+const saveReviews = (list) => writeFileSafe(REVIEWS_PATH, JSON.stringify(list, null, 2) + '\n');
+const saveCustomers = (list) => writeFileSafe(CUSTOMERS_PATH, JSON.stringify(list, null, 2) + '\n');
+const saveLeads = (list) => writeFileSafe(LEADS_PATH, JSON.stringify(list, null, 2) + '\n');
 const savePromotions = (l) => writeJsonList(PROMOTIONS_PATH, l);
 
 // --- Promociones: cálculo del carrito con descuentos automáticos y por cupón ---
@@ -729,7 +766,7 @@ function getSettings() {
 }
 
 function saveSettings(settings) {
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n');
+  writeFileSafe(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n');
 }
 
 function makeOrderId() {
@@ -809,6 +846,19 @@ function restoreStock(products, items, { orderId = null, reason = 'Pedido cancel
 
 const app = express();
 app.set('trust proxy', 1);
+// Express 4 no captura errores de rutas async: se envuelven para que lleguen al manejador de errores.
+for (const method of ['get', 'post', 'put', 'delete']) {
+  const original = app[method].bind(app);
+  app[method] = (route, ...handlers) => {
+    if (!handlers.length) return original(route);
+    return original(route, ...handlers.map((h) => (typeof h !== 'function' || h.length >= 4 ? h : (req, res, next) => {
+      try {
+        const r = h(req, res, next);
+        if (r && typeof r.catch === 'function') r.catch(next);
+      } catch (err) { next(err); }
+    })));
+  };
+}
 const PORT = process.env.PORT || 3000;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
@@ -887,7 +937,7 @@ app.use((req, res, next) => {
     res.status(400).send('Bad request');
     return;
   }
-  if (p.includes('..') || req.path.includes('..') || PRIVATE_FILES.has(p) || /^\/(node_modules|\.git|\.claude|img-cache)(\/|$)/.test(p) || /\.(json|md|lock|log)$/i.test(p) && !['/products.json', '/settings.json'].includes(p)) {
+  if (p.includes('..') || req.path.includes('..') || PRIVATE_FILES.has(p) || /^\/(node_modules|\.git|\.claude|img-cache)(\/|$)/.test(p) || /\.(json|md|lock|log)$/i.test(p) && !p.startsWith('/api/') && !['/products.json', '/settings.json'].includes(p)) {
     res.status(404).send('Not found');
     return;
   }
@@ -1032,7 +1082,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260918a';
+const ASSET_V = '20260918b';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1436,7 +1486,7 @@ const PRODUCT_FILTERS = {
 const STATIC_FILTER_BY_SLUG = { 'work-jeans-vs-pantalon-de-mezclilla-normal': 'pantalones', 'ropa-de-trabajo-y-normas-de-seguridad-en-mexico': 'reflejante', 'como-elegir-talla-de-uniforme-para-tu-cuadrilla': 'all', 'ropa-reflejante-de-trabajo-cuando-ayuda-y-que-no-es': 'reflejante', 'camisa-de-mezclilla-o-de-poliester-para-trabajar-en-planta': 'camisas', 'bordado-o-dtf-como-poner-tu-logotipo-en-uniformes-de-trabajo': 'all', 'que-preguntar-antes-de-comprar-ropa-de-trabajo-por-mayoreo': 'all', 'como-cuidar-la-ropa-de-trabajo-de-mezclilla-para-que-dure-mas': 'all' };
 
 const getArticles = () => readJsonList(ARTICLES_PATH);
-const saveArticles = (list) => fs.writeFileSync(ARTICLES_PATH, JSON.stringify(list, null, 2) + '\n');
+const saveArticles = (list) => writeFileSafe(ARTICLES_PATH, JSON.stringify(list, null, 2) + '\n');
 
 // Texto del panel → HTML seguro. Acepta HTML sencillo o un formato ligero: "## Título", "- viñeta", párrafos separados por línea en blanco, **negritas**, [texto](url).
 const ALLOWED_TAGS = new Set(['h2', 'h3', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'a', 'br', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'details', 'summary', 'div', 'span']);
@@ -1648,7 +1698,9 @@ app.use(express.static(__dirname, {
   extensions: ['html'],
   // HTML, CSS y JS cambian con cada deploy: el navegador y Cloudflare deben revalidar (ETag) en vez de guardar copias por horas.
   setHeaders: (res, filePath) => {
-    if (/\.(html|css|js|xml|txt)$/i.test(filePath)) res.set('Cache-Control', 'public, max-age=0, must-revalidate');
+    // CSS y JS llevan ?v=versión en el HTML: cada cambio genera una URL nueva, así que pueden guardarse un año.
+    if (/\.(css|js)$/i.test(filePath) && res.req && res.req.query && res.req.query.v) res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    else if (/\.(html|css|js|xml|txt)$/i.test(filePath)) res.set('Cache-Control', 'public, max-age=0, must-revalidate');
   },
 }));
 
@@ -2074,7 +2126,7 @@ app.get('/api/size-tables', (req, res) => {
 // --- Avisos "vuelve a haber stock": el cliente deja su correo en una talla agotada ---
 const STOCK_ALERTS_PATH = path.join(DATA_DIR, 'stock-alerts.json');
 const getStockAlerts = () => readJsonList(STOCK_ALERTS_PATH);
-const saveStockAlerts = (list) => fs.writeFileSync(STOCK_ALERTS_PATH, JSON.stringify(list, null, 2) + '\n');
+const saveStockAlerts = (list) => writeFileSafe(STOCK_ALERTS_PATH, JSON.stringify(list, null, 2) + '\n');
 const stockAlertAttempts = new Map();
 app.post('/api/stock-alerts', (req, res) => {
   const ip = clientIp(req);
@@ -2121,6 +2173,14 @@ setTimeout(() => { checkStockAlerts().catch(() => {}); }, 30 * 1000);
 app.get('/api/sat-catalogs', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400');
   res.json({ regimenes: SAT_REGIMENES, usos: SAT_USOS });
+});
+
+// Para monitoreo externo (UptimeRobot, Railway): responde 200 si el servidor y los datos están accesibles.
+app.get('/health', (req, res) => {
+  let ok = true;
+  try { getSettings(); getProducts(); } catch { ok = false; }
+  res.set('Cache-Control', 'no-store');
+  res.status(ok ? 200 : 500).json({ ok, uptime: Math.round(process.uptime()), at: new Date().toISOString() });
 });
 
 app.get('/api/settings', (req, res) => {
@@ -2677,19 +2737,21 @@ function notifyTarget() {
   return apiKey && to ? { apiKey, to, from: process.env.NOTIFY_FROM || 'Works Jeans <onboarding@resend.dev>' } : null;
 }
 
-async function sendEmail({ subject, html }) {
+async function sendEmail({ subject, html, attachments }) {
   const target = notifyTarget();
   if (!target) return false;
   try {
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${target.apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: target.from, to: target.to, subject, html }),
+      body: JSON.stringify({ from: target.from, to: target.to, subject, html, ...(attachments ? { attachments } : {}) }),
     });
-    if (!r.ok) console.error('Correo no enviado:', r.status, await r.text());
+    if (!r.ok) { const t = await r.text(); emailState.lastErrorAt = new Date().toISOString(); emailState.lastError = `Resend ${r.status}`; logError('correo.aviso', `Resend ${r.status}`, t); }
+    else emailState.lastOkAt = new Date().toISOString();
     return r.ok;
   } catch (err) {
-    console.error('Correo no enviado:', err.message);
+    emailState.lastErrorAt = new Date().toISOString(); emailState.lastError = err.message;
+    logError('correo.aviso', err);
     return false;
   }
 }
@@ -2709,10 +2771,12 @@ async function sendEmailTo({ to, subject, html }) {
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ from: process.env.NOTIFY_FROM || 'Works Jeans <onboarding@resend.dev>', to, subject, html }),
     });
-    if (!r.ok) { const t = await r.text(); console.error('Correo al cliente no enviado:', r.status, t); return { ok: false, reason: `Resend ${r.status}` }; }
+    if (!r.ok) { const t = await r.text(); emailState.lastErrorAt = new Date().toISOString(); emailState.lastError = `Resend ${r.status}`; logError('correo.cliente', `Resend ${r.status}`, t); return { ok: false, reason: `Resend ${r.status}` }; }
+    emailState.lastOkAt = new Date().toISOString();
     return { ok: true };
   } catch (err) {
-    console.error('Correo al cliente no enviado:', err.message);
+    emailState.lastErrorAt = new Date().toISOString(); emailState.lastError = err.message;
+    logError('correo.cliente', err);
     return { ok: false, reason: err.message };
   }
 }
@@ -2899,7 +2963,7 @@ const OPENPAY = process.env.OPENPAY_MERCHANT_ID && process.env.OPENPAY_PRIVATE_K
 } : null;
 const PENDING_CHECKOUTS_PATH = path.join(DATA_DIR, 'pending-checkouts.json');
 const getPendingCheckouts = () => readJsonList(PENDING_CHECKOUTS_PATH);
-const savePendingCheckouts = (list) => fs.writeFileSync(PENDING_CHECKOUTS_PATH, JSON.stringify(list, null, 2) + '\n');
+const savePendingCheckouts = (list) => writeFileSafe(PENDING_CHECKOUTS_PATH, JSON.stringify(list, null, 2) + '\n');
 
 function paymentsInfo() {
   return { provider: OPENPAY ? 'openpay' : (stripe ? 'stripe' : null), spei: Boolean(OPENPAY), store: Boolean(OPENPAY) && process.env.OPENPAY_STORES !== 'false', sandbox: Boolean(OPENPAY?.sandbox) };
@@ -3051,8 +3115,8 @@ app.post('/api/checkout', async (req, res) => {
     notifyNewOrder(order);
     res.json({ orderId: order.id, key: order.accessKey });
   } catch (err) {
-    console.error('Openpay:', err.message, err.openpay ? JSON.stringify(err.openpay).slice(0, 300) : '');
-    res.status(502).json({ error: `No se pudo iniciar el pago: ${err.message}. Intenta de nuevo o pide por WhatsApp.` });
+    logError('openpay.checkout', err, err.openpay ? JSON.stringify(err.openpay).slice(0, 300) : '');
+    res.status(502).json({ error: 'No se pudo iniciar el pago en este momento; no se te cobró nada. Intenta de nuevo en unos minutos o pide por WhatsApp.' });
   }
 });
 
@@ -3098,7 +3162,7 @@ app.post('/api/openpay/webhook', express.json({ limit: '200kb' }), async (req, r
       else if (order && charge.status === 'refunded') { order.payment.status = 'refunded'; order.payment.chargeStatus = charge.status; saveOrders(orders); }
     }
   } catch (err) {
-    console.error('Openpay webhook:', err.message);
+    logError('openpay.webhook', err);
   }
 });
 
@@ -3336,6 +3400,11 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
     res.json({ url: session.url });
   } catch (err) {
+    if (err && err.type && String(err.type).startsWith('Stripe')) {
+      logError('stripe.checkout', err);
+      res.status(502).json({ error: 'No se pudo iniciar el pago con tarjeta en este momento; no se te cobró nada. Intenta de nuevo o pide por WhatsApp.' });
+      return;
+    }
     res.status(400).json({ error: err.message });
   }
 });
@@ -3429,7 +3498,7 @@ function trackEvent(event, { sid, path, item, cents } = {}) {
     try {
       const keys = Object.keys(analyticsBuffer).sort();
       for (const k of keys.slice(0, Math.max(0, keys.length - 400))) delete analyticsBuffer[k];
-      fs.writeFileSync(ANALYTICS_PATH, JSON.stringify(analyticsBuffer));
+      writeFileSafe(ANALYTICS_PATH, JSON.stringify(analyticsBuffer));
     } catch { /* sin disco */ }
   }, 1000);
 }
@@ -4071,10 +4140,10 @@ app.delete('/api/admin/customers/:id', requireAdmin, perm('pedidos.editar'), (re
 
 // --- Respaldo y restauración de los datos del panel (no incluye las fotos) ---
 
-app.get('/api/admin/backup', requireAdmin, perm('respaldo'), (req, res) => {
-  const backup = {
+function buildBackup() {
+  return {
     app: 'works-jeans',
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     products: getProducts(),
     orders: getOrders(),
@@ -4084,31 +4153,154 @@ app.get('/api/admin/backup', requireAdmin, perm('respaldo'), (req, res) => {
     purchases: getPurchases(),
     returns: getReturns(),
     promotions: getPromotions(),
+    leads: readJsonList(LEADS_PATH),
+    customers: readJsonList(CUSTOMERS_PATH),
+    reviews: readJsonList(REVIEWS_PATH),
+    articles: readJsonList(ARTICLES_PATH),
+    stockAlerts: readJsonList(STOCK_ALERTS_PATH),
   };
-  res.set('Content-Disposition', `attachment; filename="respaldo-works-jeans-${backup.exportedAt.slice(0, 10)}.json"`);
-  res.json(backup);
-});
+}
 
-app.post('/api/admin/restore', requireAdmin, perm('respaldo'), express.json({ limit: '25mb' }), (req, res) => {
-  const b = req.body;
-  if (!b || b.app !== 'works-jeans' || !Array.isArray(b.products) || !Array.isArray(b.orders) || typeof b.settings !== 'object') {
-    res.status(400).json({ error: 'El archivo no es un respaldo válido de Works Jeans.' });
-    return;
-  }
+function validBackup(b) {
+  return b && b.app === 'works-jeans' && Array.isArray(b.products) && Array.isArray(b.orders) && b.settings && typeof b.settings === 'object';
+}
+
+function restoreBackup(b) {
   // Copia de seguridad de lo actual antes de sobrescribir, por si acaso.
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   for (const [name, file] of [['products', PRODUCTS_PATH], ['orders', ORDERS_PATH], ['settings', SETTINGS_PATH], ['inventory', INVENTORY_PATH]]) {
     if (fs.existsSync(file)) fs.copyFileSync(file, path.join(DATA_DIR, `${name}.antes-de-restaurar-${stamp}.json`));
   }
+  const current = getSettings();
   saveProducts(b.products);
   saveOrders(b.orders);
-  saveSettings(b.settings);
-  fs.writeFileSync(INVENTORY_PATH, JSON.stringify(Array.isArray(b.inventory) ? b.inventory : [], null, 2) + '\n');
+  saveSettings({ ...b.settings, security: current.security }); // los usuarios y la seguridad no se restauran
+  writeFileSafe(INVENTORY_PATH, JSON.stringify(Array.isArray(b.inventory) ? b.inventory : [], null, 2) + '\n');
   if (Array.isArray(b.suppliers)) saveSuppliers(b.suppliers);
   if (Array.isArray(b.purchases)) savePurchases(b.purchases);
   if (Array.isArray(b.returns)) saveReturns(b.returns);
   if (Array.isArray(b.promotions)) savePromotions(b.promotions);
-  res.json({ ok: true, products: b.products.length, orders: b.orders.length });
+  if (Array.isArray(b.leads)) saveLeads(b.leads);
+  if (Array.isArray(b.customers)) saveCustomers(b.customers);
+  if (Array.isArray(b.reviews)) saveReviews(b.reviews);
+  if (Array.isArray(b.articles)) saveArticles(b.articles);
+  if (Array.isArray(b.stockAlerts)) saveStockAlerts(b.stockAlerts);
+  return { ok: true, products: b.products.length, orders: b.orders.length };
+}
+
+app.get('/api/admin/backup', requireAdmin, perm('respaldo'), (req, res) => {
+  const backup = buildBackup();
+  res.set('Content-Disposition', `attachment; filename="respaldo-works-jeans-${backup.exportedAt.slice(0, 10)}.json"`);
+  res.json(backup);
+});
+
+app.post('/api/admin/restore', requireAdmin, perm('respaldo'), express.json({ limit: '25mb' }), (req, res) => {
+  if (!validBackup(req.body)) {
+    res.status(400).json({ error: 'El archivo no es un respaldo válido de Works Jeans.' });
+    return;
+  }
+  auditLog(req, 'respaldo.restaurar', { details: 'archivo subido' });
+  res.json(restoreBackup(req.body));
+});
+
+// --- Respaldos automáticos: uno al día en el servidor (se conservan 14) y uno a la semana por correo ---
+const BACKUP_NAME = /^respaldo-\d{4}-\d{2}-\d{2}\.json$/;
+function listBackups() {
+  try {
+    return fs.readdirSync(BACKUPS_DIR).filter((n) => BACKUP_NAME.test(n)).sort().reverse().map((name) => {
+      const st = fs.statSync(path.join(BACKUPS_DIR, name));
+      return { name, bytes: st.size, at: st.mtime.toISOString(), date: name.slice(9, 19) };
+    });
+  } catch { return []; }
+}
+function localDate() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
+}
+function runAutoBackup(force = false) {
+  fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+  const file = path.join(BACKUPS_DIR, `respaldo-${localDate()}.json`);
+  if (!force && fs.existsSync(file)) return null;
+  writeFileSafe(file, JSON.stringify(buildBackup()));
+  listBackups().slice(14).forEach((b) => { try { fs.unlinkSync(path.join(BACKUPS_DIR, b.name)); } catch { /* ya no está */ } });
+  return file;
+}
+const BACKUP_MAIL_MARK = path.join(BACKUPS_DIR, 'ultimo-correo.txt');
+function lastBackupEmailAt() {
+  try { return new Date(fs.readFileSync(BACKUP_MAIL_MARK, 'utf-8').trim()).toISOString(); } catch { return null; }
+}
+async function emailWeeklyBackup(force = false) {
+  if (!force && getSettings().backupEmail === false) return { ok: false, reason: 'desactivado' };
+  if (!notifyTarget()) return { ok: false, reason: 'sin correo de avisos o sin RESEND_API_KEY' };
+  const last = lastBackupEmailAt();
+  if (!force && last && Date.now() - new Date(last).getTime() < 6.5 * 24 * 3600000) return { ok: false, reason: 'reciente' };
+  const b = listBackups()[0];
+  if (!b) return { ok: false, reason: 'sin respaldo' };
+  const content = fs.readFileSync(path.join(BACKUPS_DIR, b.name)).toString('base64');
+  const orders = getOrders().length;
+  const ok = await sendEmail({
+    subject: `Respaldo semanal de Works Jeans · ${b.date}`,
+    html: emailLayout('Respaldo semanal', `<p>Adjunto va el respaldo automático de la tienda del <b>${b.date}</b> (${orders} pedidos, ${Math.round(b.bytes / 1024)} KB).</p><p>Guárdalo en tu computadora o en tu nube. Si algún día hiciera falta, se restaura desde el panel en Configuración → Respaldo.</p><p style="color:#777">Se envía una vez a la semana; puedes desactivarlo en el panel.</p>`),
+    attachments: [{ filename: b.name, content }],
+  });
+  if (ok) { fs.mkdirSync(BACKUPS_DIR, { recursive: true }); writeFileSafe(BACKUP_MAIL_MARK, new Date().toISOString()); }
+  return { ok, reason: ok ? null : 'no se pudo enviar' };
+}
+async function backupTick() {
+  try { runAutoBackup(); } catch (err) { logError('respaldo', err); }
+  try { await emailWeeklyBackup(); } catch (err) { logError('respaldo.correo', err); }
+}
+setInterval(() => { backupTick(); }, 60 * 60 * 1000);
+setTimeout(() => { backupTick(); }, 30 * 1000);
+
+app.get('/api/admin/backups', requireAdmin, perm('respaldo'), (req, res) => {
+  res.json({ backups: listBackups(), emailWeekly: getSettings().backupEmail !== false, emailConfigured: Boolean(notifyTarget()), lastEmailAt: lastBackupEmailAt() });
+});
+app.post('/api/admin/backups/run', requireAdmin, perm('respaldo'), (req, res) => {
+  runAutoBackup(true);
+  auditLog(req, 'respaldo.crear', {});
+  res.json({ ok: true, backups: listBackups() });
+});
+app.post('/api/admin/backups/email', requireAdmin, perm('respaldo'), async (req, res) => {
+  if (!listBackups().length) runAutoBackup(true);
+  const r = await emailWeeklyBackup(true);
+  if (!r.ok) { res.status(400).json({ error: r.reason === 'sin correo de avisos o sin RESEND_API_KEY' ? 'Guarda primero un correo para avisos y la llave de Resend.' : 'No se pudo enviar el respaldo por correo.' }); return; }
+  res.json({ ok: true, lastEmailAt: lastBackupEmailAt() });
+});
+app.get('/api/admin/backups/:name', requireAdmin, perm('respaldo'), (req, res) => {
+  const name = String(req.params.name || '');
+  if (!BACKUP_NAME.test(name) || !fs.existsSync(path.join(BACKUPS_DIR, name))) { res.status(404).json({ error: 'Respaldo no encontrado.' }); return; }
+  res.download(path.join(BACKUPS_DIR, name), `respaldo-works-jeans-${name.slice(9)}`);
+});
+app.post('/api/admin/backups/:name/restore', requireAdmin, perm('respaldo'), (req, res) => {
+  const name = String(req.params.name || '');
+  if (!BACKUP_NAME.test(name) || !fs.existsSync(path.join(BACKUPS_DIR, name))) { res.status(404).json({ error: 'Respaldo no encontrado.' }); return; }
+  let b;
+  try { b = JSON.parse(fs.readFileSync(path.join(BACKUPS_DIR, name), 'utf-8')); } catch { res.status(400).json({ error: 'El respaldo está dañado.' }); return; }
+  if (!validBackup(b)) { res.status(400).json({ error: 'El respaldo no es válido.' }); return; }
+  auditLog(req, 'respaldo.restaurar', { details: name });
+  res.json(restoreBackup(b));
+});
+
+// --- Estado del sistema para el panel ---
+app.get('/api/admin/system-status', requireAdmin, perm('respaldo'), (req, res) => {
+  const errors = readErrors(24);
+  const backups = listBackups();
+  let dataBytes = 0;
+  try { fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json')).forEach((f) => { dataBytes += fs.statSync(path.join(DATA_DIR, f)).size; }); } catch { /* sin acceso */ }
+  let writable = true;
+  try { const t = path.join(DATA_DIR, '.escritura-prueba'); fs.writeFileSync(t, '1'); fs.unlinkSync(t); } catch { writable = false; }
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    startedAt: STARTED_AT,
+    uptimeSec: Math.round(process.uptime()),
+    node: process.version,
+    memoryMb: Math.round(process.memoryUsage().rss / 1048576),
+    data: { bytes: dataBytes, external: USES_EXTERNAL_DATA, writable, orders: getOrders().length, products: getProducts().length },
+    backups: { count: backups.length, last: backups[0] || null, emailWeekly: getSettings().backupEmail !== false, lastEmailAt: lastBackupEmailAt(), emailConfigured: Boolean(notifyTarget()) },
+    errors: { last24h: errors.length, list: errors.slice(-20).reverse() },
+    email: { configured: Boolean(process.env.RESEND_API_KEY), notifyTo: Boolean(notifyTarget()), customerFrom: Boolean(process.env.NOTIFY_FROM), ...emailState },
+    payments: paymentsInfo(),
+  });
 });
 
 app.get('/api/admin/dashboard', requireAdmin, perm('reportes.ver'), (req, res) => {
@@ -4157,6 +4349,20 @@ async function sendPaymentReminders() {
 }
 setInterval(() => { sendPaymentReminders().catch(() => {}); }, 60 * 60 * 1000);
 setTimeout(() => { sendPaymentReminders().catch(() => {}); }, 60 * 1000);
+
+// Manejo de errores: mensaje claro al cliente y registro para el panel; el servidor sigue vivo.
+app.use((err, req, res, next) => {
+  if (res.headersSent) { next(err); return; }
+  const api = req.path.startsWith('/api/');
+  if (err && err.type === 'entity.parse.failed') { res.status(400).json({ error: 'Los datos enviados no son válidos.' }); return; }
+  if (err && (err.type === 'entity.too.large' || err.code === 'LIMIT_FILE_SIZE')) { res.status(413).json({ error: 'El archivo o los datos son demasiado grandes.' }); return; }
+  if (err && err.code === 'EBADCSRFTOKEN') { res.status(403).json({ error: 'Sesión inválida. Recarga la página.' }); return; }
+  logError('http', err, `${req.method} ${req.originalUrl}`);
+  if (api) res.status(500).json({ error: 'Algo falló en el servidor. Intenta de nuevo; si sigue pasando, escríbenos por WhatsApp.' });
+  else res.status(500).type('html').send('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Works Jeans</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="font-family:Inter,Arial,sans-serif;text-align:center;padding:60px 20px;color:#1e1e1e"><h1 style="font-size:1.6rem">Algo falló de nuestro lado</h1><p>Ya quedó registrado. Recarga la página en un momento o escríbenos por WhatsApp.</p><p><a href="/" style="color:#1e1e1e">Volver al inicio</a></p></body></html>');
+});
+process.on('unhandledRejection', (reason) => { logError('promesa', reason); });
+process.on('uncaughtException', (err) => { logError('fatal', err); setTimeout(() => process.exit(1), 300); });
 
 app.listen(PORT, () => {
   console.log(`Works Jeans corriendo en http://localhost:${PORT}`);

@@ -1365,3 +1365,26 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 .admin-stat-note.is-down { color: #b00020; }
 .admin-bell-item--lead { background: #e5eefb; border-color: #c7d7f5; }
 .admin-bell-item--review { background: #f0e6f7; border-color: #ddcbea; }
+
+/* --- Configuración: respaldos automáticos y estado del sistema --- */
+.admin-sys-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0 4px; }
+.admin-backup-list { list-style: none; margin: 14px 0 0; padding: 0; border: 1px solid var(--line-2, #e2e2e2); border-radius: 10px; overflow: hidden; }
+.admin-backup-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 10px 14px; }
+.admin-backup-list li + li { border-top: 1px solid var(--line-2, #e2e2e2); }
+.admin-backup-list .admin-backup-date small { color: #777; margin-left: 6px; }
+.admin-backup-btns { display: flex; gap: 8px; }
+.admin-sys { display: grid; gap: 0; margin: 0; }
+.admin-sys > div { display: grid; grid-template-columns: 170px 1fr; gap: 8px 16px; padding: 10px 0; border-bottom: 1px solid var(--line-2, #e2e2e2); align-items: center; }
+.admin-sys > div:last-child { border-bottom: 0; }
+.admin-sys dt { font-weight: 600; color: #444; font-size: 0.86rem; }
+.admin-sys dd { margin: 0; color: #555; font-size: 0.9rem; line-height: 1.5; }
+.admin-sys-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; margin-right: 6px; background: #edf7ee; color: #1f6b2f; }
+.admin-sys-pill.is-warn { background: #fff6d6; color: #7a5a00; }
+.admin-sys-pill.is-bad { background: #fde8e8; color: #a12626; }
+.admin-link-btn { background: none; border: 0; padding: 0; color: #1e1e1e; text-decoration: underline; cursor: pointer; font: inherit; }
+.admin-sys-errors { margin-top: 12px; }
+.admin-sys-errors summary { cursor: pointer; font-weight: 600; font-size: 0.88rem; }
+.admin-sys-errors ul { list-style: none; padding: 0; margin: 8px 0 0; font-size: 0.84rem; }
+.admin-sys-errors li { padding: 6px 0; border-bottom: 1px dashed #e4e4e4; word-break: break-word; }
+.admin-sys-errors li i { color: #888; }
+@media (max-width: 700px) { .admin-sys > div { grid-template-columns: 1fr; gap: 2px; } }
