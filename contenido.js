@@ -114,6 +114,7 @@ const LANDINGS = {
     intro: 'Mide una prenda que te quede bien, extendida sobre una mesa, y compárala con las tablas. Tolerancia de una pulgada.',
     products: null,
     body: `
+      <div class="size-calc" data-kind="both"></div>
       <h2>Cómo medir una camisa</h2>
       <ul>
         <li><strong>A · Largo:</strong> del punto más alto del hombro (junto al cuello) al borde inferior.</li>

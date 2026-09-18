@@ -54,8 +54,10 @@
     if (p.provider === 'stripe') { document.querySelectorAll('.checkout-method').forEach((l, i) => { if (i > 0) l.hidden = true; }); document.querySelector('.checkout-method small').textContent = 'Pago inmediato en la página segura de Stripe.'; }
   }).catch(() => {});
 
+  let productImages = {};
+  fetch('/products.json').then((r) => r.json()).then((list) => { (list || []).forEach((p) => { productImages[p.id] = p.image; }); renderItems(); }).catch(() => {});
   function renderItems() {
-    $('coItems').innerHTML = cart.map((i) => `<div class="checkout-item"><span>${i.name}<small>Talla ${i.size} · ${i.quantity} pza${i.quantity > 1 ? 's' : ''}</small></span><b>${money(i.priceCents * i.quantity)}</b></div>`).join('');
+    $('coItems').innerHTML = cart.map((i) => `<div class="checkout-item">${productImages[i.id] ? `<img src="/img/320/${productImages[i.id]}" alt="" width="48" height="60" loading="lazy">` : ''}<span>${i.name}<small>Talla ${i.size} · ${i.quantity} pza${i.quantity > 1 ? 's' : ''}</small></span><b>${money(i.priceCents * i.quantity)}</b></div>`).join('');
   }
 
   async function refreshQuote() {

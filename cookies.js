@@ -1,3 +1,17 @@
+// Con <base href="/">, un enlace "#seccion" se resuelve al inicio del sitio; aquí se desplaza dentro de la misma página.
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const id = a.getAttribute('href').slice(1);
+  if (!id) return;
+  const target = document.getElementById(id) || document.querySelector(`[name="${id}"]`);
+  e.preventDefault();
+  if (!target) { location.hash = id; return; }
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  try { history.replaceState(null, '', `${location.pathname}${location.search}#${id}`); } catch { /* sin historial */ }
+  if (target.tabIndex < 0) target.setAttribute('tabindex', '-1');
+  target.focus({ preventScroll: true });
+});
 // Aviso de cookies. El sitio solo usa almacenamiento técnico (carrito en localStorage y la sesión del panel);
 // lo único de terceros son los mapas de Google, que se cargan solo si el visitante acepta.
 (function () {

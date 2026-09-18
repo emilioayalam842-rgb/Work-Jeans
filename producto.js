@@ -103,6 +103,26 @@
     });
   }
 
+  // Aviso "vuelve a haber stock" para tallas agotadas
+  const saToggle = document.getElementById('stockAlertToggle');
+  const saForm = document.getElementById('stockAlertForm');
+  if (saToggle && saForm) {
+    saToggle.addEventListener('click', () => { saForm.hidden = !saForm.hidden; if (!saForm.hidden) document.getElementById('stockAlertEmail').focus(); });
+    saForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const st = document.getElementById('stockAlertStatus');
+      const btn = saForm.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/stock-alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: document.getElementById('stockAlert').dataset.product, size: document.getElementById('stockAlertSize').value, email: document.getElementById('stockAlertEmail').value.trim() }) });
+        const d = await res.json().catch(() => ({}));
+        st.textContent = res.ok ? 'Listo. Te avisamos por correo en cuanto vuelva a haber tu talla.' : (d.error || 'No se pudo registrar.');
+        if (res.ok) saForm.querySelector('input').value = '';
+      } catch { st.textContent = 'Sin conexión. Intenta de nuevo.'; }
+      btn.disabled = false;
+    });
+  }
+
   // Barra fija en móvil cuando los botones de compra salen de la pantalla
   const sticky = document.getElementById('pdpSticky');
   const buyBox = document.getElementById('pdpBuyBox');

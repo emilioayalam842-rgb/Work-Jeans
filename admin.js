@@ -1851,6 +1851,7 @@ async function loadSettingsForm() {
   document.getElementById('settingLowStock').value = settings.lowStockThreshold ?? 5;
   document.getElementById('settingGa4').value = settings.ga4Id || '';
   document.getElementById('settingCustomerEmails').checked = settings.customerEmails !== false;
+  document.getElementById('settingPaymentReminders').checked = settings.paymentReminders !== false;
   const ship = settings.shipping || {};
   document.getElementById('settingFreeFrom').value = ship.freeFromCents ? (ship.freeFromCents / 100).toFixed(0) : '';
   document.getElementById('settingQuoteFromQty').value = ship.quoteFromQty || '';
@@ -1926,6 +1927,7 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     shipping: collectShipping(),
     ga4Id: document.getElementById('settingGa4').value.trim().toUpperCase(),
     customerEmails: document.getElementById('settingCustomerEmails').checked,
+    paymentReminders: document.getElementById('settingPaymentReminders').checked,
   };
 
   const res = await fetch('/api/admin/settings', {

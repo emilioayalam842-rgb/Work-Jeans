@@ -876,7 +876,7 @@ app.use(session({
 }));
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/reviews.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/reviews.json', '/stock-alerts.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -1032,7 +1032,7 @@ function productJsonLd(product, origin, url) {
   };
 }
 
-const ASSET_V = '20260917w';
+const ASSET_V = '20260917y';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1090,6 +1090,8 @@ function renderProductPage(product, req) {
     ? `<fieldset class="pdp-sizes"><legend class="size-label">Talla</legend><div class="pdp-pills" id="pdpSizePills" role="group" aria-label="Tallas">${product.sizes.map((v) => `<button type="button" class="pdp-pill" data-label="${escapeHtml(variantLabel(v))}" aria-pressed="false" ${v.stock > 0 ? '' : 'disabled title="Agotada"'}>${escapeHtml(v.size)}</button>`).join('')}</div></fieldset>`
     : `<div class="pdp-select"><label class="size-label" for="pdpSize">Talla / largo / color</label><select class="size-select" id="pdpSize" ${totalStock <= 0 ? 'disabled' : ''}>${product.sizes.map((v) => `<option value="${escapeHtml(variantLabel(v))}" ${v.stock > 0 ? '' : 'disabled'}>${escapeHtml(variantLabel(v))}${v.stock > 0 ? '' : ' · agotada'}</option>`).join('')}</select></div>`;
 
+  const soldOut = product.sizes.filter((v) => !(v.stock > 0)).map((v) => variantLabel(v));
+  const stockAlert = soldOut.length ? `<div class="stock-alert" id="stockAlert" data-product="${escapeHtml(product.id)}"><button type="button" class="stock-alert-toggle" id="stockAlertToggle">¿Tu talla está agotada? Avísame cuando haya</button><form class="stock-alert-form" id="stockAlertForm" hidden><label>Talla <select id="stockAlertSize">${soldOut.map((l) => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('')}</select></label><label>Correo <input type="email" id="stockAlertEmail" required maxlength="120" placeholder="tucorreo@ejemplo.com"></label><button type="submit" class="btn btn-dark btn-sm">Avisarme</button><p class="form-status" id="stockAlertStatus" aria-live="polite"></p></form></div>` : '';
   const thumbs = images.length > 1 ? images.map((img, i) => `<button type="button" class="pdp-thumb ${i === 0 ? 'is-active' : ''}" data-large="/img/800/${img}" data-srcset="/img/480/${img} 480w, /img/800/${img} 800w, /img/1000/${img} 1000w" data-alt="${escapeHtml(product.name)} · foto ${i + 1}" aria-current="${i === 0}"><img src="/img/320/${img}" alt="${escapeHtml(product.name)} · miniatura ${i + 1}" width="64" height="80" loading="lazy"></button>`).join('') : '';
 
   let video = '';
@@ -1114,7 +1116,7 @@ function renderProductPage(product, req) {
   if (product.certifications?.length) sections.push(['certificaciones', 'Certificaciones', `<ul class="pdp-list">${product.certifications.map((c) => `<li><strong>${escapeHtml(c.name)}</strong>${c.number ? ` · No. ${escapeHtml(c.number)}` : ''}${c.body ? ` · ${escapeHtml(c.body)}` : ''}${c.validUntil ? ` · vigente hasta ${escapeHtml(c.validUntil)}` : ''}${c.document ? ` · <a href="${escapeHtml(c.document)}" target="_blank" rel="noopener">documento</a>` : ''}</li>`).join('')}</ul>`]);
   const sizeList = [...new Set(product.sizes.map((v) => v.size))];
   const table = cat.isPants ? CONTENT.tableHtml(CONTENT.SIZE_TABLES.pantalon) : CONTENT.tableHtml(CONTENT.SIZE_TABLES.camisas);
-  sections.push(['tallas', 'Tallas', `<p>Tallas disponibles en este modelo: <strong>${sizeList.map(escapeHtml).join(' · ')}</strong>.</p>${table}<p><a class="pdp-link" href="/guia-de-tallas">Ver la guía completa: cómo medir y elegir talla</a></p>`]);
+  sections.push(['tallas', 'Tallas', `<p>Tallas disponibles en este modelo: <strong>${sizeList.map(escapeHtml).join(' · ')}</strong>.</p><div class="size-calc" data-kind="${product.category === 'Camisas' ? 'camisas' : 'pantalon'}"></div>${table}<p><a class="pdp-link" href="/guia-de-tallas">Ver la guía completa: cómo medir y elegir talla</a></p>`]);
   sections.push(['cuidados', 'Cuidados', `<p>${escapeHtml(product.care || 'Lava al revés con agua fría, sin cloro, y seca a la sombra. Plancha a temperatura media si hace falta.')}</p>`]);
   const ship = settings.shipping || {};
   const shipText = ship.summary || 'Enviamos a todo México por paquetería. Preparamos tu pedido en 1 a 2 días hábiles y la entrega tarda de 3 a 7 días hábiles según el destino. También puedes recoger sin costo en la tienda de Monterrey.';
@@ -1163,7 +1165,7 @@ function renderProductPage(product, req) {
     AVAIL_CLASS: avail.cls,
     AVAIL_TEXT: avail.text,
     SHORT_DESC: escapeHtml(product.description),
-    SIZE_PICKER: sizePicker,
+    SIZE_PICKER: sizePicker + stockAlert,
     DISABLED: totalStock <= 0 ? 'disabled' : '',
     ADD_LABEL: totalStock <= 0 ? 'Agotado' : 'Agregar al carrito',
     JUMP_LINKS: sections.map(([id, t]) => `<a href="#${id}">${t}</a>`).join(''),
@@ -1293,7 +1295,7 @@ function productCardStatic(p, origin) {
   const last = p.sizes[p.sizes.length - 1]?.size || '';
   const price = (p.priceCents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
   return `
-    <a class="product-card product-card--static" href="/producto/${p.id}">
+    <a class="product-card product-card--static" href="/producto/${p.id}" data-id="${p.id}" data-sizes="${escapeHtml(p.sizes.filter((v) => v.stock > 0).map((v) => v.size).join('|'))}" data-tags="${/reflejante/.test(p.id) ? 'reflejante' : 'normal'}" data-stock="${p.sizes.reduce((a, v) => a + (v.stock || 0), 0) > 0 ? '1' : '0'}" data-name="${escapeHtml(p.name.toLowerCase())}">
       <span class="product-category">${escapeHtml(p.category)}</span>
       <img src="${p.image}" alt="${escapeHtml(p.name)} · ropa de trabajo de mezclilla Works Jeans" class="product-photo" loading="lazy" decoding="async" width="800" height="1000">
       <h2>${escapeHtml(p.name)}</h2>
@@ -2063,6 +2065,59 @@ app.put('/api/admin/security', requireAdmin, perm('usuarios'), (req, res) => {
 
 // --- Settings ---
 
+// Tablas de medidas para la calculadora de tallas (guía y ficha de producto).
+app.get('/api/size-tables', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.json(CONTENT.SIZE_TABLES);
+});
+
+// --- Avisos "vuelve a haber stock": el cliente deja su correo en una talla agotada ---
+const STOCK_ALERTS_PATH = path.join(DATA_DIR, 'stock-alerts.json');
+const getStockAlerts = () => readJsonList(STOCK_ALERTS_PATH);
+const saveStockAlerts = (list) => fs.writeFileSync(STOCK_ALERTS_PATH, JSON.stringify(list, null, 2) + '\n');
+const stockAlertAttempts = new Map();
+app.post('/api/stock-alerts', (req, res) => {
+  const ip = clientIp(req);
+  const now = Date.now();
+  const e = stockAlertAttempts.get(ip);
+  if (!e || now - e.first > 3600000) stockAlertAttempts.set(ip, { first: now, count: 1 });
+  else if (++e.count > 20) { res.status(429).json({ error: 'Demasiados intentos. Intenta más tarde.' }); return; }
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const productId = String(req.body?.productId || '').trim();
+  const size = cleanText(req.body?.size, 60);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { res.status(400).json({ error: 'Escribe un correo válido.' }); return; }
+  const product = getProducts().find((p) => p.id === productId);
+  if (!product || !size) { res.status(400).json({ error: 'Producto o talla no válidos.' }); return; }
+  const list = getStockAlerts();
+  if (list.some((a) => a.email === email && a.productId === productId && a.size === size && !a.notifiedAt)) { res.json({ ok: true, already: true }); return; }
+  list.push({ id: `sa_${Date.now().toString(36)}_${crypto.randomBytes(3).toString('hex')}`, email, productId, productName: product.name, size, createdAt: new Date().toISOString(), notifiedAt: null });
+  saveStockAlerts(list);
+  res.status(201).json({ ok: true });
+});
+app.get('/api/admin/stock-alerts', requireAdmin, perm('inventario.ver'), (req, res) => {
+  res.json(getStockAlerts().filter((a) => !a.notifiedAt));
+});
+// Cada 10 minutos: si una talla con avisos pendientes volvió a tener stock, se avisa por correo (una sola vez).
+async function checkStockAlerts() {
+  let list;
+  try { list = getStockAlerts(); } catch { return; }
+  const pending = list.filter((a) => !a.notifiedAt);
+  if (!pending.length) return;
+  const products = getProducts();
+  let changed = false;
+  for (const a of pending) {
+    const product = products.find((p) => p.id === a.productId);
+    const variant = product ? product.sizes.find((v) => variantLabel(v) === a.size || v.size === a.size) : null;
+    if (!variant || !(variant.stock > 0) || product.active === false) continue;
+    const url = `https://www.workjeans.mx/producto/${encodeURIComponent(product.id)}`;
+    const result = await sendEmailTo({ to: a.email, subject: `Ya hay talla ${a.size} de ${product.name} · Works Jeans`, html: emailLayout('Ya volvió tu talla.', `<p>Hola.</p><p>Nos pediste que te avisáramos cuando volviera a haber <b>${escapeHtml(product.name)}</b> en talla <b>${escapeHtml(a.size)}</b>. Ya está disponible.</p><p><a href="${url}" style="display:inline-block;padding:12px 18px;background:#ffd600;color:#0f0f0f;font-weight:700;text-decoration:none;border-radius:8px">Ver el producto</a></p><p style="font-size:13px;color:#6a6a6a">Las existencias cambian rápido; si vuelve a agotarse, puedes pedir el aviso de nuevo.</p>`) });
+    if (result.ok) { a.notifiedAt = new Date().toISOString(); changed = true; }
+  }
+  if (changed) saveStockAlerts(list);
+}
+setInterval(() => { checkStockAlerts().catch(() => {}); }, 10 * 60 * 1000);
+setTimeout(() => { checkStockAlerts().catch(() => {}); }, 30 * 1000);
+
 app.get('/api/sat-catalogs', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400');
   res.json({ regimenes: SAT_REGIMENES, usos: SAT_USOS });
@@ -2693,6 +2748,7 @@ const CUSTOMER_EMAILS = {
   confirmacion: (o) => ({ subject: `Recibimos tu pedido ${o.id} · Works Jeans`, title: 'Recibimos tu pedido.', intro: o.source === 'stripe' ? 'Tu pago se procesó correctamente. Preparamos tu pedido en 1 a 2 días hábiles y te avisamos por este medio y por WhatsApp cuando salga.' : 'Registramos tu pedido. Te confirmamos por WhatsApp la forma de pago y el envío.', outro: o.invoice ? 'Pediste factura: te la enviamos al correo indicado en cuanto se emita.' : '' }),
   enviado: (o) => ({ subject: `Tu pedido ${o.id} va en camino · Works Jeans`, title: 'Tu pedido va en camino.', intro: o.tracking?.number ? `Salió por ${escapeHtml(o.tracking.carrier || 'paquetería')} con la guía <b>${escapeHtml(o.tracking.number)}</b>.${o.tracking.url ? ` <a href="${escapeHtml(o.tracking.url)}">Rastrear envío</a>.` : ''} La entrega suele tardar de 3 a 7 días hábiles según el destino.` : 'Salió con la paquetería. Te compartimos la guía por WhatsApp.', outro: '' }),
   entregado: (o) => ({ subject: `Tu pedido ${o.id} fue entregado · Works Jeans`, title: 'Pedido entregado.', intro: 'Tu pedido ya está contigo. Si algo no quedó bien, tienes 15 días para cambio de talla con la prenda sin usar y con etiquetas.', outro: `Gracias por comprar ropa de trabajo hecha en Monterrey.${o.reviewToken ? ` <br><br><b>¿Nos cuentas cómo te fue?</b> Toma un minuto y ayuda a otros a elegir.<br><a href="https://www.workjeans.mx/resena?t=${o.reviewToken}" style="display:inline-block;margin-top:8px;padding:12px 18px;background:#ffd600;color:#0f0f0f;text-decoration:none;font-weight:700;border:1.5px solid #0f0f0f">Calificar mi compra</a>` : ''}` }),
+  recordatorio: (o) => ({ subject: `Tu pedido ${o.id} sigue esperando tu pago · Works Jeans`, title: 'Tu pedido te espera.', intro: o.payment?.clabe ? `Recibimos tu pedido pero aún no vemos el pago. Puedes hacer la transferencia SPEI a la CLABE <b>${escapeHtml(o.payment.clabe)}</b>${o.payment.bank ? ` (${escapeHtml(o.payment.bank)})` : ''}${o.payment.reference ? `, referencia <b>${escapeHtml(o.payment.reference)}</b>` : ''}. En cuanto lo recibamos, preparamos tu pedido.` : o.payment?.reference ? `Recibimos tu pedido pero aún no vemos el pago. Puedes pagarlo en tienda de conveniencia con la referencia <b>${escapeHtml(o.payment.reference)}</b>. En cuanto lo recibamos, preparamos tu pedido.` : 'Recibimos tu pedido pero aún no confirmamos el pago. Escríbenos por WhatsApp al 81 2861 3551 y te decimos cómo pagarlo (transferencia, tarjeta o en tienda) para apartar tus tallas.', outro: 'Si ya pagaste, ignora este correo o respóndenos con tu comprobante. Si ya no lo necesitas, no tienes que hacer nada.' }),
   cancelado: (o) => ({ subject: `Tu pedido ${o.id} fue cancelado · Works Jeans`, title: 'Pedido cancelado.', intro: 'Cancelamos tu pedido. Si pagaste con tarjeta, el reembolso aparece en tu estado de cuenta en los días que marque tu banco. Si tienes dudas, escríbenos por WhatsApp.', outro: '' }),
 };
 
@@ -4076,6 +4132,31 @@ app.use((req, res) => {
   }
   res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
+
+// Recordatorio automático de pago: pedidos pendientes con correo, a las 24 h y a las 72 h (se puede apagar en Configuración).
+async function sendPaymentReminders() {
+  let settings;
+  try { settings = getSettings(); } catch { return; }
+  if (settings.paymentReminders === false) return;
+  if (!customerEmailsEnabled()) return;
+  const orders = getOrders();
+  const now = Date.now();
+  let changed = false;
+  for (const o of orders) {
+    if (o.status !== 'pendiente' || !o.customerEmail) continue;
+    const age = now - new Date(o.createdAt).getTime();
+    const sent = (o.reminders || []).length;
+    const due = (sent === 0 && age >= 24 * 3600000) || (sent === 1 && age >= 72 * 3600000);
+    if (!due || age > 15 * 24 * 3600000) continue;
+    const result = await emailCustomer(o.id, 'recordatorio', { force: true });
+    const fresh = getOrders();
+    const o2 = fresh.find((x) => x.id === o.id);
+    if (o2 && result.ok) { o2.reminders = [...(o2.reminders || []), { at: new Date().toISOString(), ok: true }]; saveOrders(fresh); changed = true; }
+  }
+  return changed;
+}
+setInterval(() => { sendPaymentReminders().catch(() => {}); }, 60 * 60 * 1000);
+setTimeout(() => { sendPaymentReminders().catch(() => {}); }, 60 * 1000);
 
 app.listen(PORT, () => {
   console.log(`Works Jeans corriendo en http://localhost:${PORT}`);

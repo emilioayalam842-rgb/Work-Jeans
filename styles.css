@@ -2384,3 +2384,49 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 /* Tarjetas de producto sin numeración (01, 02…) */
 .product-card::before { display: none; }
 .b2b-industries a { color: var(--black); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--yellow); }
+
+/* Vender más: miniatura única oculta, FAQ en tarjetas, filtros de catálogo, calculadora de talla, aviso de stock */
+.product-thumbs:has(> .product-thumb:only-child) { display: none; }
+.product-thumbs:has(> .product-thumb:only-child) + h3 { padding-top: 22px; }
+.faq-list { border-top: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.faq-item { border-bottom: 0; background: #fff; border: 1px solid var(--line-2); border-radius: var(--radius-card); padding: 0 18px; box-shadow: var(--shadow-soft); align-self: start; transition: border-color 0.15s; }
+.faq-item:hover { border-color: var(--black); }
+.faq-item[open] { border-color: var(--yellow); box-shadow: var(--shadow-lift); }
+.faq-item summary { padding: 18px 40px 18px 0; font-size: 1rem; }
+.faq-item summary::after { right: 0; }
+.faq-item p { padding: 0 0 18px; }
+@media (max-width: 760px) { .faq-list { grid-template-columns: 1fr; } }
+.catalog-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 16px; margin: 0 0 22px; padding: 14px 16px; background: #fff; border: 1px solid var(--line-2); border-radius: var(--radius-card); box-shadow: var(--shadow-soft); }
+.catalog-filter { display: grid; gap: 4px; font-family: var(--label); font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.catalog-filter--search { flex: 1 1 220px; }
+.catalog-filter input[type="search"], .catalog-filter select { font: inherit; font-family: var(--label); font-size: 0.95rem; letter-spacing: 0.02em; text-transform: none; color: var(--black); padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--radius); background: #fff; min-width: 120px; }
+.catalog-filter input[type="search"]:focus, .catalog-filter select:focus { outline: none; border-color: var(--black); box-shadow: 0 0 0 3px rgba(255,214,0,0.4); }
+.catalog-filter--check { display: inline-flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0.02em; font-size: 0.9rem; color: var(--black); padding: 10px 0; cursor: pointer; }
+.catalog-filter--check input { width: 18px; height: 18px; accent-color: var(--black); }
+.catalog-filter-clear { border: 0; background: var(--gray); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+.catalog-filter-count { font-size: 0.85rem; color: var(--muted); margin-left: auto; }
+.catalog-empty { grid-column: 1 / -1; padding: 30px; text-align: center; color: var(--muted); }
+.product-card[hidden] { display: none !important; }
+.size-calc { margin: 18px 0 22px; padding: 18px 20px 20px; background: #fff; border: 1px solid var(--line-2); border-left: 6px solid var(--yellow); border-radius: var(--radius-card); box-shadow: var(--shadow-soft); }
+.size-calc-head p { margin: 4px 0 0; font-size: 0.92rem; color: #444; line-height: 1.5; }
+.size-calc-unit { display: inline-flex; margin: 12px 0; padding: 3px; background: var(--gray); border-radius: 999px; }
+.size-calc-unit button { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; color: #555; }
+.size-calc-unit button.is-active { background: #fff; color: var(--black); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.size-calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.size-calc-field { display: grid; gap: 6px; font-size: 0.85rem; color: #444; }
+.size-calc-field input { font: inherit; font-size: 1.05rem; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--radius); }
+.size-calc-field input:focus { outline: none; border-color: var(--black); box-shadow: 0 0 0 3px rgba(255,214,0,0.4); }
+.size-calc-result { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; }
+.size-calc-result:empty { display: none; }
+.size-calc-card { display: grid; gap: 2px; padding: 12px 14px; background: var(--yellow); border-radius: 12px; }
+.size-calc-card span { font-family: var(--label); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.size-calc-card b { font-family: var(--display); font-weight: 400; font-size: 1.6rem; line-height: 1; }
+.size-calc-card small { font-size: 0.8rem; color: #333; line-height: 1.4; }
+.stock-alert { margin: 8px 0 14px; }
+.stock-alert-toggle { border: 0; background: transparent; padding: 0; font: inherit; font-size: 0.88rem; font-weight: 600; color: var(--black); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.stock-alert-form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 10px; padding: 12px 14px; background: var(--gray); border-radius: 12px; }
+.stock-alert-form label { display: grid; gap: 4px; font-family: var(--label); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.stock-alert-form input, .stock-alert-form select { font: inherit; font-size: 0.95rem; padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; min-width: 180px; }
+.stock-alert-form .form-status { width: 100%; margin: 0; font-size: 0.85rem; }
+.checkout-item { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.checkout-item img { width: 48px; height: 60px; object-fit: contain; background: #f7f7f7; border-radius: 8px; border: 1px solid var(--line); }

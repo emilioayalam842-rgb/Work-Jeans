@@ -490,7 +490,7 @@ function renderProductCard(product) {
   const sizeRange = firstSize && lastSize && firstSize !== lastSize ? `<b>${firstSize}</b> / <b>${lastSize}</b>` : `<b>${firstSize}</b>`;
 
   return `
-    <article class="product-card reveal" data-id="${product.id}" data-name="${product.name}" data-price="${product.priceCents}">
+    <article class="product-card reveal" data-id="${product.id}" data-name="${product.name}" data-price="${product.priceCents}" data-sizes="${product.sizes.filter((v) => v.stock > 0).map((v) => v.size).join('|')}" data-tags="${/reflejante/.test(product.id) ? 'reflejante' : 'normal'}" data-stock="${totalStock > 0 ? '1' : '0'}" data-search="${String(product.name).toLowerCase()}">
       <span class="product-category">${product.category}</span>
       ${tagHtml(product)}
       ${totalStock <= 0 ? '<span class="product-soldout">Agotado</span>' : ''}
