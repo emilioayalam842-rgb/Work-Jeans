@@ -99,10 +99,22 @@ const LANDINGS = {
       <p>El mismo pantalón está disponible con cintas reflejantes en las piernas para trabajos de noche o en vialidades. Mira la página de <a href="/ropa-de-trabajo-reflejante">ropa de trabajo reflejante</a>.</p>
       <h2>Cuidado</h2>
       <p>Lava al revés con agua fría, sin cloro, y seca a la sombra. Con esos cuidados la mezclilla conserva el color y las costuras por más tiempo.</p>
+      <h2>Dónde se rompe primero un pantalón de trabajo</h2>
+      <p>Casi siempre en los mismos cuatro puntos: el tiro, la entrepierna, las rodillas y las esquinas de las bolsas traseras. Ahí es donde la tela se dobla, se estira y roza contra herramienta y superficies. Por eso llevan doble costura y remaches en los puntos de tensión: no hacen la prenda eterna, pero mueven el momento en que aparece el primer desgarre bastante más lejos que en un jean común.</p>
+      <h2>Para qué trabajos sirve</h2>
+      <p>Funciona para obra, planta, taller mecánico, almacén, patios de maniobras, instalación y mantenimiento. Es decir, trabajo que implica agacharse, cargar y estar de pie. Si tu operación tiene riesgo eléctrico por arco o exposición a fuego, este pantalón no es la prenda indicada: la mezclilla de algodón no es retardante a la flama y no tenemos certificación para eso. En esos casos conviene una prenda certificada y te lo decimos antes de venderte.</p>
+      <h2>Cuánto dura y cuándo reponerlo</h2>
+      <p>Depende del turno y del trabajo, no hay un número que valga para todos. La señal para reponer es clara: cuando la tela se adelgaza en rodillas o asentaderas y se transparenta, o cuando una costura empieza a abrirse. Rotar dos o tres pantalones por persona alarga el conjunto, porque cada prenda descansa entre lavados en vez de llevar uso y lavado diario. Lo desarrollamos en <a href="/articulos/cuantos-uniformes-necesita-cada-trabajador">cuántos uniformes necesita cada trabajador</a>.</p>
+      <h2>Comprar una pieza o la corrida completa</h2>
+      <p>Puedes comprar un pantalón para probar tela y talla antes de decidir por todo el equipo. Para cuadrillas armamos la corrida completa con etiquetas por talla, precio por volumen, bordado o DTF con tu logotipo y factura con CFDI. Pide la cotización en el <a href="/empresas">cotizador para empresas</a>.</p>
     `,
     faq: [
       ['¿El pantalón encoge al lavarlo?', 'No de forma apreciable: la mezclilla viene preencogida. La tolerancia de medidas es de una pulgada.'],
       ['¿Tiene bolsa para herramienta?', 'Lleva cinco bolsas: dos delanteras, dos traseras y una relojera. Si necesitas bolsas especiales para tu equipo, cotízalo por mayoreo.'],
+      ['¿Sirve para trabajo con riesgo de fuego o arco eléctrico?', 'No. La mezclilla de algodón no es retardante a la flama y no tenemos certificación para ese uso. Para esos puestos se necesita una prenda certificada.'],
+      ['¿Aguanta arrodillarse en concreto?', 'Lleva mezclilla 100% algodón con doble costura en las zonas de mayor desgaste. Ninguna tela es eterna sobre concreto, pero aguanta bastante más que un jean de moda.'],
+      ['¿Puedo comprar uno solo antes de pedir para mi equipo?', 'Sí. Vendemos desde una pieza justamente para que pruebes tela y talla antes de la corrida completa.'],
+      ['¿Qué talla pido?', 'La misma que usas en un jean normal. Si dudas entre dos, la mayor. Las medidas exactas están en la guía de tallas.'],
     ],
   },
   'guia-de-tallas': {
@@ -133,10 +145,24 @@ const LANDINGS = {
       <h2>Consejos para uniformar a un equipo</h2>
       <p>Pide a cada persona su talla de pantalón habitual y su talla de camisa; con eso arma la corrida. Si dudas entre dos tallas, elige la mayor: en trabajo se agradece el espacio para moverse y la prenda no encoge. Para grupos grandes conviene pedir una o dos piezas extra de las tallas más comunes (32 a 36 en pantalón, M a XG en camisa).</p>
       <p>¿Sigues con dudas? Mándanos por WhatsApp las medidas de una prenda que le quede bien a la persona y te decimos la talla.</p>
+      <h2>Por qué medir una prenda y no el cuerpo</h2>
+      <p>Medirse encima con una cinta de sastre es incómodo y da números distintos según qué tan apretado se jale la cinta. Medir una prenda que ya queda bien, extendida sobre una mesa, es más exacto y cualquiera lo puede hacer sin ayuda: la prenda no se mueve y la medida se repite igual las veces que quieras. Por eso todas nuestras tablas están hechas sobre prenda extendida y no sobre cuerpo.</p>
+      <h2>Qué pasa si quedas entre dos tallas</h2>
+      <p>Pide la mayor. Nuestra mezclilla es 100% algodón preencogido: no encoge con el lavado, pero tampoco da de sí como las telas con elastano. En el trabajo la prenda tiene que dejarte agacharte, arrodillarte y subir escaleras, y una talla justa se siente bien en el probador y estorba a media jornada. La única excepción es la camisa de quien la usa fajada todo el día: ahí la talla exacta cae mejor.</p>
+      <h2>Tallas grandes</h2>
+      <p>Manejamos pantalón hasta la 50 y camisa hasta la 5XG, con el mismo patrón, la misma tela y el mismo acabado que el resto de las tallas. Las medidas de esas tallas están en las mismas tablas de arriba. Si necesitas una corrida con varias tallas grandes, revisa <a href="/ropa-de-trabajo-tallas-grandes">ropa de trabajo en tallas grandes</a>, donde explicamos cómo pedirlas sin errores.</p>
+      <h2>Tolerancia de las medidas</h2>
+      <p>Las tablas indican una tolerancia de una pulgada. Es normal en prendas confeccionadas: dos piezas de la misma talla pueden variar un poco entre sí sin que ninguna esté mal. Si una prenda se sale de esa tolerancia, escríbenos y la reponemos.</p>
+      <h2>Si de todos modos no queda</h2>
+      <p>Tienes 15 días naturales para cambiar de talla con la prenda sin usar, sin lavar y con etiquetas. En tienda el cambio no tiene costo; por paquetería el cliente cubre el envío de ida y vuelta. Los detalles están en <a href="/envios-y-devoluciones">envíos y devoluciones</a>.</p>
     `,
     faq: [
       ['¿Las medidas son en pulgadas o centímetros?', 'En pulgadas, como es costumbre en pantalones de mezclilla. Una pulgada equivale a 2.54 cm.'],
-      ['¿Qué hago si compré la talla equivocada?', 'Tienes 15 días para cambiar de talla con la prenda sin usar y con etiquetas. Consulta la política de envíos y devoluciones.'],
+      ['¿Qué hago si compré la talla equivocada?', 'Tienes 15 días naturales para cambiar de talla con la prenda sin usar, sin lavar y con etiquetas. En tienda el cambio no tiene costo; por paquetería el cliente cubre el envío de ida y vuelta.'],
+      ['¿La ropa encoge después de lavarla?', 'No. La mezclilla viene preencogida, así que la talla que compras es la que conservas. Lava con agua fría y del revés para que además no destiña.'],
+      ['¿Mido el cuerpo o una prenda?', 'Una prenda que ya te quede bien, extendida sobre una mesa. Es más exacto que medirse encima y puedes repetir la medida las veces que quieras.'],
+      ['¿Qué talla pido si estoy entre dos?', 'La mayor. La mezclilla no da de sí y en el trabajo conviene el espacio para agacharse y moverse.'],
+      ['¿Hasta qué talla llegan?', 'Pantalón hasta la 50 y camisa hasta la 5XG, con el mismo patrón y acabado que las demás tallas.'],
     ],
   },
 };
@@ -163,6 +189,11 @@ const ARTICLES = {
       <p>Un work jean cuesta parecido a un jean de marca media, pero está hecho para aguantar el trabajo diario. Dividido entre los meses de uso real, suele salir más barato que reponer un jean de moda cada pocos meses.</p>
       <p>Si lo tuyo es trabajar, mira nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a>: mezclilla 100% algodón, costuras reforzadas y tallas del 28 al 50.</p>
     `,
+    faq: [
+      ['¿Puedo trabajar con un jean normal?', 'Puedes, pero dura menos. Un jean de moda no lleva las costuras reforzadas ni el corte recto que necesita alguien que se agacha, se arrodilla y carga todo el día; el desgaste aparece primero en tiro, rodillas y bolsas.'],
+      ['¿El work jean se siente más rígido al principio?', 'La mezclilla 100% algodón se siente firme los primeros usos y se ablanda con el uso y los lavados. Viene preencogida, así que no te va a encoger después de la primera lavada.'],
+      ['¿Qué talla pido si uso jean de moda?', 'La misma que usas normalmente. Si dudas entre dos, elige la mayor: la mezclilla no da de sí y en el trabajo se agradece el espacio. Manejamos del 28 al 50.'],
+    ],
   },
   'ropa-de-trabajo-y-normas-de-seguridad-en-mexico': {
     kicker: 'Artículo',
@@ -194,6 +225,11 @@ const ARTICLES = {
         <li><a href="https://platiica.economia.gob.mx/normalizacion/nom-017-stps-2024/" target="_blank" rel="noopener">Secretaría de Economía: ficha de la NOM-017-STPS-2024</a></li>
       </ul>
     `,
+    faq: [
+      ['¿La NOM-017-STPS obliga a usar ropa reflejante?', 'La norma obliga al patrón a analizar los riesgos de cada puesto y entregar el equipo de protección que corresponda. En varios giros eso incluye prendas con reflejante, pero la norma no nombra una prenda en concreto: depende del análisis de riesgos de tu centro de trabajo.'],
+      ['¿Las prendas de Works Jeans cumplen esa norma?', 'Nuestras prendas llevan cinta reflejante cosida sobre mezclilla, pero no cuentan con certificación ANSI/ISEA 107 ni ISO 20471. Si el reglamento de tu empresa exige una prenda certificada de alta visibilidad, consúltanos antes de comprar.'],
+      ['¿Desde cuándo aplica la versión 2024 de la norma?', 'Se publicó en el Diario Oficial de la Federación el 28 de marzo de 2025 y está vigente desde el 28 de septiembre de 2025, en sustitución de la NOM-017-STPS-2008.'],
+    ],
   },
   'ropa-reflejante-de-trabajo-cuando-ayuda-y-que-no-es': {
     kicker: 'Artículo',
@@ -253,6 +289,11 @@ const ARTICLES = {
       <p>La camisa de poliéster suele ser más barata al comprarla. Si se repone cada pocos meses, la de mezclilla termina costando menos por turno trabajado. Haz la cuenta con tu ritmo real de reposición.</p>
       <p>Mira nuestras <a href="/camisas-de-trabajo">camisas de trabajo de mezclilla</a>: 100% algodón, con bolsillo frontal, botones reforzados y tallas de XCH a 5XG.</p>
     `,
+    faq: [
+      ['¿Cuál da menos calor en planta?', 'El algodón. Absorbe el sudor y lo deja evaporar; el poliéster lo retiene contra la piel y en turnos largos se siente más caliente y huele más rápido.'],
+      ['¿Cuál aguanta más lavados?', 'La mezclilla. Soporta lavado frecuente y manchas de grasa sin adelgazarse; las camisas de poliéster ligero se rompen antes en hombros, codos y costuras.'],
+      ['¿Se puede bordar el logotipo en las dos telas?', 'Sí, pero el bordado asienta mejor sobre mezclilla porque la tela tiene cuerpo. Bordamos o estampamos en DTF en pedidos de mayoreo.'],
+    ],
   },
   'bordado-o-dtf-como-poner-tu-logotipo-en-uniformes-de-trabajo': {
     kicker: 'Artículo',
@@ -313,6 +354,11 @@ const ARTICLES = {
       <p>Pregunta si puedes reponer tallas sueltas y en cuánto tiempo. La reposición es lo que mantiene uniformado al equipo el resto del año.</p>
       <p>En Works Jeans respondemos estas preguntas en la cotización. Arma tu pedido por talla en la <a href="/empresas">página para empresas</a> y te enviamos todo por escrito.</p>
     `,
+    faq: [
+      ['¿Qué es lo primero que hay que preguntar?', 'Si hay existencia de todas las tallas hoy y en cuánto tiempo reponen. Un proveedor sin stock te deja a medio uniformar a la cuadrilla.'],
+      ['¿Cómo comparo dos cotizaciones que parecen iguales?', 'Pide el precio por talla y confirma si incluye IVA, personalización y envío. Muchas diferencias de precio desaparecen cuando se comparan esos tres puntos.'],
+      ['¿Puedo pedir una muestra antes de la corrida completa?', 'Sí. Puedes comprar desde una pieza para revisar tela, costuras y talla antes de pedir para todo el equipo.'],
+    ],
   },
   'como-cuidar-la-ropa-de-trabajo-de-mezclilla-para-que-dure-mas': {
     kicker: 'Artículo',
@@ -342,6 +388,12 @@ const ARTICLES = {
       <p>Una costura abierta o un botón flojo se arreglan en minutos si se atienden a tiempo. Deja pasar semanas y el hueco crece hasta que la prenda ya no sirve.</p>
       <p>Cada producto tiene su sección de cuidados en la ficha: revisa los <a href="/pantalones-de-trabajo">pantalones</a> y las <a href="/camisas-de-trabajo">camisas</a> de Works Jeans.</p>
     `,
+    faq: [
+      ['¿Con qué temperatura conviene lavar?', 'Con agua fría y la prenda del revés. El agua caliente destiñe la mezclilla mucho más rápido y no limpia mejor la grasa.'],
+      ['¿Puedo usar cloro?', 'No. Destiñe la mezclilla de forma irregular y daña la cinta reflejante si la prenda la lleva.'],
+      ['¿Cómo quito una mancha de grasa?', 'Trátala antes de lavar y revisa que haya salido antes de secar. El calor de la secadora fija la mancha y ya no sale.'],
+      ['¿Cuántos juegos conviene rotar?', 'Dos o tres por persona. Así cada prenda descansa entre lavados y las tres duran más que dos usadas a diario.'],
+    ],
   },
   'como-elegir-talla-de-uniforme-para-tu-cuadrilla': {
     kicker: 'Artículo',
@@ -372,6 +424,11 @@ const ARTICLES = {
       <h2>Arma el pedido en dos minutos</h2>
       <p>Con la lista lista, captura las cantidades por talla en el <a href="/mayoreo-ropa-de-trabajo">cotizador de mayoreo</a> y envíalo por WhatsApp. Nosotros confirmamos existencias y fecha de entrega el mismo día.</p>
     `,
+    faq: [
+      ['¿Tengo que medir a cada persona?', 'No hace falta. Basta con que cada quien mida una prenda que ya le quede bien, extendida sobre una mesa, y compare con la tabla de tallas.'],
+      ['¿Qué hago con quien queda entre dos tallas?', 'Pide la mayor. La mezclilla no da de sí y en el trabajo conviene el espacio para agacharse y cargar.'],
+      ['¿Conviene pedir tallas de más?', 'Sí. Un par de piezas en las tallas más comunes te sirven para ingresos nuevos y para cambios, sin esperar la siguiente compra.'],
+    ],
   },
 };
 

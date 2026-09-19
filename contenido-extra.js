@@ -390,10 +390,19 @@ const APOYO = {
       <p>Para pedidos por volumen usa el <a href="/empresas">cotizador para empresas</a>: capturas prenda y cantidades por talla y te respondemos con la cotización formal por escrito, con precio de distribuidor o de socio y factura CFDI.</p>
       <h2>Pedidos en curso</h2>
       <p>Consulta el estado de tu pedido en <a href="/rastrear">Rastrear mi pedido</a> con tu número de pedido y tu correo o teléfono. Para cambios de talla revisa las <a href="/envios-y-devoluciones">políticas de envío y cambios</a>.</p>
+      <h2>Qué necesitamos para cotizarte rápido</h2>
+      <p>Si nos escribes con estos tres datos, te respondemos con precio en el mismo día hábil: qué prenda quieres (<a href="/pantalones-de-trabajo">pantalón</a>, <a href="/camisas-de-trabajo">camisa</a> o ambas, con o sin <a href="/ropa-de-trabajo-reflejante">reflejante</a>), cuántas piezas por talla, y si necesitas el logotipo de tu empresa bordado o en DTF. Si todavía no sabes las tallas, con el número de personas te armamos una corrida estimada y la ajustamos después.</p>
+      <h2>Desde dónde atendemos</h2>
+      <p>Fabricamos y despachamos desde Monterrey, y entregamos en persona en el área metropolitana: <a href="/ropa-de-trabajo-apodaca">Apodaca</a>, <a href="/ropa-de-trabajo-escobedo">Escobedo</a>, <a href="/ropa-de-trabajo-garcia">García</a>, <a href="/ropa-de-trabajo-guadalupe">Guadalupe</a>, <a href="/ropa-de-trabajo-san-nicolas">San Nicolás</a> y <a href="/ropa-de-trabajo-santa-catarina">Santa Catarina</a>. Al resto del país enviamos por paquetería con número de guía.</p>
+      <h2>Tiempos de respuesta y de entrega</h2>
+      <p>Contestamos por WhatsApp dentro del horario de tienda. Una vez confirmado el pago, el pedido se prepara en uno o dos días hábiles y la paquetería tarda entre tres y siete días hábiles según el destino. Los pedidos de empresa con bordado llevan más tiempo y te lo confirmamos por escrito en la cotización.</p>
     `,
     faq: [
       ['¿Responden en fin de semana?', 'Atendemos de lunes a viernes de 9:00 a. m. a 6:00 p. m. Los mensajes que llegan fuera de ese horario se contestan el siguiente día hábil.'],
       ['¿Puedo ir a la tienda sin cita?', 'Sí. Pasa en horario de tienda a ver las prendas, probar tallas o recoger tu pedido.'],
+      ['¿Dónde están exactamente?', 'En Calle Emiliano Zapata 3737, colonia Venustiano Carranza, C.P. 64560, Monterrey, Nuevo León.'],
+      ['¿Puedo recoger en tienda lo que compré en línea?', 'Sí. Haz tu pedido y pasa a recogerlo en horario de tienda; así no pagas envío.'],
+      ['¿Atienden a empresas de fuera de Monterrey?', 'Sí. Enviamos a todo México por paquetería con número de guía y facturamos con CFDI.'],
     ],
   },
   'terminos-y-condiciones': {
@@ -457,6 +466,11 @@ const ARTICLES_EXTRA = {
       <p>Nuestras prendas llevan cinta reflejante cosida sobre mezclilla, no una certificación de alta visibilidad (ANSI/ISEA 107 o ISO 20471). Si el centro de trabajo exige prenda certificada, consúltanos antes. Para la mayoría de las áreas con poca luz o tránsito de montacargas, la cinta cosida cumple el objetivo.</p>
       <p>Mira la <a href="/camisa-de-mezclilla-con-reflejante">camisa</a> y el <a href="/pantalon-de-mezclilla-con-reflejante">pantalón de mezclilla con reflejante</a>, disponibles en los dos colores.</p>
     `,
+    faq: [
+      ['¿Cuál se ve mejor de día?', 'El verde lima destaca más de día y contra fondos oscuros. El naranja se usa mucho en construcción y vialidades, y contrasta bien con vegetación y cielo.'],
+      ['¿El color cambia lo que refleja de noche?', 'No. De noche las dos cintas devuelven la luz de los faros igual; la diferencia entre verde y naranja se nota de día.'],
+      ['¿Puedo mezclar los dos colores en un mismo equipo?', 'Sí, aunque conviene un solo color por cuadrilla: así se identifica de lejos quién es de cada área.'],
+    ],
   },
   'cuantos-uniformes-necesita-cada-trabajador': {
     kicker: 'Artículo',
@@ -483,6 +497,11 @@ const ARTICLES_EXTRA = {
       <h2>Ejemplo rápido</h2>
       <p>Cuadrilla de 20 personas en obra, jornada de lunes a viernes: 20 × 3 juegos = 60 camisas y 60 pantalones, más 4 o 5 piezas extra en tallas medias. Ese número es el que capturas en el <a href="/empresas">cotizador para empresas</a>.</p>
     `,
+    faq: [
+      ['¿Cuántos juegos necesita cada persona?', 'Depende del turno y de cada cuánto se lava. Con dos o tres juegos cada prenda descansa entre usos y el conjunto dura más que dos prendas puestas a diario.'],
+      ['¿Cada cuándo se reponen?', 'Cuando aparecen desgarres en costuras o la tela se adelgaza en rodillas y asentaderas. Revisar la dotación cada semestre evita que alguien ande con la prenda rota.'],
+      ['¿Conviene dejar tallas extra en almacén?', 'Sí. Un pequeño colchón en las tallas más comunes cubre ingresos nuevos y cambios sin abrir un pedido nuevo.'],
+    ],
   },
   'que-debe-incluir-una-cotizacion-de-uniformes': {
     kicker: 'Artículo',
@@ -509,6 +528,11 @@ const ARTICLES_EXTRA = {
       <h2>Cómo cotizamos nosotros</h2>
       <p>En el <a href="/empresas">cotizador para empresas</a> capturas prenda y piezas por talla; te respondemos por escrito con tela, precio por grupo de tallas (distribuidor o socio según el volumen), personalización, tiempo de entrega según stock, envío, factura CFDI y política de cambios. Lee también <a href="/articulos/que-preguntar-antes-de-comprar-ropa-de-trabajo-por-mayoreo">qué preguntar antes de comprar por mayoreo</a>.</p>
     `,
+    faq: [
+      ['¿Qué no debe faltar en una cotización de uniformes?', 'Prenda y tela, tallas y precio por talla, personalización, tiempo de entrega, costo de envío, facturación y política de cambios. Si falta alguno, pídelo antes de comparar.'],
+      ['¿El precio debe venir con IVA?', 'Debe decirlo con claridad, porque cambia mucho la comparación. Nuestros precios de tienda ya incluyen IVA y facturamos con CFDI.'],
+      ['¿Debe tener vigencia?', 'Sí. Una cotización seria dice hasta cuándo respeta el precio; sin eso no sabes si al autorizarla te van a cobrar lo mismo.'],
+    ],
   },
   'como-cuidar-la-cinta-reflejante-para-que-no-pierda-brillo': {
     kicker: 'Artículo',
@@ -530,6 +554,11 @@ const ARTICLES_EXTRA = {
       <p>Con el uso la cinta pierde algo de brillo de día; de noche sigue reflejando mientras la superficie esté íntegra. Si la cinta se cuartea, se despega o deja de reflejar con la luz de un celular en la oscuridad, es hora de reponer la prenda. En Works Jeans las cintas van cosidas, no pegadas, y tienen 30 días de garantía contra defectos de fabricación.</p>
       <p>Lee también <a href="/articulos/como-cuidar-la-ropa-de-trabajo-de-mezclilla-para-que-dure-mas">cómo cuidar la mezclilla</a> y conoce nuestra <a href="/ropa-de-trabajo-reflejante">ropa de trabajo reflejante</a>.</p>
     `,
+    faq: [
+      ['¿Se puede planchar encima de la cinta?', 'No. El calor directo de la plancha la daña y pierde brillo. Plancha alrededor y evita pasar por encima.'],
+      ['¿La puedo meter a la secadora?', 'Mejor seca a la sombra. El calor fuerte y repetido acorta la vida de la cinta, aunque la prenda aguante bien.'],
+      ['¿Cómo sé que la cinta ya no sirve?', 'Si se ve opaca, cuarteada o despegada en los bordes aunque esté limpia, ya no devuelve la luz igual y conviene reponer la prenda.'],
+    ],
   },
   'camisa-de-trabajo-o-camisola-diferencias': {
     kicker: 'Artículo',
@@ -554,6 +583,11 @@ const ARTICLES_EXTRA = {
       </ul>
       <p>Si tu gente trabaja con las manos, mira las <a href="/camisas-de-trabajo">camisas de trabajo de mezclilla</a>, de la XCH a la 5XG, con o sin cinta reflejante.</p>
     `,
+    faq: [
+      ['¿Cuál es la diferencia principal?', 'La camisa de trabajo se usa como prenda única, abrocha con botones y va fajada o por fuera. La camisola suele ser más holgada y se pone encima de la ropa, como una capa extra.'],
+      ['¿Cuál conviene en planta?', 'La camisa de mezclilla, por el corte sin partes sueltas que puedan engancharse con maquinaria.'],
+      ['¿Works Jeans fabrica camisola?', 'Fabricamos camisa de trabajo de mezclilla 100% algodón, de la XCH a la 5XG, con o sin cinta reflejante. Si necesitas otra prenda, escríbenos y te decimos si podemos ayudarte.'],
+    ],
   },
   'tallas-grandes-de-ropa-de-trabajo-como-medir-y-pedir': {
     kicker: 'Artículo',
@@ -574,6 +608,11 @@ const ARTICLES_EXTRA = {
       <h2>Al pedir para una cuadrilla</h2>
       <p>Levanta las tallas midiendo prendas, no preguntando de memoria: mucha gente dice la talla que usaba hace años. Incluye las tallas grandes en la corrida desde el primer pedido y agrega una o dos piezas extra en 44 a 48 y en 2XG a 4XG, que son las que más se repiten. Conoce la <a href="/ropa-de-trabajo-tallas-grandes">ropa de trabajo en tallas grandes</a> que tenemos en stock.</p>
     `,
+    faq: [
+      ['¿Hasta qué talla manejan?', 'Pantalón hasta la 50 y camisa hasta la 5XG, con existencia igual que las tallas chicas.'],
+      ['¿Cambia el patrón en las tallas grandes?', 'Es el mismo patrón, la misma mezclilla y el mismo acabado que en cualquier otra talla; solo cambia el tamaño.'],
+      ['¿Cómo mido si no tengo cinta de sastre?', 'Mide una prenda que te quede bien, extendida sobre la mesa: de costura a costura y multiplica por dos. Así sacas cintura o pecho sin medirte encima.'],
+    ],
   },
   'bordado-en-mezclilla-tamanos-posiciones-y-colores': {
     kicker: 'Artículo',
@@ -601,6 +640,11 @@ const ARTICLES_EXTRA = {
       <h2>Qué mandar</h2>
       <p>El logotipo en archivo vectorial (AI, SVG o PDF) o en PNG de alta resolución, los colores que quieres y la posición. Con eso te decimos tamaño final y precio junto con la corrida de tallas en el <a href="/empresas">cotizador para empresas</a>.</p>
     `,
+    faq: [
+      ['¿Dónde queda mejor el logotipo?', 'En el pecho izquierdo o en la manga. Sobre la bolsa se deforma con el uso y cuesta más que quede parejo.'],
+      ['¿Qué colores se ven bien sobre el índigo?', 'Los claros y los saturados. Los azules oscuros y los grises se pierden contra la tela y el logotipo deja de leerse a distancia.'],
+      ['¿Qué archivo necesitan de mi logotipo?', 'El logotipo en vectorial o en imagen de alta resolución. Lo revisamos contigo antes de bordar y te decimos si conviene simplificar algún detalle.'],
+    ],
   },
   'ropa-de-trabajo-para-clima-caliente': {
     kicker: 'Artículo',
@@ -622,6 +666,11 @@ const ARTICLES_EXTRA = {
       <p>Se lava más seguido: agua fría, al revés y sin cloro para que el color aguante el sol. Ten al menos tres juegos por persona para rotar (lee <a href="/articulos/cuantos-uniformes-necesita-cada-trabajador">cuántos uniformes necesita cada trabajador</a>).</p>
       <p>Nuestros <a href="/pantalones-de-trabajo">pantalones</a> y <a href="/camisas-de-trabajo">camisas de trabajo</a> se fabrican en Monterrey con mezclilla 100% algodón preencogida, para el clima donde se usan.</p>
     `,
+    faq: [
+      ['¿No da más calor la mezclilla que una tela delgada?', 'El algodón absorbe el sudor y lo deja evaporar, así que enfría al secarse. El poliéster lo retiene contra la piel y por eso se siente más caliente aunque pese menos.'],
+      ['¿Qué corte ayuda en verano?', 'El recto. Deja circular el aire entre la tela y la piel; el entallado pega la prenda al cuerpo y da más calor.'],
+      ['¿Conviene manga larga con sol directo?', 'Sí. La manga larga de algodón protege la piel del sol y no se siente más caliente que la corta cuando trabajas expuesto.'],
+    ],
   },
 };
 

@@ -69,6 +69,29 @@ test('tienda: ficha de producto, categoría, artículos y página de contenido',
   assert.equal((await api('/rastrear.html')).status, 200);
 });
 
+test('seo: preguntas frecuentes, ficha de negocio e imágenes en el sitemap', async () => {
+  // Todos los artículos y las dos categorías deben traer el bloque de preguntas.
+  const sitemap = (await api('/sitemap.xml')).text;
+  const rutas = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+  const sinFaq = [];
+  for (const ruta of rutas.filter((r) => r.startsWith('/articulos/') || r === '/camisas-de-trabajo' || r === '/pantalones-de-trabajo')) {
+    const html = (await api(ruta)).text;
+    if (!html.includes('"FAQPage"')) sinFaq.push(ruta);
+  }
+  assert.deepEqual(sinFaq, [], `sin preguntas frecuentes:\n${sinFaq.join('\n')}`);
+
+  // Páginas locales con la ficha del negocio.
+  for (const ruta of ['/contacto', '/nosotros', '/ropa-de-trabajo-apodaca']) {
+    assert.match((await api(ruta)).text, /"ClothingStore"/, `${ruta} sin ficha de negocio`);
+  }
+
+  // Sitemap con imágenes de producto.
+  assert.match(sitemap, /xmlns:image="http:\/\/www\.google\.com\/schemas\/sitemap-image\/1\.1"/);
+  const productos = (await api('/products.json')).json;
+  const imagenes = [...sitemap.matchAll(/<image:loc>/g)].length;
+  assert.ok(imagenes >= productos.length, `esperaba al menos ${productos.length} imágenes, hubo ${imagenes}`);
+});
+
 test('seo: la ficha declara envío, tiempo de entrega y devoluciones para Google', async () => {
   const products = (await api('/products.json')).json;
   const html = (await api(`/producto/${products[0].id}`)).text;

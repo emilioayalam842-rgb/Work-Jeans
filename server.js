@@ -1154,18 +1154,29 @@ function migrarSeoArticulos() {
   if (!articles.length) return;
   const mapa = new Map(pares);
   let cambios = 0;
+  const fuente = { ...CONTENT.ARTICLES };
   articles.forEach((a) => {
     for (const campo of ['title', 'description']) {
       const nuevo = mapa.get(a[campo]);
       if (nuevo) { a[campo] = nuevo; cambios += 1; }
     }
+    // Preguntas frecuentes: se agregan a los artículos que no tienen ninguna, nunca se pisan las existentes.
+    const base = fuente[a.slug];
+    if (base && Array.isArray(base.faq) && base.faq.length && (!Array.isArray(a.faq) || !a.faq.length)) {
+      a.faq = base.faq.map(([q, r]) => [q, r]);
+      cambios += 1;
+    }
   });
-  if (cambios) { saveArticles(articles); console.log(`SEO: ${cambios} títulos o descripciones de artículos acortados.`); }
+  if (cambios) { saveArticles(articles); console.log(`SEO: ${cambios} ajustes en los artículos guardados (títulos, descripciones y preguntas).`); }
 }
 
 // Fecha del último cambio de contenido del sitio (para el sitemap). Súbela solo cuando cambien
 // de verdad los textos de las páginas, no en cada despliegue.
-const CONTENT_LASTMOD = '2026-09-18';
+function escapeXml(text) {
+  return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+}
+
+const CONTENT_LASTMOD = '2026-09-19';
 
 // Descripción para buscadores: Google corta alrededor de 160 caracteres, así que se arma con las
 // frases completas que quepan más la cola con tallas y envío.
@@ -1186,7 +1197,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260918d';
+const ASSET_V = '20260919a';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1440,7 +1451,22 @@ const CATEGORY_PAGES = {
       <p>Las versiones reflejantes tienen cintas cosidas en pecho y mangas, en verde o naranja, para entornos de poca luz. Combinan con nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a> reflejantes para un uniforme completo.</p>
       <h2>Personalización con tu logotipo</h2>
       <p>Bordamos o estampamos en DTF el logotipo de tu empresa. Pide tu cotización de mayoreo con corrida de tallas en el <a href="/empresas">cotizador</a> o escríbenos por WhatsApp desde Monterrey; enviamos a todo México.</p>
+      <h2>Por qué mezclilla y no poliéster</h2>
+      <p>La mezclilla 100% algodón absorbe el sudor y lo deja evaporar, así que en turnos largos se siente menos caliente que una camisa de poliéster, que retiene la humedad contra la piel. Además aguanta el lavado frecuente y las manchas de grasa sin adelgazarse en hombros y codos, que es donde primero se rompen las camisas ligeras. Lo explicamos con detalle en <a href="/articulos/camisa-de-mezclilla-o-de-poliester-para-trabajar-en-planta">camisa de mezclilla o de poliéster</a>.</p>
+      <h2>Cómo elegir la talla</h2>
+      <p>Las camisas van de la XCH a la 5XG con el mismo patrón y el mismo acabado en todas las tallas. Para acertar, mide una camisa que ya te quede bien: extiéndela sobre una mesa, mide el pecho de costura a costura y multiplica por dos. Ese número se compara con la <a href="/guia-de-tallas">guía de tallas</a>. Si quedas entre dos, pide la mayor: la mezclilla no da de sí y en el trabajo conviene el espacio para mover los brazos.</p>
+      <h2>Cuidado y duración</h2>
+      <p>Lava del revés, con agua fría y sin cloro. Así la prenda conserva el color y, en las versiones reflejantes, la cinta mantiene el brillo más tiempo. Evita planchar encima de la cinta reflejante. Con dos o tres camisas en rotación cada una descansa entre lavados y el conjunto dura bastante más que dos puestas a diario.</p>
+      <h2>Para empresas</h2>
+      <p>Trabajamos corridas completas de tallas para cuadrillas de planta, obra, taller y logística, con etiquetas por talla para repartir sin abrir paquetes, facturación con CFDI y entrega a todo México. El precio baja por volumen y manejamos precio de distribuidor y de socio; revisa las condiciones en <a href="/mayoreo-ropa-de-trabajo">mayoreo</a>.</p>
     `,
+    faq: [
+      ['¿Qué talla de camisa de trabajo debo pedir?', 'Mide una camisa que ya te quede bien: extendida sobre la mesa, de costura a costura en el pecho, y multiplica por dos. Compara ese número con la guía de tallas. Si quedas entre dos, pide la mayor.'],
+      ['¿La camisa encoge al lavarla?', 'La mezclilla viene preencogida, así que no encoge después de la primera lavada. Lávala del revés, con agua fría y sin cloro para que conserve el color.'],
+      ['¿Hasta qué talla manejan?', 'De la XCH a la 5XG, con el mismo patrón y el mismo acabado en todas. Las tallas grandes tienen existencia igual que las chicas.'],
+      ['¿Puedo pedir las camisas con el logotipo de mi empresa?', 'Sí. Bordamos o estampamos en DTF en pedidos de mayoreo. El logotipo suele ir en el pecho izquierdo o en la manga; lo revisamos contigo antes de producir.'],
+      ['¿Venden por pieza o solo por mayoreo?', 'Las dos cosas. Puedes comprar una camisa para probar tela y talla, y después pedir la corrida completa para tu equipo.'],
+    ],
   },
 };
 
@@ -1692,6 +1718,40 @@ function fmtLongDate(iso) {
   try { return new Date(`${String(iso).slice(0, 10)}T12:00:00`).toLocaleDateString('es-MX', { dateStyle: 'long' }); } catch { return iso; }
 }
 
+// Ficha del negocio para las páginas locales (contacto, nosotros y las de cada municipio). Google la usa
+// para el panel lateral y para las búsquedas con intención local. Los datos salen de Configuración.
+function negocioJsonLd(origin) {
+  const cfg = getSettings();
+  const partes = String(cfg.address || '').split(',').map((x) => x.trim());
+  const cp = (String(cfg.address || '').match(/\b(\d{5})\b/) || [])[1] || '';
+  const horas = String(cfg.hours || '').match(/(\d{1,2}):(\d{2})/g) || [];
+  return {
+    '@type': 'ClothingStore',
+    '@id': `${origin}/#negocio`,
+    name: cfg.storeName || 'Works Jeans',
+    url: `${origin}/`,
+    logo: `${origin}/assets/img/works-jeans-logo.png`,
+    image: `${origin}/assets/img/og-works-jeans.jpg`,
+    ...(cfg.phoneDisplay ? { telephone: `+52 ${cfg.phoneDisplay}` } : {}),
+    priceRange: '$$',
+    currenciesAccepted: 'MXN',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: partes.slice(0, 2).join(', ') || 'Monterrey',
+      addressLocality: 'Monterrey',
+      addressRegion: 'Nuevo León',
+      ...(cp ? { postalCode: cp } : {}),
+      addressCountry: 'MX',
+    },
+    ...(cfg.googleMapsUrl ? { hasMap: cfg.googleMapsUrl, sameAs: [cfg.googleMapsUrl] } : {}),
+    geo: { '@type': 'GeoCoordinates', latitude: 25.6895993, longitude: -100.2771409 },
+    areaServed: 'México',
+    ...(horas.length >= 2 ? { openingHoursSpecification: { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: horas[0].padStart(5, '0'), closes: horas[1].padStart(5, '0') } } : {}),
+  };
+}
+// Páginas donde la intención es local: ahí conviene repetir la ficha del negocio.
+const PAGINAS_LOCALES = new Set(['contacto', 'nosotros', 'uniformes-industriales-monterrey', 'fabricantes-de-ropa-de-trabajo-en-monterrey']);
+
 function renderContentPage(req, res, slug, page, { isArticle }) {
   const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
   const canonical = isArticle ? `${origin}/articulos/${slug}` : `${origin}/${slug}`;
@@ -1714,6 +1774,9 @@ function renderContentPage(req, res, slug, page, { isArticle }) {
     },
     { '@type': 'BreadcrumbList', itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })) },
   ];
+  if (!isArticle && (PAGINAS_LOCALES.has(slug) || slug.startsWith('ropa-de-trabajo-'))) {
+    graph.push(negocioJsonLd(origin));
+  }
   if (page.faq) {
     graph.push({ '@type': 'FAQPage', mainEntity: page.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) });
   }
@@ -1798,12 +1861,19 @@ app.get('/sitemap.xml', (req, res) => {
     { loc: `${origin}/empresas`, priority: '0.9', lastmod: CONTENT_LASTMOD },
     { loc: `${origin}/articulos`, priority: '0.6', lastmod: CONTENT_LASTMOD },
     ...publishedArticles().map((a) => ({ loc: `${origin}/articulos/${a.slug}`, priority: '0.7', lastmod: a.updatedAt || a.publishedAt })),
-    ...publicProducts().map((p) => ({ loc: `${origin}/producto/${p.id}`, priority: '0.8', lastmod: p.updatedAt || productsDate })),
+    ...publicProducts().map((p) => ({
+      loc: `${origin}/producto/${p.id}`,
+      priority: '0.8',
+      lastmod: p.updatedAt || productsDate,
+      // Las fotos van declaradas para que también salgan en la búsqueda de imágenes de Google.
+      images: [...new Set([p.image, ...(p.images || [])].filter(Boolean))].slice(0, 6).map((img) => ({ loc: `${origin}/${img}`, title: p.name })),
+    })),
     { loc: `${origin}/aviso-de-privacidad`, priority: '0.3', lastmod: CONTENT_LASTMOD },
     { loc: `${origin}/envios-y-devoluciones`, priority: '0.3', lastmod: CONTENT_LASTMOD },
   ];
   const day = (v) => String(v || CONTENT_LASTMOD).slice(0, 10);
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${day(u.lastmod)}</lastmod><priority>${u.priority}</priority></url>`).join('\n')}\n</urlset>\n`;
+  const imgs = (u) => (u.images || []).map((i) => `<image:image><image:loc>${escapeXml(i.loc)}</image:loc><image:title>${escapeXml(i.title)}</image:title></image:image>`).join('');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${day(u.lastmod)}</lastmod><priority>${u.priority}</priority>${imgs(u)}</url>`).join('\n')}\n</urlset>\n`;
   res.type('application/xml').send(xml);
 });
 
