@@ -394,6 +394,31 @@ const APOYO = {
       <p>Si nos escribes con estos tres datos, te respondemos con precio en el mismo día hábil: qué prenda quieres (<a href="/pantalones-de-trabajo">pantalón</a>, <a href="/camisas-de-trabajo">camisa</a> o ambas, con o sin <a href="/ropa-de-trabajo-reflejante">reflejante</a>), cuántas piezas por talla, y si necesitas el logotipo de tu empresa bordado o en DTF. Si todavía no sabes las tallas, con el número de personas te armamos una corrida estimada y la ajustamos después.</p>
       <h2>Desde dónde atendemos</h2>
       <p>Fabricamos y despachamos desde Monterrey, y entregamos en persona en el área metropolitana: <a href="/ropa-de-trabajo-apodaca">Apodaca</a>, <a href="/ropa-de-trabajo-escobedo">Escobedo</a>, <a href="/ropa-de-trabajo-garcia">García</a>, <a href="/ropa-de-trabajo-guadalupe">Guadalupe</a>, <a href="/ropa-de-trabajo-san-nicolas">San Nicolás</a> y <a href="/ropa-de-trabajo-santa-catarina">Santa Catarina</a>. Al resto del país enviamos por paquetería con número de guía.</p>
+      <h2>Escríbenos desde aquí</h2>
+      <p>Si prefieres no usar WhatsApp, déjanos tus datos y te contestamos por correo en horario de tienda.</p>
+      <form id="contactForm" class="form-card" novalidate>
+        <div class="form-grid">
+          <label for="cfNombre">Nombre <span aria-hidden="true">*</span>
+            <input type="text" id="cfNombre" name="nombre" autocomplete="name" required maxlength="120" placeholder="Tu nombre">
+          </label>
+          <label for="cfEmpresa">Empresa <small>(opcional)</small>
+            <input type="text" id="cfEmpresa" name="empresa" autocomplete="organization" maxlength="120" placeholder="Nombre de tu empresa">
+          </label>
+          <label for="cfCorreo">Correo <span aria-hidden="true">*</span>
+            <input type="email" id="cfCorreo" name="correo" autocomplete="email" required maxlength="160" placeholder="tucorreo@ejemplo.com">
+          </label>
+          <label for="cfTelefono">Teléfono <small>(opcional)</small>
+            <input type="tel" id="cfTelefono" name="telefono" autocomplete="tel" maxlength="25" placeholder="81 1234 5678">
+          </label>
+        </div>
+        <label for="cfMensaje">Mensaje <span aria-hidden="true">*</span>
+          <textarea id="cfMensaje" name="mensaje" rows="5" required maxlength="2000" placeholder="Cuéntanos qué necesitas: prenda, cantidad aproximada, tallas o dudas."></textarea>
+        </label>
+        <label class="form-trap" aria-hidden="true">No llenar<input type="text" id="cfSitio" name="website" tabindex="-1" autocomplete="off"></label>
+        <button type="submit" class="btn btn-primary">Enviar mensaje</button>
+        <p class="form-note">Usamos tus datos solo para responderte. Consulta el <a href="/aviso-de-privacidad">aviso de privacidad</a>.</p>
+      </form>
+      <p class="form-status" id="contactStatus" role="status" aria-live="polite"></p>
       <h2>Tiempos de respuesta y de entrega</h2>
       <p>Contestamos por WhatsApp dentro del horario de tienda. Una vez confirmado el pago, el pedido se prepara en uno o dos días hábiles y la paquetería tarda entre tres y siete días hábiles según el destino. Los pedidos de empresa con bordado llevan más tiempo y te lo confirmamos por escrito en la cotización.</p>
     `,
@@ -516,6 +541,45 @@ const NUEVAS_2026_09 = {
       ['¿Ustedes fabrican o revenden?', 'Fabricamos. Cortamos y confeccionamos en Monterrey, y vendemos directo a empresas, distribuidores y público.'],
       ['¿Atienden a empresas de fuera de Monterrey?', 'Sí. Enviamos a todo México por paquetería con número de guía y facturamos con CFDI.'],
       ['¿Puedo llevar a mi gente a probarse tallas?', 'Sí, y es lo que recomendamos antes de una compra grande. Pasen en horario de tienda; si son muchos, avísanos por WhatsApp para tener listas las corridas.'],
+      ...faqComunes().slice(1),
+    ],
+  },
+
+  'uniformes-industriales': {
+    kicker: 'Uniformes industriales',
+    h1: 'Uniformes industriales para empresas',
+    h1Html: 'Uniformes<br>industriales.',
+    title: 'Uniformes Industriales para Empresas | Works Jeans',
+    description: 'Uniformes industriales de mezclilla para empresas: pantalón y camisa en tallas completas, con reflejante, bordado de tu logotipo y entrega a todo México.',
+    intro: 'Pantalón y camisa de mezclilla para uniformar cuadrillas completas: tallas del 28 al 50, personalización con tu logotipo, factura y reposición sin esperar producción.',
+    products: () => true,
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>Qué resuelve un uniforme industrial</h2>
+      <p>Uniformar no es solo vestir igual a la gente. Un programa de uniformes que funciona resuelve cuatro cosas a la vez: que la prenda aguante el puesto, que exista la talla de cada persona, que se pueda reponer cuando se rompe y que el gasto quede facturado y ordenado. Cuando falla cualquiera de las cuatro, el área de compras termina resolviendo urgencias cada quincena.</p>
+      <p>Nosotros fabricamos dos prendas y mantenemos existencia de la corrida completa: <a href="/pantalones-de-trabajo">pantalón de trabajo</a> de mezclilla 100% algodón del 28 al 50 y <a href="/camisas-de-trabajo">camisa de trabajo</a> de la XCH a la 5XG, ambas con o sin cinta reflejante.</p>
+      <h2>Para qué operaciones</h2>
+      <p>La misma prenda sirve en giros distintos y cada uno la desgasta diferente. Tenemos la recomendación por operación en <a href="/uniformes-para-construccion">construcción y obra</a>, <a href="/uniformes-para-manufactura-y-planta">manufactura y planta</a>, <a href="/uniformes-para-mantenimiento-y-talleres">mantenimiento y talleres</a> y <a href="/uniformes-para-logistica-y-patios">logística y patios de maniobras</a>. Para contratistas que rotan personal entre obras, lo que más pesa es tener existencia de todas las tallas; para planta, el corte sin partes sueltas.</p>
+      <h2>Tallas para una cuadrilla completa</h2>
+      <p>La mayoría de los proveedores se detiene en la 40 o la 42 y deja fuera a parte del equipo. Nosotros llegamos a la 50 en pantalón y a la 5XG en camisa con el mismo patrón, la misma tela y el mismo acabado. Para armar la corrida sin equivocarte, la <a href="/guia-de-tallas">guía de tallas</a> explica cómo medir una prenda que ya le quede bien a cada persona, que es más rápido y más exacto que medir a cada quien con cinta.</p>
+      <h2>Personalización con tu logotipo</h2>
+      <p>Bordamos o estampamos en DTF el logotipo de la empresa en pedidos de mayoreo. En camisa queda mejor sobre el pecho izquierdo o la manga; en pantalón, sobre la bolsa trasera o la pierna. Antes de producir revisamos contigo el archivo y la posición. Si quieres entender qué conviene en tu caso, lo comparamos en <a href="/articulos/bordado-o-dtf-como-poner-tu-logotipo-en-uniformes-de-trabajo">bordado o DTF</a>.</p>
+      <h2>Visibilidad cuando el puesto lo pide</h2>
+      <p>Las dos prendas existen con cinta reflejante cosida en verde lima o naranja, para áreas con montacargas, patios y turnos de noche. Conviene decirlo con claridad: son prendas con cinta reflejante, no prendas certificadas de alta visibilidad bajo ANSI/ISEA 107 ni ISO 20471, y la mezclilla de algodón no es retardante a la flama. Si tu análisis de riesgos exige prenda certificada, dínoslo antes de cotizar y te decimos con franqueza si te servimos.</p>
+      <h2>Cómo se cotiza</h2>
+      <p>En el <a href="/empresas">cotizador para empresas</a> capturas prenda y cantidades por talla y te respondemos con una cotización por escrito: precio por talla, personalización, tiempo de entrega, envío, factura y política de cambios. Si todavía no tienes las tallas, con el número de personas armamos una corrida estimada y la ajustamos después. El precio baja por volumen y manejamos precio de distribuidor y de socio; las condiciones están en <a href="/mayoreo-ropa-de-trabajo">mayoreo</a>.</p>
+      <h2>Entrega, factura y reposición</h2>
+      <p>Los pedidos de inventario salen en uno o dos días hábiles y la paquetería entrega en tres a siete días hábiles según el destino; con bordado el tiempo se confirma por escrito en la cotización. Separamos y etiquetamos por talla para que puedas repartir sin abrir paquetes. Facturamos con CFDI. Y como mantenemos existencia completa, cuando entra alguien nuevo a media quincena repones esa talla suelta sin abrir un pedido nuevo.</p>
+      <h2>Cuánto uniforme por persona</h2>
+      <p>No hay un número que sirva para todos: depende del turno y de cada cuánto se lava. Con dos o tres juegos por persona cada prenda descansa entre usos y el conjunto dura más que dos puestas a diario. Lo desarrollamos en <a href="/articulos/cuantos-uniformes-necesita-cada-trabajador">cuántos uniformes necesita cada trabajador</a>.</p>
+      <p><a class="btn btn-primary" href="/empresas">Solicitar cotización</a></p>
+    `,
+    faq: [
+      ['¿Cuál es el pedido mínimo para empresa?', 'No exigimos mínimo para comprar, pero el precio por volumen aplica a partir de cierta cantidad de piezas; te la confirmamos al cotizar según la prenda.'],
+      ['¿Pueden entregar separado por talla?', 'Sí. Para pedidos de empresa separamos y etiquetamos por talla, para que reparta directo quien recibe.'],
+      ['¿Qué pasa si una talla no queda?', 'Hay 15 días naturales para cambiar de talla con la prenda sin usar, sin lavar y con etiquetas. Las prendas ya personalizadas no tienen cambio salvo defecto de fabricación.'],
+      ['¿Manejan crédito o solo pago anticipado?', 'Depende del pedido y del historial. Coméntalo al cotizar y lo revisamos contigo por escrito.'],
+      ['¿Las prendas reflejantes están certificadas?', 'No. Llevan cinta reflejante cosida sobre mezclilla, sin certificación ANSI/ISEA 107 ni ISO 20471. Si tu empresa exige prenda certificada, avísanos antes de cotizar.'],
       ...faqComunes().slice(1),
     ],
   },

@@ -182,6 +182,37 @@ test('rastreo: pedido inexistente no revela nada', async () => {
   assert.ok(r.status === 404 || r.status === 400);
 });
 
+test('seguridad: política de contenido y formularios públicos', async () => {
+  const home = await api('/');
+  const csp = home.headers.get('content-security-policy');
+  assert.ok(csp, 'falta la política de contenido');
+  assert.match(csp, /script-src 'self'/);
+  assert.doesNotMatch(csp, /script-src[^;]*unsafe-inline/, 'los scripts en línea deben estar prohibidos');
+  assert.match(csp, /frame-ancestors 'self'/);
+  // Contacto: valida en el servidor y responde con mensaje claro
+  const vacio = await api('/api/contact', { method: 'POST', body: { nombre: '', contacto: '', mensaje: '' } });
+  assert.equal(vacio.status, 400);
+  assert.ok(vacio.json.error);
+  const bot = await api('/api/contact', { method: 'POST', body: { nombre: 'Bot', contacto: 'b@b.com', mensaje: 'hola', website: 'spam' } });
+  assert.equal(bot.status, 200, 'la trampa de bots responde sin error para no delatarse');
+  const ok = await api('/api/contact', { method: 'POST', body: { nombre: 'Ana Ruiz', contacto: 'ana@ejemplo.mx', telefono: '8112345678', empresa: 'Constructora X', mensaje: 'Necesito 40 pantalones para mi cuadrilla.' } });
+  assert.equal(ok.status, 200);
+});
+
+test('seo: atajos de dirección y landing de uniformes industriales', async () => {
+  for (const [corta, destino] of [['/mayoreo', '/mayoreo-ropa-de-trabajo'], ['/pantalon-de-trabajo-reflejante', '/pantalon-de-mezclilla-con-reflejante'], ['/faq', '/preguntas-frecuentes']]) {
+    const r = await api(corta);
+    assert.equal(r.status, 301, `${corta} debería redirigir`);
+    assert.equal(r.headers.get('location'), destino);
+  }
+  const p = await api('/uniformes-industriales');
+  assert.equal(p.status, 200);
+  assert.match(p.text, /"FAQPage"/);
+  assert.match(p.text, /href="\/empresas"/);
+  // El formulario de contacto vive en la página de contacto
+  assert.match((await api('/contacto')).text, /id="contactForm"/);
+});
+
 test('panel: contraseña incorrecta rechazada', async () => {
   const r = await api('/api/admin/login', { method: 'POST', body: { username: 'admin', password: 'mala' } });
   assert.equal(r.status, 401);

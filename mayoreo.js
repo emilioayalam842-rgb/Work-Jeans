@@ -191,6 +191,8 @@
           state: document.getElementById('leadState').value,
           headcount: document.getElementById('leadHeadcount').value,
           customization: logoSelect.value,
+          reflective: document.getElementById('leadReflejante')?.value || '',
+          neededBy: document.getElementById('leadNeededBy')?.value || '',
           notes: document.getElementById('leadNotes').value,
           lines,
           repeatOf,

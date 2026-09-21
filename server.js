@@ -877,6 +877,29 @@ app.use((req, res, next) => {
 });
 
 app.use(compression());
+
+// Política de contenido: el navegador solo ejecuta scripts del propio sitio (y el de Google Analytics
+// cuando el visitante acepta cookies). Bloquea la inyección de scripts externos y el uso del sitio
+// dentro de un iframe ajeno. Los estilos en línea se permiten porque hay atributos style en el HTML.
+const CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "img-src 'self' data: blob: https://maps.gstatic.com https://maps.googleapis.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "script-src 'self' https://www.googletagmanager.com",
+  "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com",
+  "frame-src https://www.youtube-nocookie.com https://www.youtube.com",
+  "upgrade-insecure-requests",
+].join('; ');
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  res.set('Content-Security-Policy', CSP);
+  next();
+});
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('X-Frame-Options', 'SAMEORIGIN');
@@ -1248,7 +1271,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260921a';
+const ASSET_V = '20260921b';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1952,6 +1975,22 @@ if (USES_EXTERNAL_DATA) {
   app.use('/assets/products', express.static(PRODUCTS_IMG_DIR, { maxAge: '30d' }));
 }
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '30d', dotfiles: 'deny' }));
+// Direcciones cortas que la gente escribe o que pedían campañas: llevan a la página que ya posiciona,
+// en vez de crear una segunda página con el mismo contenido compitiendo contra ella.
+const ATAJOS = {
+  '/mayoreo': '/mayoreo-ropa-de-trabajo',
+  '/pantalon-de-trabajo-reflejante': '/pantalon-de-mezclilla-con-reflejante',
+  '/pantalones-reflejantes': '/pantalon-de-mezclilla-con-reflejante',
+  '/ropa-industrial': '/ropa-de-trabajo',
+  '/uniformes': '/uniformes-industriales',
+  '/tallas': '/guia-de-tallas',
+  '/faq': '/preguntas-frecuentes',
+};
+app.get(Object.keys(ATAJOS), (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.redirect(301, ATAJOS[req.path]);
+});
+
 // Las páginas legales existían como archivo .html; ahora la dirección buena es la limpia y la vieja
 // redirige, para que Google no vea dos páginas con el mismo contenido.
 app.get(['/aviso-de-privacidad.html', '/envios-y-devoluciones.html', '/terminos-y-condiciones.html', '/index.html'], (req, res) => {
@@ -3807,7 +3846,7 @@ app.delete('/api/admin/articles/:slug', requireAdmin, perm('contenido.editar'), 
 });
 
 // --- Medición propia (sin datos personales): contadores por día y evento ---
-const TRACK_EVENTS = new Set(['page_view', 'product_view', 'size_selected', 'add_to_cart', 'begin_checkout', 'shipping_calculated', 'whatsapp_click', 'b2b_quote_started', 'b2b_quote_submitted', 'technical_sheet_downloaded', 'purchase']);
+const TRACK_EVENTS = new Set(['page_view', 'product_view', 'size_selected', 'add_to_cart', 'view_cart', 'begin_checkout', 'shipping_calculated', 'add_shipping_info', 'add_payment_info', 'purchase', 'whatsapp_click', 'phone_click', 'b2b_quote_started', 'b2b_quote_submitted', 'technical_sheet_downloaded']);
 const seenSessions = new Map(); // día -> Set de sesiones (para contar visitas únicas del día)
 function readAnalytics() {
   try { return JSON.parse(fs.readFileSync(ANALYTICS_PATH, 'utf-8')); } catch { return {}; }
@@ -3977,6 +4016,8 @@ app.post('/api/leads', async (req, res) => {
     state: cleanText(b.state, 60),
     headcount: Math.max(0, parseInt(b.headcount, 10) || 0) || null,
     customization: cleanText(b.customization, 80),
+    reflective: cleanText(b.reflective, 60),
+    neededBy: /^\d{4}-\d{2}-\d{2}$/.test(String(b.neededBy || '')) ? String(b.neededBy) : '',
     notes: cleanText(b.notes, 1500),
     lines: Array.isArray(b.lines) ? b.lines.slice(0, 30).map((l) => ({ id: cleanText(l.id, 80), name: cleanText(l.name, 120), total: Math.max(0, parseInt(l.total, 10) || 0), sizes: Object.fromEntries(Object.entries(l.sizes || {}).slice(0, 40).map(([k, v]) => [cleanText(k, 30), Math.max(0, parseInt(v, 10) || 0)])) })) : [],
     internalNotes: '',
@@ -4006,7 +4047,7 @@ app.post('/api/leads', async (req, res) => {
   const detail = lead.lines.map((l) => `${l.name}: ${Object.entries(l.sizes).map(([s, q]) => `${s}×${q}`).join(', ')} (${l.total} pzas)`).join('<br>');
   const emailed = await sendEmail({
     subject: `Cotización de empresa: ${lead.company}`,
-    html: `<h2>Nueva cotización desde www.workjeans.mx/empresas</h2><p><b>${escapeHtml(lead.company)}</b> · ${escapeHtml(lead.name)}<br>${escapeHtml(lead.email)} · ${escapeHtml(lead.phone)}<br>${escapeHtml([lead.city, lead.state].filter(Boolean).join(', '))}</p><p>${detail ? escapeHtml(detail).replace(/&lt;br&gt;/g, '<br>') : 'Sin desglose por talla.'}<br>Total: ${lead.totalPieces} piezas${lead.headcount ? ` · ~${lead.headcount} personas` : ''}${lead.customization ? ` · ${escapeHtml(lead.customization)}` : ''}</p>${lead.notes ? `<p style="white-space:pre-wrap">${escapeHtml(lead.notes)}</p>` : ''}<p>Revisa y da seguimiento en el panel → Ventas → Cotizaciones.</p>`,
+    html: `<h2>Nueva cotización desde www.workjeans.mx/empresas</h2><p><b>${escapeHtml(lead.company)}</b> · ${escapeHtml(lead.name)}<br>${escapeHtml(lead.email)} · ${escapeHtml(lead.phone)}<br>${escapeHtml([lead.city, lead.state].filter(Boolean).join(', '))}</p><p>${detail ? escapeHtml(detail).replace(/&lt;br&gt;/g, '<br>') : 'Sin desglose por talla.'}<br>Total: ${lead.totalPieces} piezas${lead.headcount ? ` · ~${lead.headcount} personas` : ''}${lead.customization ? ` · ${escapeHtml(lead.customization)}` : ''}${lead.reflective ? ` · ${escapeHtml(lead.reflective)}` : ''}${lead.neededBy ? `<br><b>La necesita para:</b> ${escapeHtml(lead.neededBy)}` : ''}</p>${lead.notes ? `<p style="white-space:pre-wrap">${escapeHtml(lead.notes)}</p>` : ''}<p>Revisa y da seguimiento en el panel → Ventas → Cotizaciones.</p>`,
   });
   if (customerEmailsEnabled()) {
     const repeatUrl = `https://www.workjeans.mx/empresas?repetir=${lead.repeatToken}`;
@@ -4050,7 +4091,7 @@ app.delete('/api/admin/leads/:id', requireAdmin, perm('pedidos.eliminar'), (req,
 // --- Formulario de contacto: llega por correo (si hay Resend) y siempre queda registrado ---
 const contactAttempts = new Map();
 app.post('/api/contact', async (req, res) => {
-  const { nombre, contacto, mensaje, website } = req.body || {};
+  const { nombre, contacto, mensaje, website, empresa, telefono } = req.body || {};
   if (website) {
     res.json({ ok: true }); // campo trampa para bots
     return;
@@ -4058,6 +4099,8 @@ app.post('/api/contact', async (req, res) => {
   const name = String(nombre || '').trim().slice(0, 120);
   const contact = String(contacto || '').trim().slice(0, 160);
   const message = String(mensaje || '').trim().slice(0, 2000);
+  const company = cleanText(empresa, 120);
+  const phone = String(telefono || '').replace(/[^\d+ ()-]/g, '').trim().slice(0, 25);
   if (!name || !contact || !message) {
     res.status(400).json({ error: 'Completa nombre, contacto y mensaje.' });
     return;
@@ -4070,8 +4113,8 @@ app.post('/api/contact', async (req, res) => {
   }
   contactAttempts.set(clientIp(req), [...recent, now]);
   const sent = await sendEmail({
-    subject: `Mensaje del sitio: ${name}`,
-    html: `<h2>Nuevo mensaje desde www.workjeans.mx</h2><p><b>Nombre:</b> ${escapeHtml(name)}<br><b>Contacto:</b> ${escapeHtml(contact)}</p><p style="white-space:pre-wrap">${escapeHtml(message)}</p>`,
+    subject: `Mensaje del sitio: ${name}${company ? ` (${company})` : ''}`,
+    html: `<h2>Nuevo mensaje desde www.workjeans.mx</h2><p><b>Nombre:</b> ${escapeHtml(name)}${company ? `<br><b>Empresa:</b> ${escapeHtml(company)}` : ''}<br><b>Correo:</b> ${escapeHtml(contact)}${phone ? `<br><b>Teléfono:</b> ${escapeHtml(phone)}` : ''}</p><p style="white-space:pre-wrap">${escapeHtml(message)}</p>`,
   });
   res.json({ ok: true, emailed: sent });
 });

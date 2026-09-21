@@ -82,11 +82,24 @@
       $('coShipMsg').classList.toggle('is-error', ['invalid_cp', 'unknown_cp', 'quote_required'].includes(s.status));
       $('coTotal').textContent = money(quote.totalCents);
       $('coSubmitTotal').textContent = money(quote.totalCents);
+      document.dispatchEvent(new CustomEvent('wj-quote-ready'));
     } catch { status.textContent = 'No se pudo calcular el total. Revisa tu conexión.'; }
   }
   $('coZip').addEventListener('input', () => { $('coZip').value = $('coZip').value.replace(/\D/g, '').slice(0, 5); clearTimeout(quoteTimer); quoteTimer = setTimeout(refreshQuote, 250); });
   renderItems();
   refreshQuote();
+  if (cart.length) window.wjTrack?.('view_cart', { items: cart, valueCents: cart.reduce((t, i) => t + i.priceCents * i.quantity, 0) });
+  // El costo de envío queda confirmado cuando el código postal devuelve una zona válida.
+  let envioAvisado = false;
+  document.addEventListener('wj-quote-ready', () => {
+    if (envioAvisado || !quote || !quote.shipping) return;
+    if (!['quoted', 'free', 'pending_rates'].includes(quote.shipping.status)) return;
+    envioAvisado = true;
+    window.wjTrack?.('add_shipping_info', { items: cart, valueCents: quote.totalCents, shippingCents: quote.shipping.costCents || 0 });
+  });
+  document.querySelectorAll('input[name="method"]').forEach((r) => r.addEventListener('change', () => {
+    window.wjTrack?.('add_payment_info', { items: cart, valueCents: quote ? quote.totalCents : undefined, method: r.value });
+  }));
 
   function invoiceData() {
     if (!$('coInvoiceWanted').checked) return null;
@@ -122,7 +135,7 @@
     const original = btn.innerHTML;
     btn.textContent = 'Procesando…';
     const token = (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^\w-]/g, '');
-    window.wjTrack?.('begin_checkout', { items: cart.length });
+    window.wjTrack?.('begin_checkout', { items: cart, valueCents: quote ? quote.totalCents : undefined });
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
