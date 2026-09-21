@@ -42,7 +42,7 @@ const LANDINGS = {
     products: () => true,
     body: `
       <h2>Ropa de trabajo hecha en Monterrey</h2>
-      <p>Works Jeans nació en Monterrey para resolver un problema común en la industria regia: uniformes que se rompen a los dos meses. Confeccionamos pantalones y camisas de mezclilla 100% algodón con costuras reforzadas, pensadas para obra, planta, taller mecánico, patio de carga y campo.</p>
+      <p>Works Jeans nació en Monterrey para resolver un problema común en la industria regia: <a href="/uniformes-de-mezclilla">uniformes</a> que se rompen a los dos meses. Confeccionamos pantalones y camisas de mezclilla 100% algodón con costuras reforzadas, pensadas para obra, planta, taller mecánico, patio de carga y campo.</p>
       <h2>Stock inmediato, no pedidos a 6 semanas</h2>
       <p>Mantenemos inventario de todas las tallas en nuestra tienda de Calle Emiliano Zapata 3737, Col. Venustiano Carranza. Puedes pasar a probar la talla, recoger el pedido el mismo día o pedir envío a cualquier parte de Nuevo León y del país.</p>
       <h2>Uniformes con tu logotipo</h2>
@@ -69,17 +69,24 @@ const LANDINGS = {
       <h2>Para quién</h2>
       <ul>
         <li><strong>Empresas y contratistas</strong> que uniforman cuadrillas: obra, planta, mantenimiento, logística.</li>
-        <li><strong>Distribuidores y tiendas</strong> de ropa de trabajo que quieren mezclilla nacional con stock constante.</li>
-        <li><strong>Escuelas técnicas y programas de capacitación</strong> que necesitan uniformes resistentes.</li>
+        <li><strong>Distribuidores y tiendas</strong> de <a href="/ropa-de-trabajo">ropa de trabajo</a> que quieren mezclilla nacional con stock constante.</li>
+        <li><strong>Escuelas técnicas y programas de capacitación</strong> que necesitan <a href="/uniformes-de-mezclilla">uniformes</a> resistentes.</li>
       </ul>
       <h2>Personalización</h2>
       <p>Bordado de logotipo en pecho o espalda, estampado DTF y etiqueta por talla en cada prenda para facilitar el reparto en almacén. Las prendas personalizadas se fabrican sobre pedido.</p>
       <h2>Pago y envío</h2>
       <p>Transferencia, tarjeta o pago en tienda. Enviamos a todo México por paquetería con guía; en Monterrey podemos entregar o puedes recoger en tienda.</p>
+      <h2>Pantalones de trabajo por mayoreo</h2>
+      <p>Es lo que más sale por volumen. El <a href="/pantalones-de-trabajo">pantalón de trabajo</a> de mezclilla 100% algodón va del 28 al 50 con el mismo patrón en todas las tallas, y existe con o sin <a href="/pantalon-de-mezclilla-con-reflejante">cinta reflejante</a> en las piernas. Para una cuadrilla, la corrida típica se concentra entre la 32 y la 38, pero mantenemos existencia completa justo para que puedas pedir las tallas sueltas de los extremos sin esperar producción. Si tu operación es de piso de planta, revisa qué buscar en <a href="/pantalones-industriales">pantalones industriales</a>.</p>
+      <h2>Camisas por mayoreo</h2>
+      <p>La <a href="/camisas-de-trabajo">camisa de trabajo</a> va de la XCH a la 5XG, con botones reforzados y bolsillo frontal, también con opción reflejante en pecho, espalda y mangas. Camisa y pantalón del mismo color forman el uniforme completo, y el bordado del logotipo queda mejor en la camisa, sobre el pecho izquierdo.</p>
     `,
     faq: [
       ['¿Facturan?', 'Sí, emitimos factura CFDI. Indícanos RFC, razón social y correo al hacer el pedido.'],
       ['¿Cuánto tarda un pedido de mayoreo?', 'Si es de inventario, sale en 1 a 2 días hábiles. Con bordado o DTF, normalmente de 5 a 10 días hábiles según el volumen.'],
+      ['¿Puedo pedir solo pantalones por mayoreo?', 'Sí. Puedes armar la corrida solo de pantalones, solo de camisas o mezclada; el precio por volumen se calcula sobre el total de piezas.'],
+      ['¿Qué tallas conviene pedir para una cuadrilla?', 'La mayor parte se concentra entre la 32 y la 38 en pantalón y entre la M y la XG en camisa, pero conviene medir a tu gente. La guía de tallas explica cómo hacerlo en unos minutos.'],
+      ['¿Vienen etiquetadas por talla?', 'Sí. Para pedidos de empresa separamos y etiquetamos por talla, para que puedas repartir sin abrir paquetes.'],
     ],
   },
   'pantalon-de-mezclilla-para-trabajo': {
@@ -184,7 +191,7 @@ const ARTICLES = {
       <h2>3. El corte deja moverse</h2>
       <p>El work jean es recto o ligeramente holgado: te agachas, subes escaleras y te arrodillas sin que jale. Un jean entallado limita el movimiento y revienta las costuras al forzarlo.</p>
       <h2>4. Tallas completas</h2>
-      <p>La ropa de trabajo debe existir en 28 y en 50, porque una cuadrilla no viene en un solo tamaño. La mayoría de las marcas de moda no pasan de la 42.</p>
+      <p>La <a href="/ropa-de-trabajo">ropa de trabajo</a> debe existir en 28 y en 50, porque una cuadrilla no viene en un solo tamaño. La mayoría de las marcas de moda no pasan de la 42.</p>
       <h2>5. Precio por uso, no por etiqueta</h2>
       <p>Un work jean cuesta parecido a un jean de marca media, pero está hecho para aguantar el trabajo diario. Dividido entre los meses de uso real, suele salir más barato que reponer un jean de moda cada pocos meses.</p>
       <p>Si lo tuyo es trabajar, mira nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a>: mezclilla 100% algodón, costuras reforzadas y tallas del 28 al 50.</p>
@@ -205,12 +212,12 @@ const ARTICLES = {
     products: (p) => /reflejante/.test(p.id),
     body: `
       <h2>La norma vigente: NOM-017-STPS-2024</h2>
-      <p>La Norma Oficial Mexicana NOM-017-STPS-2024, <em>Equipo de protección personal. Selección, uso y manejo en los centros de trabajo</em>, se publicó en el Diario Oficial de la Federación el 28 de marzo de 2025 y entró en vigor el 28 de septiembre de 2025. Sustituye a la NOM-017-STPS-2008, que estuvo vigente desde diciembre de 2008. Obliga al patrón a identificar los riesgos de cada puesto, seleccionar y entregar el equipo de protección personal (EPP) adecuado sin costo para el trabajador, capacitarlo en su uso y llevar registro. La ropa de trabajo forma parte del EPP cuando protege contra un riesgo identificado: abrasión, salpicaduras, baja visibilidad, entre otros.</p>
+      <p>La Norma Oficial Mexicana NOM-017-STPS-2024, <em>Equipo de protección personal. Selección, uso y manejo en los centros de trabajo</em>, se publicó en el Diario Oficial de la Federación el 28 de marzo de 2025 y entró en vigor el 28 de septiembre de 2025. Sustituye a la NOM-017-STPS-2008, que estuvo vigente desde diciembre de 2008. Obliga al patrón a identificar los riesgos de cada puesto, seleccionar y entregar el equipo de protección personal (EPP) adecuado sin costo para el trabajador, capacitarlo en su uso y llevar registro. La <a href="/ropa-de-trabajo">ropa de trabajo</a> forma parte del EPP cuando protege contra un riesgo identificado: abrasión, salpicaduras, baja visibilidad, entre otros.</p>
       <p>Si tu empresa todavía documenta sus procedimientos con la versión 2008, conviene actualizarlos: desde septiembre de 2025 la referencia obligatoria es la de 2024.</p>
       <h2>¿Cuándo conviene ropa con reflejante?</h2>
       <p>Siempre que la persona trabaje cerca de vehículos o maquinaria en movimiento, en vialidades, patios de maniobras, almacenes con montacargas o en turnos nocturnos. México no tiene una NOM específica de alta visibilidad; en la práctica se toman como referencia las normas internacionales ANSI/ISEA 107 y EN ISO 20471, que definen colores y cantidad de material reflejante. Nuestra <a href="/ropa-de-trabajo-reflejante">ropa reflejante</a> usa cintas retrorreflectantes cosidas en pecho, mangas y piernas; no está certificada bajo esas normas, así que si tu reglamento interno exige prenda certificada, revísalo con tu asesor antes de comprar.</p>
       <h2>Ropa de trabajo que sí se usa</h2>
-      <p>La norma más estricta no sirve si el trabajador se quita la prenda porque es incómoda o se rompe. Por eso conviene elegir uniformes de algodón que respiren, con corte que deje moverse y que aguanten lavado frecuente. La mezclilla cumple las tres.</p>
+      <p>La norma más estricta no sirve si el trabajador se quita la prenda porque es incómoda o se rompe. Por eso conviene elegir <a href="/uniformes-de-mezclilla">uniformes</a> de algodón que respiren, con corte que deje moverse y que aguanten lavado frecuente. La mezclilla cumple las tres.</p>
       <h2>Lista rápida para el encargado de seguridad</h2>
       <ul>
         <li>Identifica por puesto qué riesgo cubre la ropa: abrasión, visibilidad, ambos.</li>
@@ -311,7 +318,7 @@ const ARTICLES = {
       <h2>Dónde colocarlo</h2>
       <ul>
         <li><strong>Camisa:</strong> pecho izquierdo (bordado pequeño), espalda (DTF grande), manga (nombre o área).</li>
-        <li><strong>Pantalón:</strong> bolsa trasera o parte baja de la pierna, siempre lejos de las costuras reforzadas y de la cinta reflejante.</li>
+        <li><strong>Pantalón:</strong> bolsa trasera o parte baja de la pierna, siempre lejos de las costuras reforzadas y de la <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a>.</li>
       </ul>
       <h2>Qué archivo enviar</h2>
       <p>Para bordado basta el logotipo en buena resolución; para DTF, lo ideal es un archivo vectorial (SVG, AI, PDF) o un PNG grande con fondo transparente. Indica los colores exactos si tu marca los tiene definidos.</p>
@@ -349,7 +356,7 @@ const ARTICLES = {
       <h2>8. ¿Puedo ver una muestra?</h2>
       <p>Una prenda física evita malentendidos de tela, color y talla antes de comprometer todo el pedido.</p>
       <h2>9. ¿Cómo se identifican las tallas al recibir?</h2>
-      <p>Etiqueta visible por prenda y empaque por talla ahorran horas al repartir uniformes.</p>
+      <p>Etiqueta visible por prenda y empaque por talla ahorran horas al repartir <a href="/uniformes-de-mezclilla">uniformes</a>.</p>
       <h2>10. ¿Cómo repongo piezas después?</h2>
       <p>Pregunta si puedes reponer tallas sueltas y en cuánto tiempo. La reposición es lo que mantiene uniformado al equipo el resto del año.</p>
       <p>En Works Jeans respondemos estas preguntas en la cotización. Arma tu pedido por talla en la <a href="/empresas">página para empresas</a> y te enviamos todo por escrito.</p>
@@ -374,7 +381,7 @@ const ARTICLES = {
         <li>Al revés, para proteger el color y las cintas reflejantes.</li>
         <li>Agua fría o tibia; nunca cloro. El cloro decolora y debilita el hilo.</li>
         <li>Cierra botones y cremalleras para que no rocen otras prendas.</li>
-        <li>Lava la ropa de trabajo aparte cuando trae grasa o polvo pesado.</li>
+        <li>Lava la <a href="/ropa-de-trabajo">ropa de trabajo</a> aparte cuando trae grasa o polvo pesado.</li>
       </ul>
       <h2>Manchas de grasa y aceite</h2>
       <p>Aplica jabón líquido para trastes directamente sobre la mancha, frota suave con las yemas de los dedos, deja actuar unos minutos y lava normal. No planches una mancha de grasa: el calor la fija.</p>
@@ -407,7 +414,7 @@ const ARTICLES = {
       <h2>Paso 1: pregunta talla de pantalón y de camisa por persona</h2>
       <p>La talla de pantalón (28 a 50) casi todos la saben. La de camisa (XCH a 5XG) no siempre; si dudan, pídeles pecho y hombros de una camisa que les quede bien y compara con la <a href="/guia-de-tallas">guía de tallas</a>.</p>
       <h2>Paso 2: ante la duda, la talla mayor</h2>
-      <p>En ropa de trabajo sobra un poco de espacio y no falta. Una prenda justa se rompe antes y estorba al moverse. La mezclilla preencogida no reduce con el lavado, así que no compres "para que encoja".</p>
+      <p>En <a href="/ropa-de-trabajo">ropa de trabajo</a> sobra un poco de espacio y no falta. Una prenda justa se rompe antes y estorba al moverse. La mezclilla preencogida no reduce con el lavado, así que no compres "para que encoja".</p>
       <h2>Paso 3: agrega repuestos de las tallas centrales</h2>
       <p>En un equipo típico de 20 personas la distribución suele ser parecida a esta:</p>
       <table class="content-table">

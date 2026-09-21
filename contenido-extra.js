@@ -53,7 +53,7 @@ const INDUSTRIAS = {
       <h2>Ropa de trabajo para la línea de producción</h2>
       <p>En una planta el uniforme tiene que ser cómodo ocho horas de pie, resistir grasa y lavado frecuente y no tener partes sueltas que se enganchen. Nuestra <a href="/camisas-de-trabajo">camisa de trabajo</a> de mezclilla tiene botones reforzados y bolsillo frontal; el <a href="/pantalones-de-trabajo">pantalón</a> es de corte recto, sin cintas ni adornos que se atoren.</p>
       <h2>Reflejante en áreas de montacargas</h2>
-      <p>Para almacén, patios y pasillos con tránsito de montacargas ofrecemos camisa y pantalón con cinta reflejante cosida en verde o naranja. No son prendas certificadas de alta visibilidad; si tu reglamento interno exige certificación, dinos y lo revisamos contigo.</p>
+      <p>Para almacén, patios y pasillos con tránsito de montacargas ofrecemos camisa y pantalón con <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a> cosida en verde o naranja. No son prendas certificadas de alta visibilidad; si tu reglamento interno exige certificación, dinos y lo revisamos contigo.</p>
       <h2>Tallas para toda la plantilla</h2>
       <p>Pantalón del 28 al 50 y camisa de XCH a 5XG. Publicamos las <a href="/guia-de-tallas">tablas de medidas</a> para que recursos humanos levante tallas sin adivinar, y podemos ayudarte a armar la corrida a partir de tu lista de personal.</p>
       <h2>Logotipo, factura y reposiciones</h2>
@@ -79,7 +79,7 @@ const INDUSTRIAS = {
       <h2>Bolsas que sí sirven</h2>
       <p>El <a href="/pantalones-de-trabajo">pantalón de trabajo</a> tiene cinco bolsas con costuras reforzadas para llevar desarmador, calibrador o trapo sin que se abran. La <a href="/camisas-de-trabajo">camisa</a> tiene bolsillo frontal y botones reforzados que no se desprenden al agacharse.</p>
       <h2>Para talleres mecánicos, eléctricos y de servicio</h2>
-      <p>Talleres automotrices, de maquinaria, de aire acondicionado, cuadrillas de mantenimiento de edificios y plantas: el mismo uniforme sirve para todos, con o sin cinta reflejante según el área. Compra desde una pieza en línea o pide la corrida completa para tu equipo con logotipo bordado.</p>
+      <p>Talleres automotrices, de maquinaria, de aire acondicionado, cuadrillas de mantenimiento de edificios y plantas: el mismo uniforme sirve para todos, con o sin <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a> según el área. Compra desde una pieza en línea o pide la corrida completa para tu equipo con logotipo bordado.</p>
       <h2>Talla correcta desde el primer pedido</h2>
       <p>Consulta la <a href="/guia-de-tallas">guía de tallas</a>: se mide una prenda que quede bien y se compara con la tabla. Si dudas entre dos tallas, elige la mayor; en el taller se agradece el espacio para moverse.</p>
     `,
@@ -99,7 +99,7 @@ const INDUSTRIAS = {
     products: (p) => /reflejante/.test(p.id),
     body: `
       <h2>Que te vean de día y de noche</h2>
-      <p>En un patio de maniobras o un andén de carga la gente convive con montacargas, camiones y poca luz. Nuestros uniformes reflejantes llevan cintas cosidas en pecho, espalda y mangas (camisa) y en ambas piernas (pantalón), en verde lima o naranja. El verde destaca en fondos oscuros y de día; el naranja es el color habitual en transporte y vialidades.</p>
+      <p>En un patio de maniobras o un andén de carga la gente convive con montacargas, camiones y poca luz. Nuestros <a href="/uniformes-de-mezclilla">uniformes</a> reflejantes llevan cintas cosidas en pecho, espalda y mangas (camisa) y en ambas piernas (pantalón), en verde lima o naranja. El verde destaca en fondos oscuros y de día; el naranja es el color habitual en transporte y vialidades.</p>
       <p><strong>Importante:</strong> son cintas reflejantes cosidas sobre mezclilla. No son prendas certificadas de alta visibilidad (ANSI/ISEA 107 ni ISO 20471). Si tu operación o tu cliente exige prenda certificada, consúltanos antes de comprar.</p>
       <h2>Mezclilla, no malla</h2>
       <p>Un chaleco de malla se rompe en semanas y se usa encima de otra ropa. Aquí la cinta va sobre la misma mezclilla 100% algodón de nuestros <a href="/pantalones-de-trabajo">pantalones</a> y <a href="/camisas-de-trabajo">camisas</a>: una sola prenda que se lava y aguanta como un jean.</p>
@@ -183,7 +183,7 @@ const PRODUCTO_Y_CLIENTE = {
       <h2>Lo demás es la camisa de siempre</h2>
       <p>Mezclilla 100% algodón preencogida, botones reforzados que no se desprenden, bolsillo frontal y un corte que deja mover los brazos. Tallas de la XCH a la 5XG; consulta las medidas en la <a href="/guia-de-tallas">guía de tallas</a>.</p>
       <h2>No es prenda certificada de alta visibilidad</h2>
-      <p>Lleva cinta reflejante, pero no cuenta con certificación ANSI/ISEA 107 ni ISO 20471. Si el reglamento de tu empresa exige prenda certificada, consúltanos antes de comprar. Para la mayoría de las áreas con poca luz o tránsito de montacargas, la cinta cosida cumple el objetivo: que te vean.</p>
+      <p>Lleva <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a>, pero no cuenta con certificación ANSI/ISEA 107 ni ISO 20471. Si el reglamento de tu empresa exige prenda certificada, consúltanos antes de comprar. Para la mayoría de las áreas con poca luz o tránsito de montacargas, la cinta cosida cumple el objetivo: que te vean.</p>
       <h2>Combínala con el pantalón reflejante</h2>
       <p>El <a href="/pantalon-de-mezclilla-con-reflejante">pantalón de mezclilla con reflejante</a> lleva dos cintas en cada pierna; juntos forman un uniforme completo. Para cuadrillas, cotiza la corrida en la <a href="/empresas">página para empresas</a> con bordado de logotipo.</p>
     `,
@@ -207,7 +207,7 @@ const PRODUCTO_Y_CLIENTE = {
       <h2>El mismo pantalón de trabajo</h2>
       <p>Cinco bolsas, costuras dobles en tiro, entrepierna y bolsas, y corte recto que deja agacharse. Tallas del 28 al 50 con el mismo patrón; revisa cintura, cadera y largo en la <a href="/guia-de-tallas">guía de tallas</a>.</p>
       <h2>Aviso sobre certificación</h2>
-      <p>Es un pantalón con cinta reflejante cosida, no una prenda certificada de alta visibilidad (ANSI/ISEA 107 o ISO 20471). Si tu operación exige certificación, consúltanos antes de comprar.</p>
+      <p>Es un pantalón con <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a> cosida, no una prenda certificada de alta visibilidad (ANSI/ISEA 107 o ISO 20471). Si tu operación exige certificación, consúltanos antes de comprar.</p>
       <h2>Uniforme completo</h2>
       <p>Combínalo con la <a href="/camisa-de-mezclilla-con-reflejante">camisa de mezclilla con reflejante</a>. Para cuadrillas de logística, construcción o transporte, cotiza la corrida completa en la <a href="/empresas">página para empresas</a>.</p>
     `,
@@ -260,7 +260,7 @@ const PRODUCTO_Y_CLIENTE = {
         <li><strong>Personalización:</strong> bordado o estampado DTF con el logotipo de tu empresa.</li>
       </ul>
       <h2>Venta directa a empresas y distribuidores</h2>
-      <p>Manejamos tres niveles de precio: cliente final (el que ves en la tienda en línea, con IVA), distribuidor y socio, según el volumen. Si revendes ropa de trabajo o uniformas a varias cuadrillas, pide la lista vigente en la <a href="/distribuidores-de-ropa-de-trabajo">página para distribuidores</a> o en el <a href="/empresas">cotizador</a>.</p>
+      <p>Manejamos tres niveles de precio: cliente final (el que ves en la tienda en línea, con IVA), distribuidor y socio, según el volumen. Si revendes <a href="/ropa-de-trabajo">ropa de trabajo</a> o uniformas a varias cuadrillas, pide la lista vigente en la <a href="/distribuidores-de-ropa-de-trabajo">página para distribuidores</a> o en el <a href="/empresas">cotizador</a>.</p>
       <h2>Visítanos</h2>
       <p>Calle Emiliano Zapata 3737, colonia Venustiano Carranza, Monterrey, N.L. Lunes a viernes de 9:00 a. m. a 6:00 p. m. También enviamos a todo México por paquetería con número de guía.</p>
     `,
@@ -285,7 +285,7 @@ const PRODUCTO_Y_CLIENTE = {
       <p>Cada prenda llega con etiqueta individual por talla y empaque protector, para que entre directo a tu almacén o a tu piso de venta. Fabricamos en Monterrey y mantenemos la corrida completa en stock: pantalón 28 a 50, camisa XCH a 5XG, con y sin reflejante.</p>
       <h2>Para quién es</h2>
       <ul>
-        <li>Tiendas de ropa de trabajo y ferreterías con área de uniformes.</li>
+        <li>Tiendas de <a href="/ropa-de-trabajo">ropa de trabajo</a> y ferreterías con área de <a href="/uniformes-de-mezclilla">uniformes</a>.</li>
         <li>Empresas que uniforman a varias cuadrillas o a varios clientes.</li>
         <li>Proveedores de equipo de seguridad que quieren sumar mezclilla resistente a su catálogo.</li>
       </ul>
@@ -336,7 +336,7 @@ const APOYO = {
     intro: 'Todo lo que nos preguntan antes de comprar, en un solo lugar. Si falta algo, escríbenos por WhatsApp y te contestamos en horario de tienda.',
     products: null,
     body: `
-      <p>Somos fabricantes de ropa de trabajo de mezclilla en Monterrey. Vendemos en línea a todo México, en nuestra tienda de la colonia Venustiano Carranza y por mayoreo a empresas y distribuidores. Aquí están las dudas más comunes; también puedes revisar la <a href="/guia-de-tallas">guía de tallas</a>, las <a href="/envios-y-devoluciones">políticas de envío y cambios</a> y el estado de tu pedido en <a href="/rastrear">Rastrear mi pedido</a>.</p>
+      <p>Somos fabricantes de <a href="/ropa-de-trabajo">ropa de trabajo</a> de mezclilla en Monterrey. Vendemos en línea a todo México, en nuestra tienda de la colonia Venustiano Carranza y <a href="/mayoreo-ropa-de-trabajo">por mayoreo</a> a empresas y distribuidores. Aquí están las dudas más comunes; también puedes revisar la <a href="/guia-de-tallas">guía de tallas</a>, las <a href="/envios-y-devoluciones">políticas de envío y cambios</a> y el estado de tu pedido en <a href="/rastrear">Rastrear mi pedido</a>.</p>
     `,
     faq: [
       ['¿Manejan mayoreo?', 'Sí. Surtimos uniformes de trabajo a empresas, contratistas y distribuidores con precios de distribuidor y de socio según el volumen, y stock en Monterrey. Cotiza en la página para empresas.'],
@@ -364,13 +364,13 @@ const APOYO = {
     products: () => true,
     body: `
       <h2>De dónde venimos</h2>
-      <p>Works Jeans nació en Monterrey de una necesidad simple: pantalones de trabajo que realmente aguanten el ritmo del día a día. Vimos cuadrillas comprando jeans de moda que se rompían en semanas y uniformes de tela delgada que no protegían nada. Decidimos fabricar work jeans y camisas de mezclilla pensando en quienes trabajan con las manos, sin dejar de lado el estilo.</p>
+      <p>Works Jeans nació en Monterrey de una necesidad simple: <a href="/pantalones-de-trabajo">pantalones de trabajo</a> que realmente aguanten el ritmo del día a día. Vimos cuadrillas comprando jeans de moda que se rompían en semanas y <a href="/uniformes-de-mezclilla">uniformes</a> de tela delgada que no protegían nada. Decidimos fabricar work jeans y camisas de mezclilla pensando en quienes trabajan con las manos, sin dejar de lado el estilo.</p>
       <h2>Cómo hacemos las cosas</h2>
       <p>Cada camisa y pantalón se confecciona en mezclilla 100% algodón preencogida, con costuras dobles y botones reforzados en las zonas de mayor desgaste. Fabricamos la corrida completa, del 28 al 50 en pantalón y de la XCH a la 5XG en camisa, porque una cuadrilla no viene en un solo tamaño. Y decimos solo lo que podemos cumplir: nuestras prendas reflejantes llevan cinta cosida, no una certificación que no tienen.</p>
       <h2>Dónde estamos</h2>
       <p>Nuestra tienda está en Calle Emiliano Zapata 3737, colonia Venustiano Carranza, Monterrey, Nuevo León. Abrimos de lunes a viernes de 9:00 a. m. a 6:00 p. m. Desde ahí atendemos al área metropolitana y enviamos a todo México por paquetería.</p>
       <h2>A quién atendemos</h2>
-      <p>A la persona que compra un pantalón para trabajar y a la empresa que uniforma a doscientas. Vendemos desde una pieza en línea y por mayoreo a empresas y distribuidores, con precio por volumen, bordado de logotipo y factura CFDI. Conoce más en <a href="/empresas">Empresas</a> o escríbenos por <a href="${WA}">WhatsApp</a>.</p>
+      <p>A la persona que compra un pantalón para trabajar y a la empresa que uniforma a doscientas. Vendemos desde una pieza en línea y <a href="/mayoreo-ropa-de-trabajo">por mayoreo</a> a empresas y distribuidores, con precio por volumen, bordado de logotipo y factura CFDI. Conoce más en <a href="/empresas">Empresas</a> o escríbenos por <a href="${WA}">WhatsApp</a>.</p>
     `,
   },
   'contacto': {
@@ -427,7 +427,7 @@ const APOYO = {
       <h2>6. Garantía</h2>
       <p>Todas las prendas tienen garantía de 30 días contra defectos de fabricación en costuras, botones o cintas reflejantes. Si detectas un defecto, envía fotos por WhatsApp; reponemos la prenda o reembolsamos el importe, y en ese caso Works Jeans cubre los gastos de envío.</p>
       <h2>7. Prendas reflejantes</h2>
-      <p>Nuestras prendas con cinta reflejante llevan cintas cosidas sobre mezclilla. No son prendas certificadas de alta visibilidad bajo ANSI/ISEA 107 ni ISO 20471, y así se indica en cada ficha. Es responsabilidad del comprador verificar los requisitos de su centro de trabajo.</p>
+      <p>Nuestras prendas con <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a> llevan cintas cosidas sobre mezclilla. No son prendas certificadas de alta visibilidad bajo ANSI/ISEA 107 ni ISO 20471, y así se indica en cada ficha. Es responsabilidad del comprador verificar los requisitos de su centro de trabajo.</p>
       <h2>8. Facturación</h2>
       <p>Emitimos CFDI con los datos fiscales que el cliente captura al comprar. Los datos deben coincidir con la constancia de situación fiscal; la factura se envía al correo indicado.</p>
       <h2>9. Datos personales</h2>
@@ -439,7 +439,126 @@ const APOYO = {
   },
 };
 
-const LANDINGS_EXTRA = { ...INDUSTRIAS, ...CIUDADES, ...PRODUCTO_Y_CLIENTE, ...APOYO };
+// --- Páginas nuevas: término general, ciudad principal y pantalón industrial -----------------
+// Cada una cubre una intención distinta: la general sirve de índice hacia el resto, la de Monterrey
+// es la tienda física y la de pantalón industrial explica el requisito técnico, no el catálogo.
+
+const NUEVAS_2026_09 = {
+  'ropa-de-trabajo': {
+    kicker: 'Ropa de trabajo',
+    h1: 'Ropa de trabajo de mezclilla',
+    h1Html: 'Ropa de trabajo<br>de mezclilla.',
+    title: 'Ropa de Trabajo de Mezclilla | Works Jeans Monterrey',
+    description: 'Pantalones y camisas de trabajo de mezclilla 100% algodón, con o sin reflejante. Tallas del 28 al 50 y XCH a 5XG. Hechos en Monterrey, envío a todo México.',
+    intro: 'Todo lo que fabricamos en un solo lugar: pantalones y camisas de mezclilla para obra, planta, taller, almacén y servicio. Desde una pieza o por corrida completa.',
+    products: () => true,
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>Qué entendemos por ropa de trabajo</h2>
+      <p>Ropa de trabajo es la que se pone alguien que va a usar las manos ocho horas o más: agacharse, arrodillarse, cargar, subir escaleras, rozar contra herramienta y superficies. No es un uniforme de oficina ni un jean de moda con etiqueta distinta. La diferencia está en la tela, en las costuras y en el corte, y se nota a los tres meses, cuando una prenda sigue entera y la otra ya se abrió del tiro.</p>
+      <p>Nosotros fabricamos dos prendas y las hacemos bien: <a href="/pantalones-de-trabajo">pantalones de trabajo</a> y <a href="/camisas-de-trabajo">camisas de trabajo</a>, ambas en mezclilla 100% algodón, y ambas disponibles con <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a> cosida para quien trabaja de noche o cerca de maquinaria.</p>
+      <h2>Por qué mezclilla 100% algodón</h2>
+      <p>El algodón absorbe el sudor y lo deja evaporar, así que en turnos largos y con calor se siente menos pesado que una tela sintética, que retiene la humedad contra la piel. Además aguanta lavado frecuente, grasa y roce sin adelgazarse en las zonas críticas. Nuestra mezclilla viene preencogida: la talla que compras es la que conservas después del primer lavado.</p>
+      <p>Hay un caso donde la mezclilla de algodón no es la prenda indicada, y lo decimos antes de vender: si tu operación tiene riesgo de arco eléctrico o exposición a fuego, necesitas una prenda retardante certificada, y la nuestra no lo es.</p>
+      <h2>Con o sin cinta reflejante</h2>
+      <p>Las mismas prendas existen en versión con cinta reflejante cosida, en verde lima o naranja: en la camisa va en pecho, espalda y mangas; en el pantalón, dos cintas en cada pierna. Sirve para vialidades, patios de maniobras, almacenes con montacargas y turnos de noche. Son prendas con cinta reflejante, no prendas certificadas de alta visibilidad bajo ANSI/ISEA 107 ni ISO 20471; si tu reglamento interno exige certificación, consúltanos antes de comprar.</p>
+      <h2>Tallas completas, sin excepciones</h2>
+      <p>Pantalón del 28 al 50 y camisa de la XCH a la 5XG, con el mismo patrón, la misma tela y el mismo acabado en todas. Una cuadrilla no viene en un solo tamaño y no tiene sentido uniformar a la mitad del equipo. Para elegir bien la primera vez, usa la <a href="/guia-de-tallas">guía de tallas</a>, que se mide sobre una prenda extendida y no sobre el cuerpo. Si necesitas varias tallas grandes, revisa <a href="/ropa-de-trabajo-tallas-grandes">ropa de trabajo en tallas grandes</a>.</p>
+      <h2>Por tipo de trabajo</h2>
+      <p>Cada operación desgasta distinto y por eso separamos las recomendaciones: <a href="/uniformes-para-construccion">construcción y obra</a>, <a href="/uniformes-para-manufactura-y-planta">manufactura y planta</a>, <a href="/uniformes-para-mantenimiento-y-talleres">mantenimiento y talleres</a> y <a href="/uniformes-para-logistica-y-patios">logística y patios de maniobras</a>. En cada una explicamos qué prenda conviene y por qué.</p>
+      <h2>Una pieza o la corrida completa</h2>
+      <p>Puedes comprar un pantalón o una camisa para revisar tela, costuras y talla antes de decidir por todo el equipo. Cuando ya sepas qué quieres, armamos la corrida completa con etiquetas por talla para repartir sin abrir paquetes, precio por volumen, bordado o DTF con tu logotipo y factura con CFDI. Pide la cotización en el <a href="/empresas">cotizador para empresas</a> o revisa las condiciones de <a href="/mayoreo-ropa-de-trabajo">mayoreo</a>.</p>
+      <h2>Dónde comprar</h2>
+      <p>Fabricamos y vendemos directo desde Monterrey. Puedes pasar a la tienda a probarte tallas y llevarte el pedido el mismo día, o comprar en línea y recibir por paquetería con número de guía en todo México. Los detalles de tiempos y cambios están en <a href="/envios-y-devoluciones">envíos y devoluciones</a>.</p>
+    `,
+    faq: [
+      ['¿Qué diferencia hay entre ropa de trabajo y un jean normal?', 'La tela, las costuras y el corte. La ropa de trabajo lleva mezclilla de más cuerpo, doble costura en las zonas de desgaste y corte recto para moverse. Un jean de moda se ve igual el primer día y se abre mucho antes.'],
+      ['¿Venden solo a empresas?', 'No. Vendemos desde una pieza a cualquier persona y también armamos corridas completas para cuadrillas, con precio por volumen y factura.'],
+      ['¿La ropa encoge o destiñe?', 'La mezclilla viene preencogida, así que no encoge. Para que no destiña, lava del revés, con agua fría y sin cloro.'],
+      ['¿Las prendas reflejantes están certificadas?', 'No. Llevan cinta reflejante cosida sobre mezclilla, pero no cuentan con certificación ANSI/ISEA 107 ni ISO 20471. Si tu empresa exige prenda certificada, dínoslo antes de comprar.'],
+      ['¿Sirve para trabajo con riesgo de fuego?', 'No. La mezclilla de algodón no es retardante a la flama. Para esos puestos se necesita una prenda certificada para ese uso.'],
+      ...faqComunes(),
+    ],
+  },
+
+  'ropa-de-trabajo-monterrey': {
+    kicker: 'Monterrey · Nuevo León',
+    h1: 'Ropa de trabajo en Monterrey',
+    h1Html: 'Ropa de trabajo<br>en Monterrey.',
+    title: 'Ropa de Trabajo en Monterrey | Works Jeans',
+    description: 'Fabricante de ropa de trabajo de mezclilla en Monterrey: tienda física, stock de todas las tallas, mayoreo con bordado y entrega el mismo día en la ciudad.',
+    intro: 'Fabricamos aquí, en Monterrey, y vendemos directo. Tienda física para probar tallas, stock completo y entrega el mismo día en la ciudad.',
+    products: () => true,
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>Fabricamos en Monterrey, no revendemos</h2>
+      <p>Works Jeans corta y confecciona en Monterrey. Eso cambia dos cosas para quien compra aquí: el precio no lleva la capa de un intermediario, y cuando necesitas reponer tallas no dependes de un contenedor que viene en camino. Lo que está en existencia sale el mismo día.</p>
+      <h2>Tienda para probarse antes de comprar</h2>
+      <p>Estamos en Calle Emiliano Zapata 3737, colonia Venustiano Carranza, C.P. 64560, de lunes a viernes de 9:00 a. m. a 6:00 p. m. Puedes pasar a tocar la tela, probarte tallas y llevarte el pedido en el momento. Para una compra de empresa esto ahorra el problema más caro de todos: pedir cincuenta piezas y descubrir que la talla no era la que creían.</p>
+      <h2>Qué industrias atendemos aquí</h2>
+      <p>Monterrey concentra obra, manufactura, metalmecánica, talleres y logística, y cada una desgasta la ropa distinto. Tenemos la recomendación por giro en <a href="/uniformes-para-construccion">construcción</a>, <a href="/uniformes-para-manufactura-y-planta">manufactura y planta</a>, <a href="/uniformes-para-mantenimiento-y-talleres">mantenimiento y talleres</a> y <a href="/uniformes-para-logistica-y-patios">logística y patios</a>. Si tu operación tiene montacargas o turnos de noche, revisa además la <a href="/ropa-de-trabajo-reflejante">ropa con cinta reflejante</a>.</p>
+      <h2>Entrega en la zona metropolitana</h2>
+      <p>Además de Monterrey atendemos <a href="/ropa-de-trabajo-apodaca">Apodaca</a>, <a href="/ropa-de-trabajo-escobedo">General Escobedo</a>, <a href="/ropa-de-trabajo-garcia">García</a>, <a href="/ropa-de-trabajo-guadalupe">Guadalupe</a>, <a href="/ropa-de-trabajo-san-nicolas">San Nicolás de los Garza</a> y <a href="/ropa-de-trabajo-santa-catarina">Santa Catarina</a>. Al resto del país enviamos por paquetería con número de guía.</p>
+      <h2>Para empresas de Monterrey</h2>
+      <p>Armamos corridas completas del 28 al 50 en pantalón y de la XCH a la 5XG en camisa, con etiquetas por talla para repartir sin abrir paquetes, bordado o DTF con tu logotipo y factura con CFDI. Si todavía no tienes las tallas de tu gente, con el número de personas te armamos una corrida estimada y la ajustamos después. Empieza en el <a href="/empresas">cotizador para empresas</a> o revisa <a href="/mayoreo-ropa-de-trabajo">mayoreo</a>.</p>
+      <h2>Precio de distribuidor</h2>
+      <p>Si revendes ropa de trabajo o uniformas a varias empresas en Nuevo León, manejamos precio de distribuidor y de socio por grupo de tallas. Las condiciones están en <a href="/distribuidores-de-ropa-de-trabajo">distribuidores</a>.</p>
+      <h2>Qué fabricamos</h2>
+      <p>Dos prendas, hechas para durar: <a href="/pantalones-de-trabajo">pantalones de trabajo</a> de mezclilla 100% algodón con cinco bolsas, doble costura en las zonas de desgaste y corte recto, del 28 al 50; y <a href="/camisas-de-trabajo">camisas de trabajo</a> con botones reforzados y bolsillo frontal, de la XCH a la 5XG. Las dos existen con cinta reflejante cosida en verde lima o naranja. Toda la mezclilla viene preencogida, así que la talla que compras es la que conservas.</p>
+      <h2>Por qué comprar aquí y no en línea a ciegas</h2>
+      <p>La talla es el problema más caro de la ropa de trabajo. Comprar sin probarse termina en cambios, en prendas que nadie usa y en gente esperando. Si estás en Monterrey tienes la ventaja de venir, tocar la tela y probarte antes de decidir por cincuenta personas. Y si de todos modos algo no queda, hay 15 días naturales para cambiar de talla con la prenda sin usar, sin lavar y con etiquetas; en tienda el cambio no tiene costo.</p>
+      <h2>Reposición sin esperar producción</h2>
+      <p>Mantenemos existencia de la corrida completa, no solo de las tallas comunes. Eso significa que cuando entra alguien nuevo a media quincena o alguien rompe un pantalón, repones esa talla suelta el mismo día en vez de esperar a la siguiente compra grande.</p>
+    `,
+    faq: [
+      ['¿Dónde está la tienda?', 'En Calle Emiliano Zapata 3737, colonia Venustiano Carranza, C.P. 64560, Monterrey, Nuevo León. Abrimos de lunes a viernes de 9:00 a. m. a 6:00 p. m.'],
+      ['¿Puedo recoger el mismo día?', 'Sí, si la talla está en existencia. Escríbenos por WhatsApp antes de salir y te confirmamos que la tenemos apartada.'],
+      ['¿Ustedes fabrican o revenden?', 'Fabricamos. Cortamos y confeccionamos en Monterrey, y vendemos directo a empresas, distribuidores y público.'],
+      ['¿Atienden a empresas de fuera de Monterrey?', 'Sí. Enviamos a todo México por paquetería con número de guía y facturamos con CFDI.'],
+      ['¿Puedo llevar a mi gente a probarse tallas?', 'Sí, y es lo que recomendamos antes de una compra grande. Pasen en horario de tienda; si son muchos, avísanos por WhatsApp para tener listas las corridas.'],
+      ...faqComunes().slice(1),
+    ],
+  },
+
+  'pantalones-industriales': {
+    kicker: 'Pantalones industriales',
+    h1: 'Pantalones industriales de mezclilla',
+    h1Html: 'Pantalones<br>industriales.',
+    title: 'Pantalones Industriales de Mezclilla | Works Jeans',
+    description: 'Pantalones industriales de mezclilla con doble costura y corte sin partes sueltas, para planta, taller y obra. Tallas 28 a 50, con opción reflejante.',
+    intro: 'Pantalón pensado para piso de planta: doble costura donde más sufre, corte sin partes sueltas y tallas del 28 al 50, con o sin cinta reflejante.',
+    products: (p) => p.category === 'Pantalones',
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>Qué hace que un pantalón sea industrial</h2>
+      <p>No es una etiqueta ni un color. Un pantalón industrial se define por tres cosas concretas: aguanta el desgaste del puesto, no tiene partes que se enganchen con maquinaria y se puede reponer en la misma talla cuando toque. Si falla cualquiera de las tres, tarde o temprano genera un problema: una prenda rota a media quincena, un susto con una banda transportadora o una cuadrilla con la mitad del equipo uniformado distinto.</p>
+      <h2>Dónde se rompe y qué hicimos al respecto</h2>
+      <p>En un pantalón de trabajo el desgaste se concentra en cuatro puntos: el tiro, la entrepierna, las rodillas y las esquinas de las bolsas traseras. Por eso llevan doble costura en esas zonas y remaches en los puntos de tensión, sobre mezclilla 100% algodón preencogida. No hace la prenda eterna; mueve bastante más lejos el día en que aparece el primer desgarre.</p>
+      <h2>Corte sin partes sueltas</h2>
+      <p>El corte es recto y sin cordones, jaretas colgando ni bolsas de fuelle que sobresalgan. En planta, cualquier cosa que cuelgue es un riesgo cerca de bandas, engranes y montacargas. El pantalón lleva cinco bolsas: dos delanteras, dos traseras y una relojera, todas al ras.</p>
+      <h2>Visibilidad cuando hace falta</h2>
+      <p>El mismo pantalón existe con dos cintas reflejantes cosidas en cada pierna, a la altura de la rodilla y la pantorrilla, en verde lima o naranja. Son las alturas que quedan frente a los faros de un montacargas o de un camión. Míralo en <a href="/pantalon-de-mezclilla-con-reflejante">pantalón de mezclilla con reflejante</a>. Importante: es una prenda con cinta reflejante, no una prenda certificada de alta visibilidad bajo ANSI/ISEA 107 ni ISO 20471.</p>
+      <h2>Lo que este pantalón no es</h2>
+      <p>No es retardante a la flama y no tiene certificación para riesgo de arco eléctrico. Si tu análisis de riesgos marca exposición a fuego o arco, necesitas otra prenda y te lo decimos antes de venderte. La <a href="/articulos/ropa-de-trabajo-y-normas-de-seguridad-en-mexico">NOM-017-STPS</a> obliga al patrón a entregar el equipo que corresponda a cada puesto, y esa decisión sale del análisis de riesgos de tu centro de trabajo, no del catálogo de un proveedor.</p>
+      <h2>Tallas y reposición</h2>
+      <p>Del 28 al 50, con el mismo patrón y acabado en todas. Mantener existencia de la corrida completa es lo que permite reponer una talla suelta sin esperar producción. Para armar la dotación inicial usa la <a href="/guia-de-tallas">guía de tallas</a>, y si tienes varias tallas grandes revisa <a href="/ropa-de-trabajo-tallas-grandes">tallas grandes</a>.</p>
+      <h2>Dotación por persona</h2>
+      <p>Dos o tres pantalones por persona en rotación duran más que dos usados a diario, porque cada prenda descansa entre lavados. La señal para reponer es clara: cuando la tela se adelgaza en rodillas o asentaderas, o cuando una costura empieza a abrirse. Lo desarrollamos en <a href="/articulos/cuantos-uniformes-necesita-cada-trabajador">cuántos uniformes necesita cada trabajador</a>.</p>
+      <h2>Compra por volumen</h2>
+      <p>Para cuadrillas armamos la corrida completa con etiquetas por talla, precio por volumen, bordado o DTF con tu logotipo y factura con CFDI. Cotiza en el <a href="/empresas">cotizador para empresas</a> o revisa <a href="/mayoreo-ropa-de-trabajo">mayoreo</a>. También puedes pedir una pieza suelta para probar antes.</p>
+    `,
+    faq: [
+      ['¿Qué diferencia hay entre un pantalón industrial y uno de trabajo común?', 'En la práctica es lo mismo cuando el pantalón está bien hecho: mezclilla con cuerpo, doble costura en las zonas de desgaste y corte sin partes sueltas. La palabra "industrial" suele referirse al entorno donde se usa, no a una norma distinta.'],
+      ['¿Es retardante a la flama?', 'No. La mezclilla 100% algodón no es retardante y no tenemos certificación para riesgo de arco eléctrico o fuego. Para esos puestos se necesita una prenda certificada.'],
+      ['¿Tiene refuerzo en rodillas?', 'Lleva doble costura en las zonas de mayor desgaste, incluida la pierna. No trae rodillera acolchada; si tu operación la necesita, coméntanos qué buscas al cotizar.'],
+      ['¿Se puede bordar el logotipo de la empresa?', 'Sí, en pedidos de mayoreo, bordado o estampado DTF. El logotipo suele ir en la bolsa trasera o en la pierna; lo revisamos contigo antes de producir.'],
+      ['¿Manejan existencia de todas las tallas?', 'Sí, del 28 al 50. Es lo que permite reponer una talla suelta sin esperar a la siguiente producción.'],
+      ...faqComunes(),
+    ],
+  },
+};
+
+const LANDINGS_EXTRA = { ...INDUSTRIAS, ...CIUDADES, ...PRODUCTO_Y_CLIENTE, ...APOYO, ...NUEVAS_2026_09 };
 
 // --- Artículos nuevos ------------------------------------------------------
 
@@ -455,7 +574,7 @@ const ARTICLES_EXTRA = {
     publishedAt: PUBLISHED_2,
     body: `
       <h2>Lo que hace la cinta y lo que hace el color</h2>
-      <p>La cinta reflejante devuelve la luz de un faro hacia su origen: por eso de noche un conductor ve una franja brillante. Eso lo hace la cinta, sin importar el color. El color importa de día y al atardecer, cuando lo que se ve es el contraste del verde lima o el naranja contra el fondo.</p>
+      <p>La <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a> devuelve la luz de un faro hacia su origen: por eso de noche un conductor ve una franja brillante. Eso lo hace la cinta, sin importar el color. El color importa de día y al atardecer, cuando lo que se ve es el contraste del verde lima o el naranja contra el fondo.</p>
       <h2>Cuándo conviene verde</h2>
       <p>En fondos oscuros u opacos: interiores de nave, almacenes con poca luz, asfalto, maquinaria pintada de colores oscuros. El verde lima es el color que más contrasta con el gris y el negro, y de día se distingue a mayor distancia.</p>
       <h2>Cuándo conviene naranja</h2>
@@ -516,7 +635,7 @@ const ARTICLES_EXTRA = {
       <h2>1. La prenda, con nombre y tela</h2>
       <p>Qué prenda es (camisa, pantalón), de qué tela (mezclilla 100% algodón, mezcla, poliéster) y qué acabado (preencogida o no). Si la cotización no dice la composición, pregúntala: es lo que decide cuánto dura.</p>
       <h2>2. Tallas y precio por talla</h2>
-      <p>La corrida completa disponible y si el precio cambia por grupo de tallas. Las tallas grandes usan más tela; es normal que cuesten un poco más, pero debe estar escrito.</p>
+      <p>La corrida completa disponible y si el precio cambia por grupo de tallas. Las <a href="/ropa-de-trabajo-tallas-grandes">tallas grandes</a> usan más tela; es normal que cuesten un poco más, pero debe estar escrito.</p>
       <h2>3. Personalización</h2>
       <p>Bordado o DTF, en qué posición, de qué tamaño y si el precio ya lo incluye. Si mandas tu logotipo, pide ver cómo quedará antes de producir.</p>
       <h2>4. Tiempo de entrega real</h2>
@@ -581,7 +700,7 @@ const ARTICLES_EXTRA = {
         <li><strong>Camisola:</strong> atención al público, oficinas de planta, servicios donde la prenda se ve más de lo que se usa.</li>
         <li><strong>Camisa de trabajo:</strong> obra, taller, mantenimiento, planta, logística; todo lo que raspa, ensucia y exige lavado seguido.</li>
       </ul>
-      <p>Si tu gente trabaja con las manos, mira las <a href="/camisas-de-trabajo">camisas de trabajo de mezclilla</a>, de la XCH a la 5XG, con o sin cinta reflejante.</p>
+      <p>Si tu gente trabaja con las manos, mira las <a href="/camisas-de-trabajo">camisas de trabajo de mezclilla</a>, de la XCH a la 5XG, con o sin <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a>.</p>
     `,
     faq: [
       ['¿Cuál es la diferencia principal?', 'La camisa de trabajo se usa como prenda única, abrocha con botones y va fajada o por fuera. La camisola suele ser más holgada y se pone encima de la ropa, como una capa extra.'],

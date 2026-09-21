@@ -983,19 +983,25 @@ app.get('/img/:width(\\d+)/*', async (req, res) => {
     res.status(404).send('Imagen no encontrada');
     return;
   }
-  const webp = (req.headers.accept || '').includes('image/webp');
-  const key = `${crypto.createHash('md5').update(`${source}:${fs.statSync(source).mtimeMs}`).digest('hex')}-${width}.${webp ? 'webp' : 'jpg'}`;
+  // AVIF pesa menos que WebP y lo aceptan los navegadores recientes; si no, WebP; si no, JPG.
+  const accept = req.headers.accept || '';
+  const formato = accept.includes('image/avif') ? 'avif' : accept.includes('image/webp') ? 'webp' : 'jpg';
+  const key = `${crypto.createHash('md5').update(`${source}:${fs.statSync(source).mtimeMs}`).digest('hex')}-${width}.${formato}`;
   const cached = path.join(IMG_CACHE_DIR, key);
   res.set('Cache-Control', 'public, max-age=2592000');
   res.set('Vary', 'Accept');
-  res.type(webp ? 'image/webp' : 'image/jpeg');
+  res.type(formato === 'jpg' ? 'image/jpeg' : `image/${formato}`);
   if (fs.existsSync(cached)) {
     res.sendFile(cached);
     return;
   }
   try {
     const pipeline = sharp(source).rotate().resize({ width, withoutEnlargement: true });
-    const buffer = webp ? await pipeline.webp({ quality: 82 }).toBuffer() : await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer();
+    const buffer = formato === 'avif'
+      ? await pipeline.avif({ quality: 58 }).toBuffer()
+      : formato === 'webp'
+        ? await pipeline.webp({ quality: 82 }).toBuffer()
+        : await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer();
     fs.writeFile(cached, buffer, () => {});
     res.send(buffer);
   } catch (err) {
@@ -1146,6 +1152,44 @@ function shippingDetailsSchema() {
 
 // Los artículos se copian una vez a articles.json y luego manda el panel: esta migración corrige
 // los títulos y descripciones largos de los que nadie ha editado (solo si el texto sigue siendo el viejo).
+// Enlaces contextuales dentro del texto de un artículo hacia categorías y páginas clave.
+// Solo enlaza texto plano: nunca dentro de otro enlace ni de un encabezado, y nunca al destino
+// al que el artículo ya apunta. Máximo tres por artículo para que se lea natural.
+const ENLACES_CONTEXTO = [
+  ['pantalones de trabajo', '/pantalones-de-trabajo'],
+  ['pantalón de trabajo', '/pantalones-de-trabajo'],
+  ['camisas de trabajo', '/camisas-de-trabajo'],
+  ['camisa de trabajo', '/camisas-de-trabajo'],
+  ['cinta reflejante', '/ropa-de-trabajo-reflejante'],
+  ['ropa reflejante', '/ropa-de-trabajo-reflejante'],
+  ['guía de tallas', '/guia-de-tallas'],
+  ['tallas grandes', '/ropa-de-trabajo-tallas-grandes'],
+  ['por mayoreo', '/mayoreo-ropa-de-trabajo'],
+  ['ropa de trabajo', '/ropa-de-trabajo'],
+  ['uniformes', '/uniformes-de-mezclilla'],
+];
+function enlazarEnTexto(html, slug) {
+  const escapado = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let texto = html;
+  let puestos = 0;
+  for (const [termino, destino] of ENLACES_CONTEXTO) {
+    if (puestos >= 3) break;
+    if (destino === `/${slug}` || texto.includes(`href="${destino}"`)) continue;
+    // Se parte por enlaces y encabezados: las partes impares no se tocan.
+    const piezas = texto.split(/(<a\b[^>]*>[\s\S]*?<\/a>|<h[1-6]\b[^>]*>[\s\S]*?<\/h[1-6]>)/);
+    const re = new RegExp(`(?<![\\w\\-])${escapado(termino)}(?![\\w<\\-])`);
+    let hecho = false;
+    for (let i = 0; i < piezas.length && !hecho; i += 2) {
+      const m = piezas[i].match(re);
+      if (!m) continue;
+      piezas[i] = piezas[i].replace(re, `<a href="${destino}">${m[0]}</a>`);
+      hecho = true;
+    }
+    if (hecho) { texto = piezas.join(''); puestos += 1; }
+  }
+  return { texto, puestos };
+}
+
 function migrarSeoArticulos() {
   let pares;
   try { pares = require('./migracion-seo.js'); } catch { return; }
@@ -1166,6 +1210,13 @@ function migrarSeoArticulos() {
       a.faq = base.faq.map(([q, r]) => [q, r]);
       cambios += 1;
     }
+    // Enlaces contextuales hacia categorías: una sola vez por artículo.
+    if (a.enlacesContexto !== 1 && typeof a.bodySource === 'string') {
+      const { texto, puestos } = enlazarEnTexto(a.bodySource, a.slug);
+      a.bodySource = texto;
+      a.enlacesContexto = 1;
+      if (puestos) cambios += puestos;
+    }
   });
   if (cambios) { saveArticles(articles); console.log(`SEO: ${cambios} ajustes en los artículos guardados (títulos, descripciones y preguntas).`); }
 }
@@ -1176,7 +1227,7 @@ function escapeXml(text) {
   return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
 }
 
-const CONTENT_LASTMOD = '2026-09-19';
+const CONTENT_LASTMOD = '2026-09-21';
 
 // Descripción para buscadores: Google corta alrededor de 160 caracteres, así que se arma con las
 // frases completas que quepan más la cola con tallas y envío.
@@ -1197,7 +1248,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260919a';
+const ASSET_V = '20260921a';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1405,6 +1456,9 @@ const CATEGORY_PAGES = {
       ['¿Aguanta el lavado diario?', 'Sí. Es mezclilla 100% algodón preencogida con costuras dobles. Lava al revés, con agua fría y sin cloro, para que conserve color y costuras por más tiempo.'],
       ['¿Hacen pantalones de trabajo con logotipo?', 'Sí, bordado o estampado DTF para pedidos de mayoreo. Cotízalo desde el cotizador o por WhatsApp.'],
       ['¿Envían a todo México?', 'Sí, por paquetería con número de guía. En Monterrey también puedes recoger en tienda.'],
+      ['¿Son pantalones de trabajo para hombre o unisex?', 'Usan tallaje del 28 al 50, el que se usa normalmente en pantalón de hombre, con corte recto y sin entalle. Los compran hombres y también mujeres que prefieren ese corte para trabajar; no manejamos un patrón de dama distinto.'],
+      ['¿Qué talla pido si uso jean de moda?', 'La misma que usas normalmente. Si dudas entre dos, elige la mayor: la mezclilla no da de sí y en el trabajo conviene el espacio.'],
+      ['¿Sirve para planta con maquinaria?', 'Sí. El corte es recto y sin cordones ni partes que cuelguen. Si necesitas además visibilidad, existe la versión con cinta reflejante en las piernas.'],
     ],
     seoText: `
       <h2>Pantalones de mezclilla para trabajar, no para lucir</h2>
@@ -1432,6 +1486,11 @@ const CATEGORY_PAGES = {
       <h2>Uniformes de trabajo por mayoreo en Monterrey</h2>
       <p>Surtimos empresas, contratistas y distribuidores con stock inmediato y corridas completas de tallas. Podemos bordar o estampar el logotipo de tu empresa. Arma tu pedido por talla en el <a href="/empresas">cotizador de mayoreo</a> y recibe la cotización por WhatsApp. Enviamos a todo México desde nuestra tienda en Monterrey.</p>
       <p>Lee también: <a href="/articulos/work-jeans-vs-pantalon-de-mezclilla-normal">work jeans vs. pantalón de mezclilla normal</a> y la <a href="/guia-de-tallas">guía de tallas</a>.</p>
+      <h2>Pantalones de trabajo para hombre y para mujer</h2>
+      <p>Nuestro pantalón usa tallaje del 28 al 50, la numeración que se usa normalmente en pantalón de hombre, y el corte es recto y sin entalle. Lo compran hombres y también mujeres que prefieren ese corte por comodidad en planta y en obra, donde una prenda entallada estorba para agacharse y arrodillarse. No fabricamos por ahora un patrón distinto de dama: si buscas un corte femenino específico, dínoslo por WhatsApp y te decimos con franqueza si te servimos o no.</p>
+      <p>Para elegir talla no hace falta medirse encima: mide un pantalón que ya te quede bien, extendido sobre una mesa, de lado a lado por la pretina, y multiplica por dos. Ese número se compara con la <a href="/guia-de-tallas">guía de tallas</a>.</p>
+      <h2>Para planta, obra y taller</h2>
+      <p>El mismo pantalón sirve en giros distintos y cada uno lo desgasta diferente. Si tu operación es de piso de planta con maquinaria, revisa qué buscar en <a href="/pantalones-industriales">pantalones industriales</a>. Para cuadrillas de obra está <a href="/uniformes-para-construccion">uniformes para construcción</a>, y si hay montacargas o turnos de noche, la versión con <a href="/pantalon-de-mezclilla-con-reflejante">cinta reflejante</a>.</p>
     `,
   },
   'camisas-de-trabajo': {
@@ -1750,7 +1809,11 @@ function negocioJsonLd(origin) {
   };
 }
 // Páginas donde la intención es local: ahí conviene repetir la ficha del negocio.
-const PAGINAS_LOCALES = new Set(['contacto', 'nosotros', 'uniformes-industriales-monterrey', 'fabricantes-de-ropa-de-trabajo-en-monterrey']);
+const PAGINAS_LOCALES = new Set([
+  'contacto', 'nosotros', 'uniformes-industriales-monterrey', 'fabricantes-de-ropa-de-trabajo-en-monterrey',
+  'ropa-de-trabajo-monterrey', 'ropa-de-trabajo-apodaca', 'ropa-de-trabajo-escobedo', 'ropa-de-trabajo-garcia',
+  'ropa-de-trabajo-guadalupe', 'ropa-de-trabajo-san-nicolas', 'ropa-de-trabajo-santa-catarina',
+]);
 
 function renderContentPage(req, res, slug, page, { isArticle }) {
   const origin = CANONICAL_HOST ? `https://${CANONICAL_HOST}` : `${req.protocol}://${req.get('host')}`;
@@ -1774,7 +1837,7 @@ function renderContentPage(req, res, slug, page, { isArticle }) {
     },
     { '@type': 'BreadcrumbList', itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })) },
   ];
-  if (!isArticle && (PAGINAS_LOCALES.has(slug) || slug.startsWith('ropa-de-trabajo-'))) {
+  if (!isArticle && PAGINAS_LOCALES.has(slug)) {
     graph.push(negocioJsonLd(origin));
   }
   if (page.faq) {
