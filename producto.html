@@ -84,6 +84,7 @@
           <p class="pdp-desc">{{SHORT_DESC}}</p>
 
           <div class="pdp-options">
+            <button type="button" class="pdp-size-link" id="pdpSizeGuide" aria-haspopup="dialog">Guía de tallas</button>
             {{SIZE_PICKER}}
             <p class="stock-note" id="pdpStockNote"></p>
             <div class="pdp-qty">
@@ -166,6 +167,16 @@
     <span>WhatsApp</span>
   </a>
 
+  <div class="size-modal" id="sizeModal" hidden>
+    <div class="size-modal-backdrop" data-close-size></div>
+    <div class="size-modal-box" role="dialog" aria-modal="true" aria-labelledby="sizeModalTitle">
+      <div class="size-modal-head">
+        <h2 id="sizeModalTitle">Guía de tallas</h2>
+        <button type="button" class="size-modal-close" data-close-size aria-label="Cerrar guía de tallas">✕</button>
+      </div>
+      <div class="size-modal-body">{{SIZE_GUIDE}}</div>
+    </div>
+  </div>
   <script src="cart.js?v={{ASSET_V}}" defer></script>
   <script src="select.js?v={{ASSET_V}}" defer></script>
   <script src="producto.js?v={{ASSET_V}}" defer></script>

@@ -171,6 +171,36 @@ test('carrito: cotización con talla válida', async () => {
   assert.ok(r.json.subtotalCents > 0);
 });
 
+test('carrito: escalones de envío por cantidad de piezas', async () => {
+  // El envío sube por escalones porque la paquetería cobra por peso y caja.
+  const login = await api('/api/admin/login', { method: 'POST', body: { username: 'admin', password: 'prueba-1234' } });
+  const sesion = (login.headers.get('set-cookie') || '').split(';')[0];
+  const ajustes = await api('/api/settings');
+  const envio = { ...ajustes.json.shipping, freeFromCents: 0, quoteFromQty: 0 };
+  envio.zones = envio.zones.map((z, i) => (i === 0
+    ? { ...z, tiers: [{ maxQty: 3, costCents: 9900 }, { maxQty: 10, costCents: 18000 }] }
+    : { ...z, tiers: [] }));
+  const guardar = await api('/api/admin/settings', { method: 'PUT', headers: { Cookie: sesion }, body: { shipping: envio } });
+  assert.equal(guardar.status, 200, guardar.text);
+
+  const productos = (await api('/products.json')).json;
+  const p = productos.find((x) => x.sizes.some((v) => v.stock > 0)) || productos[0];
+  const talla = (p.sizes.find((v) => v.stock > 0) || p.sizes[0]).size;
+  const cotizar = async (cantidad) => {
+    const r = await api('/api/cart/quote', { method: 'POST', body: { items: [{ id: p.id, size: talla, quantity: cantidad }], postalCode: '64000' } });
+    return r.json.shipping;
+  };
+  assert.equal((await cotizar(1)).costCents, 9900, 'una pieza cae en el primer escalón');
+  assert.equal((await cotizar(3)).costCents, 9900, 'el tope del escalón se incluye');
+  assert.equal((await cotizar(4)).costCents, 18000, 'al pasar el tope sube al siguiente');
+  assert.equal((await cotizar(11)).status, 'pending_rates', 'arriba del último escalón se cotiza aparte');
+
+  // Google recibe la tarifa de una pieza
+  const ficha = (await api(`/producto/${p.id}`)).text;
+  assert.match(ficha, /"value": ?"99\.00"/);
+  await api('/api/admin/logout', { method: 'POST', headers: { Cookie: sesion } });
+});
+
 test('api: cuerpo inválido devuelve 400 con mensaje, no 500', async () => {
   const r = await api('/api/cart/quote', { method: 'POST', body: '{esto no es json' });
   assert.equal(r.status, 400);

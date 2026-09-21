@@ -341,6 +341,23 @@ function shippingConfig() {
   return { summary: s.summary || '', freeFromCents: s.freeFromCents || 0, quoteFromQty: s.quoteFromQty || 0, zones: Array.isArray(s.zones) ? s.zones : [] };
 }
 
+// Escalones de envío por cantidad de piezas. Se ordenan por tope y se toma el primero que alcance;
+// arriba del último escalón el envío se cotiza aparte, porque ya es carga y no paquete.
+function tarifasOrdenadas(zone) {
+  return (Array.isArray(zone && zone.tiers) ? zone.tiers : [])
+    .filter((t) => Number.isFinite(t.maxQty) && t.maxQty > 0 && Number.isFinite(t.costCents) && t.costCents >= 0)
+    .sort((a, b) => a.maxQty - b.maxQty);
+}
+function tarifaDeZona(zone, qty) {
+  const escalones = tarifasOrdenadas(zone);
+  if (escalones.length) {
+    const piezas = Math.max(1, Number(qty) || 1);
+    const escalon = escalones.find((t) => piezas <= t.maxQty);
+    return escalon ? escalon.costCents : null;
+  }
+  return Number.isFinite(zone.costCents) ? zone.costCents : null;
+}
+
 function shippingQuote({ postalCode, subtotalCents, qty, freeShipping }) {
   const cfg = shippingConfig();
   const cp = String(postalCode || '').replace(/\D/g, '');
@@ -353,10 +370,13 @@ function shippingQuote({ postalCode, subtotalCents, qty, freeShipping }) {
   if (!zone) return { status: 'unknown_cp', costCents: null, label: 'No cubrimos ese código postal por paquetería. Escríbenos por WhatsApp para revisarlo.' };
   const free = freeShipping || (cfg.freeFromCents > 0 && subtotalCents >= cfg.freeFromCents);
   if (free) return { status: 'free', zone: zone.name, costCents: 0, days: zone.days || '', label: `Envío gratis a ${zone.name}${zone.days ? ` · ${zone.days}` : ''}` };
-  if (!Number.isFinite(zone.costCents) || zone.costCents === null) {
+  // La paquetería cobra por peso y volumen, y en una tienda de dos prendas el peso depende de cuántas
+  // piezas van. Por eso cada zona puede tener escalones por cantidad; si no los tiene, se usa el precio único.
+  const costo = tarifaDeZona(zone, qty);
+  if (!Number.isFinite(costo) || costo === null) {
     return { status: 'pending_rates', zone: zone.name, costCents: null, days: zone.days || '', label: `Envío a ${zone.name}: te confirmamos el costo por WhatsApp antes de enviar. No se cobra nada de envío al pagar.` };
   }
-  return { status: 'quoted', zone: zone.name, costCents: zone.costCents, days: zone.days || '', label: `Envío a ${zone.name}${zone.days ? ` · ${zone.days}` : ''}` };
+  return { status: 'quoted', zone: zone.name, costCents: costo, days: zone.days || '', label: `Envío a ${zone.name}${zone.days ? ` · ${zone.days}` : ''}` };
 }
 
 function parseMoney(value) {
@@ -1145,7 +1165,10 @@ function returnPolicySchema(origin) {
 
 function ratedZones() {
   const cfg = getSettings().shipping || {};
-  return (Array.isArray(cfg.zones) ? cfg.zones : []).filter((z) => Number.isFinite(z.costCents) && z.costCents >= 0);
+  // Para Google se declara lo que paga quien compra una pieza, que es el caso más común.
+  return (Array.isArray(cfg.zones) ? cfg.zones : [])
+    .map((z) => ({ ...z, costCents: tarifaDeZona(z, 1) }))
+    .filter((z) => Number.isFinite(z.costCents) && z.costCents >= 0);
 }
 
 function shippingDetailsSchema() {
@@ -1271,7 +1294,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260921b';
+const ASSET_V = '20260921e';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1370,8 +1393,11 @@ function renderProductPage(product, req) {
     : '<p>Todavía no hay reseñas de este modelo. Cada cliente recibe un enlace para calificar su compra cuando le entregamos el pedido; solo publicamos reseñas de compras reales.</p>']);
   sections.push(['personalizacion', 'Personalización', `<p>${escapeHtml(product.customization || 'Bordado o estampado DTF con el logotipo de tu empresa en pedidos de mayoreo. Cuéntanos qué necesitas y te cotizamos.')}</p>`]);
 
-  const related = publicProducts().filter((p) => p.id !== product.id && p.category === product.category).slice(0, 3);
-  const others = related.length ? related : publicProducts().filter((p) => p.id !== product.id).slice(0, 3);
+  // Se recomienda primero lo que sí se puede comprar hoy: un modelo agotado como primera sugerencia no sirve.
+  const conStock = (p) => (p.sizes || []).some((v) => v.stock > 0);
+  const ordenar = (lista) => [...lista].sort((a, b) => Number(conStock(b)) - Number(conStock(a)));
+  const related = ordenar(publicProducts().filter((p) => p.id !== product.id && p.category === product.category)).slice(0, 3);
+  const others = related.length ? related : ordenar(publicProducts().filter((p) => p.id !== product.id)).slice(0, 3);
   const relatedHtml = others.length ? `<section class="pdp-related" id="relacionados"><h2>También te puede servir</h2><div class="products-grid products-grid--static">${others.map((p) => productCardStatic(p, origin)).join('')}</div></section>` : '';
 
   const jsonld = productJsonLd(product, origin, url);
@@ -1405,6 +1431,7 @@ function renderProductPage(product, req) {
     AVAIL_TEXT: avail.text,
     SHORT_DESC: escapeHtml(product.description),
     SIZE_PICKER: sizePicker + stockAlert,
+    SIZE_GUIDE: `<p>Mide una prenda que ya te quede bien, extendida sobre una mesa, y compárala con la tabla. Es más exacto que medirte encima. Si quedas entre dos tallas, pide la mayor: la mezclilla no da de sí.</p><div class="size-calc" data-kind="${cat.isPants ? 'pantalon' : 'camisas'}"></div>${table}<p class="size-modal-note">Tolerancia de una pulgada en todas las medidas. <a href="/guia-de-tallas">Ver la guía completa</a> con los diagramas de dónde medir.</p>`,
     DISABLED: totalStock <= 0 ? 'disabled' : '',
     ADD_LABEL: totalStock <= 0 ? 'Agotado' : 'Agregar al carrito',
     JUMP_LINKS: sections.map(([id, t]) => `<a href="#${id}">${t}</a>`).join(''),
@@ -2541,6 +2568,17 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.put('/api/admin/settings', requireAdmin, perm('configuracion.editar'), (req, res) => {
+  // Los escalones de envío se limpian aquí: solo números y como máximo seis por zona.
+  if (req.body && req.body.shipping && Array.isArray(req.body.shipping.zones)) {
+    req.body.shipping.zones = req.body.shipping.zones.map((z) => ({
+      ...z,
+      tiers: (Array.isArray(z.tiers) ? z.tiers : [])
+        .map((t) => ({ maxQty: Math.max(1, parseInt(t.maxQty, 10) || 0), costCents: Math.max(0, Math.round(Number(t.costCents) || 0)) }))
+        .filter((t) => t.maxQty > 0)
+        .sort((a, b) => a.maxQty - b.maxQty)
+        .slice(0, 6),
+    }));
+  }
   const current = getSettings();
   const { security: _ignored, ...body } = req.body || {};
   const updated = { ...current, ...body, security: current.security };

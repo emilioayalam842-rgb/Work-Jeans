@@ -147,3 +147,36 @@
   window.onProductsLoaded = refreshStock;
   window.wjTrack?.('product_view', { item: id });
 })();
+
+// Guía de tallas sin salir del producto: se abre como ventana y se cierra con Escape o clic fuera.
+(function () {
+  const abrir = document.getElementById('pdpSizeGuide');
+  const modal = document.getElementById('sizeModal');
+  if (!abrir || !modal) return;
+  let ultimoFoco = null;
+
+  function abrirModal() {
+    ultimoFoco = document.activeElement;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    modal.querySelector('.size-modal-close').focus();
+  }
+  function cerrarModal() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    ultimoFoco?.focus();
+  }
+  abrir.addEventListener('click', abrirModal);
+  modal.addEventListener('click', (e) => { if (e.target.closest('[data-close-size]')) cerrarModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) cerrarModal(); });
+  // El foco no debe escaparse de la ventana mientras está abierta.
+  modal.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const focos = [...modal.querySelectorAll('button, a[href], input, select, textarea')].filter((el) => el.offsetParent !== null);
+    if (!focos.length) return;
+    const primero = focos[0];
+    const ultimo = focos[focos.length - 1];
+    if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+  });
+})();

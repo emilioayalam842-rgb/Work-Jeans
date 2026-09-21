@@ -691,4 +691,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('checkoutStripe')?.addEventListener('click', startStripeCheckout);
+  document.getElementById('cartKeep')?.addEventListener('click', () => {
+    closeCart();
+    // Si la página no tiene productos a la vista, se lleva al catálogo en vez de dejar al cliente parado.
+    const grid = document.getElementById('productsGrid') || document.getElementById('catalogo') || document.querySelector('.products-grid');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else window.location.href = '/pantalones-de-trabajo';
+  });
 });

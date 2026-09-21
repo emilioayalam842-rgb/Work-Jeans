@@ -1863,20 +1863,33 @@ async function loadSettingsForm() {
   if (!zones.children.length) addZoneRow();
 }
 
+// Un escalón dice: hasta X piezas, cuesta Y pesos. Sirve porque la paquetería cobra por peso
+// y en una tienda de dos prendas el peso depende de cuántas piezas lleva la caja.
+function tierRow(t = {}) {
+  return `<span class="zone-tier"><span>hasta</span><input type="number" class="tier-qty" min="1" step="1" value="${Number.isFinite(t.maxQty) ? t.maxQty : ''}" placeholder="3"><span>pzas</span><input type="number" class="tier-cost" min="0" step="1" value="${Number.isFinite(t.costCents) ? (t.costCents / 100).toFixed(0) : ''}" placeholder="$"><button type="button" class="admin-inline-btn" data-action="remove-tier" aria-label="Quitar escalón">✕</button></span>`;
+}
+
 function addZoneRow(z = {}) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td><input type="text" class="zone-name" value="${esc(z.name || '')}" placeholder="Nuevo León"></td>
     <td><input type="text" class="zone-from" value="${esc(z.cpFrom || '')}" maxlength="5" inputmode="numeric" placeholder="64000"></td>
     <td><input type="text" class="zone-to" value="${esc(z.cpTo || '')}" maxlength="5" inputmode="numeric" placeholder="67999"></td>
-    <td><input type="number" class="zone-cost" value="${Number.isFinite(z.costCents) && z.costCents !== null ? (z.costCents / 100).toFixed(0) : ''}" min="0" step="1" placeholder="pendiente"></td>
+    <td>
+      <input type="number" class="zone-cost" value="${Number.isFinite(z.costCents) && z.costCents !== null ? (z.costCents / 100).toFixed(0) : ''}" min="0" step="1" placeholder="pendiente">
+      <div class="zone-tiers" data-tiers>${(z.tiers || []).map((t) => tierRow(t)).join('')}</div>
+      <button type="button" class="admin-inline-btn" data-action="add-tier">+ Escalón por piezas</button>
+    </td>
     <td><input type="text" class="zone-days" value="${esc(z.days || '')}" placeholder="2 a 4 días hábiles"></td>
     <td class="admin-table-actions">${iconBtn('remove-zone', 'close', 'Quitar')}</td>`;
   document.getElementById('shipZones').appendChild(tr);
 }
 document.getElementById('addZoneBtn').addEventListener('click', () => addZoneRow());
 document.getElementById('shipZones').addEventListener('click', (e) => {
-  if (e.target.closest('[data-action="remove-zone"]')) e.target.closest('tr').remove();
+  if (e.target.closest('[data-action="remove-zone"]')) { e.target.closest('tr').remove(); return; }
+  if (e.target.closest('[data-action="remove-tier"]')) { e.target.closest('.zone-tier').remove(); return; }
+  const add = e.target.closest('[data-action="add-tier"]');
+  if (add) add.previousElementSibling.insertAdjacentHTML('beforeend', tierRow());
 });
 
 function collectShipping() {
@@ -1888,6 +1901,10 @@ function collectShipping() {
       cpFrom: tr.querySelector('.zone-from').value.replace(/\D/g, '').slice(0, 5),
       cpTo: tr.querySelector('.zone-to').value.replace(/\D/g, '').slice(0, 5),
       costCents: cost === '' ? null : Math.round(parseFloat(cost) * 100),
+      tiers: [...tr.querySelectorAll('.zone-tier')].map((el) => ({
+        maxQty: parseInt(el.querySelector('.tier-qty').value, 10) || 0,
+        costCents: Math.round((parseFloat(el.querySelector('.tier-cost').value) || 0) * 100),
+      })).filter((t) => t.maxQty > 0),
       days: tr.querySelector('.zone-days').value.trim().slice(0, 60),
     };
   }).filter((z) => z.name && z.cpFrom && z.cpTo);
