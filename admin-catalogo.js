@@ -28,7 +28,7 @@
     if (!(await fetchStock())) return;
     const productSel = document.getElementById('variantsProduct');
     const current = productSel.value;
-    productSel.innerHTML = '<option value="">Todos los modelos</option>' + productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    llenarSelect(productSel, [crearOpcion('', 'Todos los modelos'), ...productsCache.map((p) => crearOpcion(p.id, p.name))]);
     productSel.value = current;
     renderVariants();
   };
@@ -190,11 +190,11 @@
     const colors = [...new Set(stockRows.map((r) => r.color).filter(Boolean))].sort();
     const colorSel = document.getElementById('stockColor');
     const cur = colorSel.value;
-    colorSel.innerHTML = '<option value="">Todos los colores</option>' + colors.map((c) => `<option value="${c}">${c}</option>`).join('');
+    llenarSelect(colorSel, [crearOpcion('', 'Todos los colores'), ...colors.map((c) => crearOpcion(c, c))]);
     colorSel.value = cur;
     const whSel = document.getElementById('stockWarehouse');
     const curW = whSel.value;
-    whSel.innerHTML = '<option value="">Todos los almacenes</option>' + stockMeta.warehouses.map((w) => `<option value="${w}">${w}</option>`).join('');
+    llenarSelect(whSel, [crearOpcion('', 'Todos los almacenes'), ...stockMeta.warehouses.map((w) => crearOpcion(w, w))]);
     whSel.value = curW;
     whSel.parentElement.hidden = false;
     whSel.hidden = stockMeta.warehouses.length < 2;
@@ -230,17 +230,17 @@
       </div>`).join('');
 
     const multi = stockMeta.warehouses.length > 1;
-    document.getElementById('stockTableHead').innerHTML = `<tr><th>Modelo</th><th>Variante</th><th>SKU</th>${multi ? stockMeta.warehouses.map((w) => `<th>${w}</th>`).join('') : ''}<th>Físico</th><th>Apartadas</th><th>Disponible</th><th>Valor a costo</th><th></th></tr>`;
-    document.getElementById('stockTableBody').innerHTML = rows.length ? rows.map((r) => `
+    document.getElementById('stockTableHead').innerHTML = `<tr><th>Modelo</th><th>Variante</th><th>SKU</th>${multi ? stockMeta.warehouses.map((w) => `<th>${esc(w)}</th>`).join('') : ''}<th>Físico</th><th>Apartadas</th><th>Disponible</th><th>Valor a costo</th><th></th></tr>`;
+    document.getElementById('stockTableBody').innerHTML = rows.length ? rows.map((r, i) => `
       <tr data-product="${r.productId}" data-size="${esc(r.label)}">
         <td>${esc(r.productName)}</td>
         <td><strong>${esc(r.label)}</strong></td>
         <td><code>${esc(r.sku || '—')}</code></td>
-        ${multi ? r.warehouses.map((w) => `<td>${w.qty}</td>`).join('') : ''}
+        ${multi ? r.warehouses.map((w) => `<td>${Number(w.qty) || 0}</td>`).join('') : ''}
         <td>${r.stock + (r.reserved || 0)}</td>
         <td>${r.reserved || 0}</td>
         <td class="${r.stock <= stockMeta.threshold ? 'admin-stock-low' : ''}">
-          <input type="number" class="admin-stock-input" value="${r.stock}" min="0" step="1" data-current="${r.stock}" title="Escribe la cantidad y presiona Enter">
+          <input type="number" class="admin-stock-input" id="stock-${esc(String(r.productId || r.id || i))}-${esc(String(r.size || ''))}-${i}" value="${r.stock}" min="0" step="1" data-current="${r.stock}" aria-label="Existencia de ${esc(r.productName || '')} ${esc(String(r.size || ''))}${multi ? ' en el almacén seleccionado' : ''}" title="Escribe la cantidad y presiona Enter">
         </td>
         <td>${formatPrice(r.stock * (r.costCents || 0))}</td>
         <td class="admin-table-actions">
@@ -291,13 +291,18 @@
       body: JSON.stringify({ productId: tr.dataset.product, size: tr.dataset.size, delta: wanted - current, warehouse: wh, reason: `Ajuste manual: de ${current} a ${wanted}` }),
     });
     input.disabled = false;
+    const aviso = document.getElementById('stockLive');
     if (res.ok) {
+      // Quien usa lector de pantalla necesita oír el resultado: la tabla se redibuja sin avisar.
+      if (aviso) aviso.textContent = `Existencia actualizada: ${input.getAttribute('aria-label') || 'la variante'} quedó en ${wanted} piezas.`;
       await loadProducts();
       loadStock();
     } else {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       input.value = current;
-      alert(data.error || 'No se pudo ajustar.');
+      const mensaje = data.error || 'No se pudo ajustar la existencia.';
+      if (aviso) aviso.textContent = mensaje;
+      alert(mensaje);
     }
   }
   document.getElementById('stockTableBody').addEventListener('keydown', (e) => {
@@ -318,7 +323,7 @@
   function fillTransferVariants() {
     const product = productsCache.find((p) => p.id === document.getElementById('transferProduct').value);
     const sel = document.getElementById('transferVariant');
-    sel.innerHTML = product ? product.sizes.map((s) => `<option value="${esc(variantLabel(s))}">${esc(variantLabel(s))} (${s.stock} pzas)</option>`).join('') : '';
+    llenarSelect(sel, product ? product.sizes.map((s) => crearOpcion(variantLabel(s), `${variantLabel(s)} (${s.stock} pzas)`)) : []);
     updateTransferInfo();
   }
 
@@ -333,9 +338,9 @@
   document.getElementById('stockTransferBtn').addEventListener('click', () => {
     const names = warehouseList();
     document.getElementById('transferError').textContent = '';
-    document.getElementById('transferProduct').innerHTML = productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
-    document.getElementById('transferFrom').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
-    document.getElementById('transferTo').innerHTML = names.map((n, i) => `<option value="${n}" ${i === 1 ? 'selected' : ''}>${n}</option>`).join('');
+    llenarSelect(document.getElementById('transferProduct'), productsCache.map((p) => crearOpcion(p.id, p.name)));
+    llenarSelect(document.getElementById('transferFrom'), names.map((n) => crearOpcion(n, n)));
+    llenarSelect(document.getElementById('transferTo'), names.map((n, i) => crearOpcion(n, n, i === 1)));
     document.getElementById('transferQty').value = 1;
     fillTransferVariants();
     transferOverlay.hidden = false;

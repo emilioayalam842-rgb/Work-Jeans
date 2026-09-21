@@ -2,6 +2,19 @@
 // devoluciones y cambios con estadísticas. Usa las funciones globales de admin.js.
 
 (function () {
+
+  // Las listas desplegables se rellenan con elementos reales, nunca con texto interpretado como HTML.
+  function rellenarSelects(raiz) {
+    (raiz || document).querySelectorAll('select[data-llenar]:not([data-lleno])').forEach((sel) => {
+      sel.dataset.lleno = '1';
+      if (sel.dataset.llenar === 'productos') {
+        llenarSelect(sel, productsCache.map((p) => crearOpcion(p.id, p.name, p.id === sel.dataset.sel)));
+      } else if (sel.dataset.llenar === 'motivos') {
+        llenarSelect(sel, Object.entries(REASON_LABELS).map(([k, v]) => crearOpcion(k, v)));
+      }
+    });
+  }
+  new MutationObserver(() => rellenarSelects()).observe(document.body, { childList: true, subtree: true });
   const PO_LABELS = { borrador: 'Borrador', enviada: 'Enviada', parcial: 'Recibida parcial', recibida: 'Recibida', cancelada: 'Cancelada' };
   const REASON_LABELS = { 'quedo-grande': 'Le quedó grande', 'quedo-chico': 'Le quedó chico', defecto: 'Defecto', 'cambio-modelo': 'Cambio de modelo', 'cambio-color': 'Cambio de color', otro: 'Otro' };
   let suppliers = [];
@@ -115,7 +128,7 @@
     const row = document.createElement('div');
     row.className = 'admin-po-line';
     row.innerHTML = `
-      <select class="po-product admin-filter">${productsCache.map((p) => `<option value="${esc(p.id)}" ${line.productId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+      <select class="po-product admin-filter" data-llenar="productos" data-sel="${esc(line.productId || '')}"></select>
       <select class="po-variant admin-filter"></select>
       <input type="number" class="po-qty" min="1" step="1" placeholder="Cant." value="${line.qty || ''}">
       <input type="number" class="po-cost" min="0" step="0.01" placeholder="Costo c/u" value="${line.costMxn || ''}">
@@ -123,7 +136,7 @@
     const fill = () => {
       const product = productsCache.find((p) => p.id === row.querySelector('.po-product').value);
       const sel = row.querySelector('.po-variant');
-      sel.innerHTML = product ? product.sizes.map((s) => `<option value="${esc(variantLabel(s))}">${esc(variantLabel(s))}</option>`).join('') : '';
+      llenarSelect(sel, product ? product.sizes.map((s) => crearOpcion(variantLabel(s), variantLabel(s))) : []);
       if (product && !row.querySelector('.po-cost').value && product.costCents) row.querySelector('.po-cost').value = (product.costCents / 100).toFixed(2);
     };
     row.querySelector('.po-product').addEventListener('change', fill);
@@ -148,7 +161,7 @@
     await fetchSuppliers();
     document.getElementById('poError').textContent = '';
     document.getElementById('poForm').reset();
-    document.getElementById('poSupplier').innerHTML = '<option value="">Sin proveedor registrado</option>' + suppliers.map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+    llenarSelect(document.getElementById('poSupplier'), [crearOpcion('', 'Sin proveedor registrado'), ...suppliers.map((s) => crearOpcion(s.id, s.name))]);
     document.getElementById('poLines').innerHTML = '';
     addPoLine();
     poOverlay.hidden = false;
@@ -201,13 +214,13 @@
         <thead><tr><th>Producto</th><th>Variante</th><th>Pedidas</th><th>Recibidas</th><th>Costo</th>${canReceive ? '<th>Recibir ahora</th>' : ''}</tr></thead>
         <tbody>${po.items.map((i, idx) => `<tr>
           <td>${esc(i.productName)}</td><td>${esc(i.size || '—')}</td><td>${i.qty}</td><td>${i.received || 0}</td><td>${formatPrice(i.costCents)}</td>
-          ${canReceive ? `<td><input type="number" class="po-receive-qty" data-index="${idx}" min="0" max="${i.qty - (i.received || 0)}" value="${i.qty - (i.received || 0)}" style="width:80px"></td>` : ''}
+          ${canReceive ? `<td><input type="number" class="po-receive-qty" data-index="${idx}" min="0" max="${i.qty - (i.received || 0)}" value="${i.qty - (i.received || 0)}" class="admin-w-80"></td>` : ''}
         </tr>`).join('')}</tbody>
       </table>
       <p class="admin-order-total">Total ${formatPrice(po.totals.totalCents)} · Pagado ${formatPrice(po.totals.paidCents)} · <strong>${po.totals.dueCents ? `Pendiente ${formatPrice(po.totals.dueCents)}` : 'Liquidada'}</strong></p>
       ${(po.payments || []).length ? `<p class="admin-muted admin-small">Pagos: ${po.payments.map((p) => `${fmtDate(p.date)} ${formatPrice(p.amountCents)}${p.note ? ` (${esc(p.note)})` : ''}`).join(' · ')}</p>` : ''}`;
     document.getElementById('poReceiveWrap').hidden = !canReceive;
-    document.getElementById('poReceiveWarehouse').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
+    llenarSelect(document.getElementById('poReceiveWarehouse'), names.map((n) => crearOpcion(n, n)));
     document.getElementById('poReceiveWarehouseWrap').hidden = names.length < 2;
     document.getElementById('poStatusSelect').value = po.status;
     document.getElementById('poPayAmount').value = '';
@@ -275,22 +288,22 @@
       <div class="admin-return-line" data-index="${idx}">
         <span>${esc(i.name)}${i.size ? ` · ${esc(i.size)}` : ''} <span class="admin-muted admin-small">(${i.quantity} compradas)</span></span>
         <input type="number" class="ret-qty" min="0" max="${i.quantity}" value="0" placeholder="0">
-        <select class="ret-reason admin-filter">${Object.entries(REASON_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+        <select class="ret-reason admin-filter" data-llenar="motivos"></select>
       </div>`).join('') : '';
   }
   function fillExchangeVariants() {
     const product = productsCache.find((p) => p.id === document.getElementById('exchangeProduct').value);
-    document.getElementById('exchangeVariant').innerHTML = product ? product.sizes.map((s) => `<option value="${esc(variantLabel(s))}" ${s.stock <= 0 ? 'disabled' : ''}>${esc(variantLabel(s))} (${s.stock} disp.)</option>`).join('') : '';
+    llenarSelect(document.getElementById('exchangeVariant'), product ? product.sizes.map((s) => { const o = crearOpcion(variantLabel(s), `${variantLabel(s)} (${s.stock} disp.)`); o.disabled = s.stock <= 0; return o; }) : []);
   }
   document.getElementById('newReturnBtn').addEventListener('click', async () => {
     await loadOrders();
     document.getElementById('returnError').textContent = '';
     document.getElementById('returnForm').reset();
     const candidates = [...ordersCache].filter((o) => !['cancelado'].includes(o.status)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 200);
-    document.getElementById('returnOrder').innerHTML = candidates.map((o) => `<option value="${esc(o.id)}">${new Date(o.createdAt).toLocaleDateString('es-MX')} · ${esc(o.customerName) || 'Sin nombre'} · ${formatPrice(o.totalCents)}</option>`).join('');
-    document.getElementById('exchangeProduct').innerHTML = productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    llenarSelect(document.getElementById('returnOrder'), candidates.map((o) => crearOpcion(o.id, `${new Date(o.createdAt).toLocaleDateString('es-MX')} · ${o.customerName || 'Sin nombre'} · ${formatPrice(o.totalCents)}`)));
+    llenarSelect(document.getElementById('exchangeProduct'), productsCache.map((p) => crearOpcion(p.id, p.name)));
     const names = warehouseList();
-    document.getElementById('returnWarehouse').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
+    llenarSelect(document.getElementById('returnWarehouse'), names.map((n) => crearOpcion(n, n)));
     document.getElementById('returnWarehouseWrap').hidden = names.length < 2;
     fillReturnOrder();
     fillExchangeVariants();

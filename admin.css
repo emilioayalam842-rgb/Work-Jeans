@@ -1415,3 +1415,17 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 .admin-reauth { max-width: 420px; }
 .admin-reauth h2 { margin-top: 0; }
 .admin-reauth input { width: 100%; }
+
+/* Aviso que solo leen los lectores de pantalla */
+.admin-sr-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Clases que sustituyen estilos escritos dentro del HTML del panel */
+.admin-form--720 { max-width: 720px; }
+.admin-form--760 { max-width: 760px; }
+.admin-preview-frame { width: 100%; height: 60vh; border: 0; }
+.admin-upper { text-transform: uppercase; }
+.admin-w-80 { width: 80px; }
+.admin-min-260 { min-width: 260px; }
+.admin-right { text-align: right; }
+.admin-preview-frame { width: 100%; height: 60vh; border: 1px solid #e5e5e5; border-radius: 12px; background: #f3f3f3; }
+.admin-rank-bar i { display: block; height: 100%; width: var(--ancho, 0%); }

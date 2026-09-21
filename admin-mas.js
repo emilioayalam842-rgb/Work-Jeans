@@ -27,14 +27,14 @@
     const tr = btn.closest('tr');
     const productId = tr.dataset.product; const label = tr.dataset.size;
     const res = await fetch('/api/admin/inventory?limit=500');
-    const log = res.ok ? await res.json() : [];
+    const log = res.ok ? listaDe(await res.json()) : [];
     const rows = log.filter((m) => m.productId === productId && (m.size === label || (label || '').startsWith(m.size || '\u0000')));
     let ov = document.getElementById('stockHistoryOverlay');
     if (!ov) { ov = document.createElement('div'); ov.className = 'admin-overlay'; ov.id = 'stockHistoryOverlay'; ov.hidden = true; document.body.appendChild(ov); ov.addEventListener('click', (ev) => { if (ev.target === ov) ov.hidden = true; }); }
     const name = tr.children[0]?.textContent || productId;
     const inQty = rows.filter((m) => m.delta > 0).reduce((s, m) => s + m.delta, 0);
     const outQty = rows.filter((m) => m.delta < 0).reduce((s, m) => s - m.delta, 0);
-    ov.innerHTML = `<div class="admin-form" style="max-width:720px">
+    ov.innerHTML = `<div class="admin-form admin-form--720">
       <div class="admin-detail-id"><span class="admin-kicker">Historial</span><b>${esc(name)} · ${esc(label)}</b></div>
       <div class="admin-chart-stats"><div class="admin-chart-stat"><b>${inQty}</b><span>entradas</span></div><div class="admin-chart-stat"><b>${outQty}</b><span>salidas</span></div><div class="admin-chart-stat"><b>${rows.length}</b><span>movimientos</span></div></div>
       ${rows.length ? `<table class="admin-table admin-detail-table"><thead><tr><th>Fecha</th><th>Cambio</th><th>Quedan</th><th>Motivo</th></tr></thead><tbody>${rows.map((m) => `<tr><td class="admin-nowrap">${new Date(m.at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td><td class="${m.delta > 0 ? 'admin-profit' : 'admin-stock-low'}">${m.delta > 0 ? '+' : ''}${m.delta}</td><td>${m.stockAfter ?? '—'}</td><td>${esc(m.reason || '')}${m.orderId ? ` <button type="button" class="admin-inline-btn admin-small" data-open-order="${esc(m.orderId)}">Ver pedido</button>` : ''}${m.warehouse ? ` <span class="admin-muted admin-small">· ${esc(m.warehouse)}</span>` : ''}</td></tr>`).join('')}</tbody></table>` : '<p class="admin-muted">Sin movimientos registrados para esta talla (los últimos 500 movimientos).</p>'}
@@ -71,11 +71,11 @@
   document.getElementById('emailPreviewBtn')?.addEventListener('click', () => {
     let ov = document.getElementById('emailPreviewOverlay');
     if (!ov) { ov = document.createElement('div'); ov.className = 'admin-overlay'; ov.id = 'emailPreviewOverlay'; ov.hidden = true; document.body.appendChild(ov); ov.addEventListener('click', (ev) => { if (ev.target === ov) ov.hidden = true; }); }
-    ov.innerHTML = `<div class="admin-form" style="max-width:760px">
+    ov.innerHTML = `<div class="admin-form admin-form--760">
       <div class="admin-detail-id"><span class="admin-kicker">Vista previa</span><b>Correos al cliente</b></div>
       <p class="admin-muted admin-small">Así se ven con el pedido más reciente. Se envían solos al confirmar, enviar, entregar o cancelar un pedido (si el pedido tiene correo).</p>
       <div class="admin-subtabs" id="emailPreviewTabs">${[['confirmacion', 'Confirmación'], ['enviado', 'Enviado'], ['entregado', 'Entregado'], ['cancelado', 'Cancelado']].map(([k, v], i) => `<button type="button" class="admin-subtab ${i === 0 ? 'active' : ''}" data-type="${k}">${v}</button>`).join('')}</div>
-      <iframe id="emailPreviewFrame" title="Vista previa del correo" style="width:100%;height:60vh;border:1px solid #e5e5e5;border-radius:12px;background:#f3f3f3"></iframe>
+      <iframe id="emailPreviewFrame" title="Vista previa del correo" class="admin-preview-frame"></iframe>
       <div class="admin-form-actions"><button type="button" class="btn btn-secondary" data-close>Cerrar</button></div>
     </div>`;
     const frame = ov.querySelector('#emailPreviewFrame');
@@ -131,7 +131,7 @@
     const wa = whatsappDigits(c.phone);
     const last = orders[0];
     ov.innerHTML = `
-      <div class="admin-form" style="max-width:760px">
+      <div class="admin-form admin-form--760">
         <div class="admin-detail-id"><span class="admin-kicker">Cliente</span><b>${esc(c.name || 'Sin nombre')}</b>${c.company ? `<span class="admin-muted">${esc(c.company)}</span>` : ''}</div>
         <div class="admin-lead-grid">
           <div><span class="admin-kicker">Contacto</span><p>${c.phone ? `${esc(c.phone)}<br>` : ''}${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a><br>` : ''}${!c.phone && !c.email ? '<span class="admin-muted">Sin datos de contacto</span>' : ''}</p></div>

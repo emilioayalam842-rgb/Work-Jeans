@@ -31,7 +31,7 @@
   <link rel="preload" href="assets/fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/oswald-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=20260921m">
+  <link rel="stylesheet" href="styles.css?v=20260921r">
 
   <script type="application/ld+json">
   {
@@ -150,7 +150,7 @@
       <details class="cart-invoice" id="cartInvoice">
         <summary><span class="cart-invoice-check" aria-hidden="true"></span> Necesito factura</summary>
         <div class="cart-invoice-fields">
-          <label>RFC <input type="text" id="invoiceRfc" autocomplete="off" maxlength="13" placeholder="XAXX010101000" pattern="[A-ZÑ&amp;]{3,4}[0-9]{6}[A-Z0-9]{3}" style="text-transform:uppercase"></label>
+          <label>RFC <input type="text" id="invoiceRfc" autocomplete="off" maxlength="13" placeholder="XAXX010101000" pattern="[A-ZÑ&amp;]{3,4}[0-9]{6}[A-Z0-9]{3}" class="uppercase-input"></label>
           <label>Nombre o razón social (como en la constancia) <input type="text" id="invoiceName" autocomplete="organization" placeholder="Nombre o empresa"></label>
           <label>Código postal fiscal <input type="text" id="invoiceZip" inputmode="numeric" maxlength="5" placeholder="64000"></label>
           <label>Régimen fiscal <select id="invoiceRegimen"><option value="">Elige…</option></select></label>
@@ -424,7 +424,7 @@
       <div class="container mayoreo-inner">
         <div>
           <span class="eyebrow">Empresas</span>
-          <h2 style="margin-top:22px">¿Necesitas uniformar<br><span>a tu equipo?</span></h2>
+          <h2 class="mt-22">¿Necesitas uniformar<br><span>a tu equipo?</span></h2>
           <p>Cotizamos pedidos empresariales, corridas de tallas del 28 al 50 y personalización con tu logotipo. Con factura y entrega a todo México.</p>
           <p class="mayoreo-note">Los precios de la tienda son de cliente final con IVA incluido. Para distribuidores y compras por volumen manejamos <strong>precios de distribuidor</strong>: pídenos la lista al cotizar.</p>
           <div class="mayoreo-actions">
@@ -488,7 +488,7 @@
             title="Mapa de la tienda Works Jeans en Monterrey"
             id="mapsEmbed"
             data-src="https://www.google.com/maps?q=Works%20jeans%2C%20Calle%20Emiliano%20Zapata%203737%2C%20Venustiano%20Carranza%2C%2064560%20Monterrey%2C%20N.L.&output=embed"
-            width="100%" height="360" style="border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen>
+            width="100%" height="360" class="map-embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen>
           </iframe>
         </div>
       </div>
@@ -584,7 +584,7 @@
   </main>
 
   <footer class="footer">
-    <div class="hazard" aria-hidden="true" style="margin:-72px -24px 56px"></div>
+    <div class="hazard hazard--offset" aria-hidden="true"></div>
     <picture><source srcset="assets/img/works-jeans-logo.webp" type="image/webp"><img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="footer-logo" width="150" height="70" loading="lazy"></picture>
     <span class="kicker" data-t="footerKicker">Workwear industrial</span>
     <span class="eyebrow" data-t="footerEyebrow">Para los que trabajan duro.</span>
@@ -614,11 +614,11 @@
     <span>WhatsApp</span>
   </a>
 
-  <script src="cart.js?v=20260921m" defer></script>
-  <script src="filtros.js?v=20260921m" defer></script>
-  <script src="select.js?v=20260921m" defer></script>
-  <script src="script.js?v=20260921m" defer></script>
-  <script src="analytics.js?v=20260921m" defer></script>
-  <script src="cookies.js?v=20260921m" defer></script>
+  <script src="cart.js?v=20260921r" defer></script>
+  <script src="filtros.js?v=20260921r" defer></script>
+  <script src="select.js?v=20260921r" defer></script>
+  <script src="script.js?v=20260921r" defer></script>
+  <script src="analytics.js?v=20260921r" defer></script>
+  <script src="cookies.js?v=20260921r" defer></script>
 </body>
 </html>

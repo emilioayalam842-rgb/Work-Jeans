@@ -65,10 +65,10 @@
     if (kind === 'collection') options = settingsCache.collections || [];
     if (kind === 'products') options = productsCache.map((p) => [p.id, p.name]);
     const selected = new Set((sel.dataset.selected || '').split('|').filter(Boolean));
-    sel.innerHTML = options.map((o) => {
+    llenarSelect(sel, options.map((o) => {
       const [value, label] = Array.isArray(o) ? o : [o, o];
-      return `<option value="${value}" ${selected.has(value) ? 'selected' : ''}>${label}</option>`;
-    }).join('');
+      return crearOpcion(value, label, selected.has(value));
+    }));
   }
 
   function openPromoForm(p) {

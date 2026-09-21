@@ -164,7 +164,7 @@
   // ---------- Usuarios ----------
   function roleOptions() {
     const roles = window.sessionInfo?.roles || {};
-    return Object.entries(roles).map(([k, r]) => `<option value="${k}">${esc(r.label)}</option>`).join('');
+    return Object.entries(roles).map(([k, r]) => crearOpcion(k, r.label));
   }
 
   window.loadUsers = async function loadUsers() {
@@ -209,7 +209,7 @@
   function openUserForm(u) {
     document.getElementById('userError').textContent = '';
     document.getElementById('userForm').reset();
-    document.getElementById('userRole').innerHTML = roleOptions();
+    llenarSelect(document.getElementById('userRole'), roleOptions());
     document.getElementById('userId').value = u?.id || '';
     document.getElementById('userFormTitle').textContent = u ? 'Editar usuario' : 'Nuevo usuario';
     document.getElementById('userName').value = u?.name || '';
@@ -356,7 +356,7 @@
     const res = await fetch('/api/admin/audit?limit=500');
     if (res.status === 401) { showLogin(); return; }
     if (!res.ok) return;
-    auditCache = await res.json();
+    auditCache = listaDe(await res.json());
     renderAudit();
   };
   document.getElementById('auditSearch').addEventListener('input', renderAudit);

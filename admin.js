@@ -103,6 +103,38 @@ function lowStockLimit() {
 }
 
 // Escapa texto para meterlo en HTML (nombres de clientes, notas, etc.).
+// Direcciones de imagen permitidas: rutas internas del propio sitio, https, y las previsualizaciones
+// que el navegador genera al elegir un archivo. Cualquier otra cosa se descarta.
+function safeImageUrl(valor) {
+  const v = String(valor ?? '').trim();
+  if (!v) return '';
+  if (/^blob:/i.test(v) && !/[<>"'\s]/.test(v)) return v;
+  if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/i.test(v)) return v;
+  if (/^https:\/\/[\w.-]+\/[\w./%-]*$/i.test(v)) return v;
+  if (/^(assets\/[\w./-]+|\/(img|assets)\/[\w./%-]+)$/i.test(v) && !v.includes('..')) return v;
+  return '';
+}
+
+// Una opción de lista desplegable construida como elemento: su texto nunca se interpreta como HTML.
+function crearOpcion(valor, etiqueta, seleccionada = false) {
+  const o = document.createElement('option');
+  o.value = valor ?? '';
+  o.textContent = etiqueta ?? valor ?? '';
+  if (seleccionada) o.selected = true;
+  return o;
+}
+function llenarSelect(select, opciones) {
+  if (!select) return;
+  select.replaceChildren(...opciones.filter(Boolean));
+}
+
+// Las listas del servidor pueden venir como arreglo (compatibilidad) o paginadas. Esto acepta las dos.
+function listaDe(respuesta) {
+  if (Array.isArray(respuesta)) return respuesta;
+  if (respuesta && Array.isArray(respuesta.items)) return respuesta.items;
+  return [];
+}
+
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -385,7 +417,7 @@ function renderProductsTable(products) {
           ${iconBtn('move-up', 'up', 'Subir', index === 0 ? 'disabled' : '')}
           ${iconBtn('move-down', 'down', 'Bajar', index === products.length - 1 ? 'disabled' : '')}
         </td>
-        <td><img src="${esc(p.image)}" alt="${esc(p.name)}" class="admin-table-photo"></td>
+        <td><img src="${esc(safeImageUrl(p.image))}" alt="${esc(p.name)}" class="admin-table-photo"></td>
         <td>${esc(p.name)} ${tag}${p.status === 'descontinuado' ? '<span class="admin-tag admin-tag--off">Descontinuado</span>' : p.status === 'borrador' ? '<span class="admin-tag admin-tag--draft">Borrador</span>' : ''}<br><span class="admin-muted admin-small">${[p.sku, p.fit, p.wash, p.collection].filter(Boolean).join(' · ')}</span>${wholesale ? '<br>' + wholesale : ''}</td>
         <td>${esc(p.category)}</td>
         <td>${p.comparePriceCents ? `<s class="admin-muted">${formatPrice(p.comparePriceCents)}</s> ` : ''}${formatPrice(p.priceCents)}</td>
@@ -411,9 +443,9 @@ function renderProductsTable(products) {
               <div class="admin-stock-size ${s.stock <= limit ? 'is-low' : ''}" data-size="${esc(variantLabel(s))}">
                 <span class="admin-stock-size-name">${esc(variantLabel(s))}</span>
                 <div class="admin-stock-controls">
-                  <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="-1" aria-label="Quitar una pieza">−</button>
-                  <input type="number" class="admin-stock-count admin-stock-input admin-stock-input--sm" value="${s.stock}" min="0" step="1" data-current="${s.stock}" title="Escribe la cantidad y presiona Enter">
-                  <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="1" aria-label="Agregar una pieza">+</button>
+                  <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="-1" aria-label="Quitar una pieza de ${esc(p.name)} talla ${esc(variantLabel(s))}">−</button>
+                  <input type="number" class="admin-stock-count admin-stock-input admin-stock-input--sm" id="stock-${esc(p.id)}-${esc(variantLabel(s))}" value="${Number(s.stock) || 0}" min="0" step="1" data-current="${Number(s.stock) || 0}" aria-label="Existencia de ${esc(p.name)} talla ${esc(variantLabel(s))}" title="Escribe la cantidad y presiona Enter">
+                  <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="1" aria-label="Agregar una pieza de ${esc(p.name)} talla ${esc(variantLabel(s))}">+</button>
                 </div>
               </div>
             `).join('')}
@@ -426,15 +458,31 @@ function renderProductsTable(products) {
 }
 
 async function adjustStock(productId, size, delta, sizeEl) {
-  const res = await fetch('/api/admin/inventory/adjust', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, size, delta, reason: 'Ajuste manual desde el panel' }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    alert(data.error || 'No se pudo ajustar el stock.');
+  // Mientras se guarda, los controles quedan inactivos: así no se cuenta dos veces un clic doble.
+  const controles = [...sizeEl.querySelectorAll('button, input')];
+  controles.forEach((c) => { c.disabled = true; });
+  const aviso = document.getElementById('stockLive');
+  let res;
+  let data = {};
+  try {
+    res = await fetch('/api/admin/inventory/adjust', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, size, delta, reason: 'Ajuste manual desde el panel' }),
+    });
+    data = await res.json().catch(() => ({}));
+  } finally {
+    controles.forEach((c) => { c.disabled = false; });
+  }
+  if (!res || !res.ok) {
+    const mensaje = data.error || 'No se pudo ajustar la existencia.';
+    if (aviso) aviso.textContent = mensaje;
+    alert(mensaje);
     return;
+  }
+  if (aviso) {
+    const producto = productsCache.find((x) => x.id === productId);
+    aviso.textContent = `Existencia actualizada: ${producto ? producto.name : ''} talla ${size} quedó en ${data.stock} piezas.`;
   }
   const product = productsCache.find((p) => p.id === productId);
   const entry = product?.sizes.find((s) => s.size === size);
@@ -465,15 +513,16 @@ function addSizeRow(v = {}) {
   const row = document.createElement('tr');
   row.className = 'admin-size-row';
   const wh = v.warehouses || {};
+  const numero = (x, porDefecto = 0) => (Number.isFinite(Number(x)) ? Number(x) : porDefecto);
   const stockCell = names.length > 1
-    ? names.map((n) => `<label class="admin-wh-cell"><span>${n}</span><input type="number" class="size-row-wh" data-wh="${n}" min="0" value="${wh[n] ?? (n === names[0] ? (v.stock ?? 0) : 0)}"></label>`).join('')
-    : `<input type="number" class="size-row-stock" min="0" value="${v.stock ?? 0}">`;
+    ? names.map((n) => `<label class="admin-wh-cell"><span>${esc(n)}</span><input type="number" class="size-row-wh" data-wh="${esc(n)}" min="0" aria-label="Existencia de ${esc(v.size || 'la variante')} en ${esc(n)}" value="${numero(wh[n], n === names[0] ? numero(v.stock) : 0)}"></label>`).join('')
+    : `<input type="number" class="size-row-stock" min="0" aria-label="Existencia de ${esc(v.size || 'la variante')}" value="${numero(v.stock)}">`;
   row.innerHTML = `
     <td><input type="text" class="size-row-name" placeholder="32" value="${esc(v.size || '')}"></td>
-    <td><input type="text" class="size-row-length" placeholder="32" value="${v.length || ''}"></td>
-    <td><input type="text" class="size-row-color" placeholder="Índigo" value="${v.color || ''}"></td>
+    <td><input type="text" class="size-row-length" placeholder="32" value="${esc(v.length || '')}"></td>
+    <td><input type="text" class="size-row-color" placeholder="Índigo" value="${esc(v.color || '')}"></td>
     <td><input type="text" class="size-row-sku" placeholder="auto" value="${esc(v.sku || '')}"></td>
-    <td><input type="text" class="size-row-barcode" placeholder="EAN" value="${v.barcode || ''}"></td>
+    <td><input type="text" class="size-row-barcode" placeholder="EAN" value="${esc(v.barcode || '')}"></td>
     <td class="admin-wh-cells">${stockCell}</td>
     <td><input type="number" class="size-row-price" step="0.01" min="0" placeholder="=" value="${v.priceCents ? (v.priceCents / 100).toFixed(2) : ''}"></td>
     <td><input type="number" class="size-row-cost" step="0.01" min="0" placeholder="=" value="${v.costCents ? (v.costCents / 100).toFixed(2) : ''}"></td>
@@ -514,10 +563,10 @@ document.getElementById('genVariantsBtn').addEventListener('click', () => {
 });
 
 function fillProductFormSelects() {
-  const cats = settingsCache.categories || [];
-  document.getElementById('fieldCategory').innerHTML = cats.map((c) => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('') || '<option value="Pantalones">Pantalones</option><option value="Camisas">Camisas</option>';
-  const cols = settingsCache.collections || [];
-  document.getElementById('fieldCollection').innerHTML = '<option value="">Sin colección</option>' + cols.map((c) => `<option value="${c}">${c}</option>`).join('');
+  const cats = (settingsCache.categories || []).map((c) => (typeof c === 'string' ? c : c.name)).filter(Boolean);
+  llenarSelect(document.getElementById('fieldCategory'), (cats.length ? cats : ['Pantalones', 'Camisas']).map((c) => crearOpcion(c, c)));
+  const cols = (settingsCache.collections || []).map((c) => (typeof c === 'string' ? c : c.name)).filter(Boolean);
+  llenarSelect(document.getElementById('fieldCollection'), [crearOpcion('', 'Sin colección'), ...cols.map((c) => crearOpcion(c, c))]);
   document.getElementById('variantStockHead').textContent = warehouseList().length > 1 ? `Existencia (${warehouseList().join(' / ')})` : 'Existencia';
 }
 
@@ -525,7 +574,7 @@ function renderImageList() {
   const list = document.getElementById('imageList');
   list.innerHTML = formImages.map((img, i) => `
     <div class="admin-image-item ${i === 0 ? 'is-main' : ''}">
-      <img src="${img}" alt="">
+      <img src="${esc(safeImageUrl(img))}" alt="Foto ${i + 1} del producto">
       <span class="admin-image-tag">${i === 0 ? 'Principal' : `#${i + 1}`}</span>
       <div class="admin-image-actions">
         ${i > 0 ? `<button type="button" class="admin-inline-btn" data-action="main" data-index="${i}">Hacer principal</button>` : ''}
@@ -854,7 +903,7 @@ document.getElementById('printOrdersBtn').addEventListener('click', () => {
     alert('No hay pedidos para imprimir.');
     return;
   }
-  const rows = orders.map((o) => `<tr><td>${new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${esc(o.customerName || '—')}<br><small>${esc(o.customerPhone || '')}</small></td><td>${o.items.map((i) => `${esc(i.name)}${i.size ? ` (${esc(i.size)})` : ''} x${i.quantity}`).join('<br>')}</td><td style="text-align:right">${formatPrice(o.totalCents)}</td><td>${STATUS_LABELS[o.status] || o.status}</td><td>${o.tracking?.number ? `${o.tracking.carrier || ''} ${o.tracking.number}` : ''}</td></tr>`).join('');
+  const rows = orders.map((o) => `<tr><td>${new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${esc(o.customerName || '—')}<br><small>${esc(o.customerPhone || '')}</small></td><td>${o.items.map((i) => `${esc(i.name)}${i.size ? ` (${esc(i.size)})` : ''} x${i.quantity}`).join('<br>')}</td><td class="admin-right">${formatPrice(o.totalCents)}</td><td>${STATUS_LABELS[o.status] || o.status}</td><td>${o.tracking?.number ? `${o.tracking.carrier || ''} ${o.tracking.number}` : ''}</td></tr>`).join('');
   const win = window.open('', '_blank');
   win.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Pedidos · Works Jeans</title><style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:1.2rem;margin:0 0 4px}p{margin:0 0 16px;color:#555;font-size:.85rem}table{width:100%;border-collapse:collapse;font-size:.85rem}th,td{padding:8px 6px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#666}small{color:#666}</style></head><body><h1>Pedidos · Works Jeans</h1><p>${new Date().toLocaleString('es-MX')} · ${orders.length} pedidos</p><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Guía</th></tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>window.print()</script></body></html>`);
   win.document.close();
@@ -863,7 +912,7 @@ document.getElementById('printOrdersBtn').addEventListener('click', () => {
 function renderMonthFilter() {
   const select = document.getElementById('ordersMonthFilter');
   const months = [...new Set(ordersCache.map((o) => monthKey(o.createdAt)))].sort().reverse();
-  select.innerHTML = `<option value="">Todos los meses</option>${months.map((m) => `<option value="${m}">${monthLabel(m)}</option>`).join('')}`;
+  llenarSelect(select, [crearOpcion('', 'Todos los meses'), ...months.map((m) => crearOpcion(m, monthLabel(m)))]);
   select.value = months.includes(ordersMonth) ? ordersMonth : '';
   ordersMonth = select.value;
 }
@@ -1375,7 +1424,7 @@ async function loadInventory() {
     showLogin();
     return;
   }
-  const log = await res.json();
+  const log = listaDe(await res.json());
   const body = document.getElementById('inventoryTableBody');
   if (log.length === 0) {
     body.innerHTML = '<tr><td colspan="6">Todavía no hay movimientos registrados.</td></tr>';
@@ -1394,7 +1443,7 @@ async function loadInventory() {
     </tr>
   `).join('');
   const suppliers = [...new Set(log.map((m) => m.supplier).filter(Boolean))];
-  document.getElementById('suppliersList').innerHTML = suppliers.map((s) => `<option value="${s}"></option>`).join('');
+  llenarSelect(document.getElementById('suppliersList'), suppliers.map((s) => crearOpcion(s, '')));
 }
 
 // --- Entradas de mercancía ---
@@ -1423,10 +1472,10 @@ document.getElementById('newEntryBtn').addEventListener('click', () => {
   document.getElementById('entryError').textContent = '';
   document.getElementById('entryForm').reset();
   document.getElementById('entryUpdateCost').checked = true;
-  document.getElementById('entryProduct').innerHTML = productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  llenarSelect(document.getElementById('entryProduct'), productsCache.map((p) => crearOpcion(p.id, p.name)));
   const names = warehouseList();
   document.getElementById('entryWarehouseWrap').hidden = names.length < 2;
-  document.getElementById('entryWarehouse').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
+  llenarSelect(document.getElementById('entryWarehouse'), names.map((n) => crearOpcion(n, n)));
   renderEntrySizes();
   document.getElementById('entryOverlay').hidden = false;
 });
@@ -1630,10 +1679,8 @@ function addOrderItemRow() {
   const row = document.createElement('div');
   row.className = 'admin-order-item-row';
   row.innerHTML = `
-    <select class="order-item-product">
-      ${productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}
-    </select>
-    <select class="order-item-size"></select>
+    <select class="order-item-product" aria-label="Producto"></select>
+    <select class="order-item-size" aria-label="Talla"></select>
     <input type="number" class="order-item-qty" value="1" min="1" max="50" aria-label="Cantidad">
     <span class="order-item-price" aria-label="Importe">—</span>
     ${iconBtn('remove-item', 'close', 'Quitar producto')}
@@ -1642,12 +1689,11 @@ function addOrderItemRow() {
 
   const productSelect = row.querySelector('.order-item-product');
   const sizeSelect = row.querySelector('.order-item-size');
+  llenarSelect(productSelect, productsCache.map((p) => crearOpcion(p.id, p.name)));
 
   function fillSizes() {
     const product = productsCache.find((p) => p.id === productSelect.value);
-    sizeSelect.innerHTML = product
-      ? product.sizes.map((s) => `<option value="${esc(variantLabel(s))}" ${s.stock <= 0 ? 'disabled' : ''}>${esc(variantLabel(s))} (${s.stock} disp.)</option>`).join('')
-      : '';
+    llenarSelect(sizeSelect, product ? product.sizes.map((s) => { const o = crearOpcion(variantLabel(s), `${variantLabel(s)} (${s.stock} disp.)`); o.disabled = s.stock <= 0; return o; }) : []);
   }
 
   productSelect.addEventListener('change', () => { fillSizes(); updateOrderTotal(); });

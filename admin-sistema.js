@@ -41,18 +41,23 @@
         ['Servidor', `${pill(true, 'En línea', '')} desde ${fmtDT(d.startedAt)} (${ago(d.startedAt)})`],
         ['Datos', `${pill(d.data.writable, 'Guardando bien', 'No se puede escribir')} ${d.data.orders} pedidos · ${d.data.products} productos · ${kb(d.data.bytes)}${d.data.external ? ' en el volumen de Railway' : ' en la carpeta del proyecto'}`],
         ['Último respaldo', d.backups.last ? `${pill(true, d.backups.last.date, '')} ${ago(d.backups.last.at)} · ${d.backups.count} guardados` : pill(false, '', 'Aún no hay', true)],
+        ['Respaldos cifrados', d.backups.cifrados ? pill(true, 'Sí', '') : `${pill(false, '', 'No', true)} <span class="admin-muted admin-small">define BACKUP_KEY en las variables del servidor para cifrarlos</span>`],
+        ['Fotos respaldadas', d.backups.fotos && d.backups.fotos.total ? `${pill(true, `${d.backups.fotos.total} fotos`, '')} ${kb(d.backups.fotos.bytes)} guardadas aparte` : pill(false, '', 'Todavía ninguna', true)],
         ['Respaldo por correo', d.backups.emailWeekly ? (d.backups.emailConfigured ? `${pill(true, 'Activo', '')} ${d.backups.lastEmailAt ? `último ${fmtDT(d.backups.lastEmailAt)}` : 'todavía no se envía el primero'}` : pill(false, '', 'Falta correo de avisos o llave de Resend', true)) : pill(false, '', 'Desactivado', true)],
         ['Correos', d.email.configured ? `${pill(!d.email.lastError || (d.email.lastOkAt && d.email.lastOkAt > d.email.lastErrorAt), 'Funcionando', 'Con fallas', true)} ${d.email.lastOkAt ? `último enviado ${fmtDT(d.email.lastOkAt)}` : 'sin envíos todavía'}${d.email.lastError ? ` · último error: ${esc(d.email.lastError)} (${fmtDT(d.email.lastErrorAt)})` : ''}` : pill(false, '', 'Sin RESEND_API_KEY', true)],
         ['Pagos en línea', pay ? `${pill(true, pay, '')}${d.payments.spei ? ' tarjeta, SPEI y tiendas' : ' tarjeta'}` : pill(false, '', 'No configurados (solo WhatsApp)', true)],
-        ['Errores (24 h)', d.errors.last24h ? `${pill(false, '', `${d.errors.last24h}`, d.errors.last24h < 5)} <button type="button" class="admin-link-btn" id="sysErrorsBtn">ver</button>` : pill(true, 'Ninguno', '')],
+        ['Errores del servidor (24 h)', d.errors.last24h ? `${pill(false, '', `${d.errors.last24h}`, d.errors.last24h < 5)} <button type="button" class="admin-link-btn" id="sysErrorsBtn">ver</button>` : pill(true, 'Ninguno', '')],
+        ['Intentos bloqueados (24 h)', d.seguridad && d.seguridad.last24h ? `${pill(true, String(d.seguridad.last24h), '')} <button type="button" class="admin-link-btn" id="sysSegBtn">ver</button> <span class="admin-muted admin-small">el sistema los rechazó: no son fallas</span>` : pill(true, 'Ninguno', '')],
         ['Memoria', `${d.memoryMb} MB · Node ${esc(d.node)}`],
       ];
       box.innerHTML = `<dl class="admin-sys">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
-        <details class="admin-sys-errors" id="sysErrors" ${d.errors.last24h ? '' : 'hidden'}><summary>Últimos errores</summary><ul>${d.errors.list.map((e) => `<li><small>${fmtDT(e.at)}</small> <b>${esc(e.scope)}</b> ${esc(e.message)}${e.extra ? ` <i>${esc(e.extra)}</i>` : ''}</li>`).join('')}</ul></details>
+        <details class="admin-sys-errors" id="sysErrors" ${d.errors.last24h ? '' : 'hidden'}><summary>Últimos errores del servidor</summary><ul>${d.errors.list.map((e) => `<li><small>${fmtDT(e.at)}</small> <b>${esc(e.scope)}</b> ${esc(e.message)}${e.extra ? ` <i>${esc(e.extra)}</i>` : ''}</li>`).join('')}</ul></details>
+        <details class="admin-sys-errors" id="sysSeguridad" ${d.seguridad && d.seguridad.last24h ? '' : 'hidden'}><summary>Intentos bloqueados por seguridad</summary><p class="admin-help">Peticiones que el sistema rechazó a propósito: sin permiso, sin token, de otro sitio o con la sesión vencida. No son fallas.</p><ul>${(d.seguridad ? d.seguridad.list : []).map((e) => `<li><small>${fmtDT(e.at)}</small> <b>${esc(e.tipo)}</b> ${esc(e.detalle)}${e.contexto ? ` <i>${esc(e.contexto)}</i>` : ''}</li>`).join('')}</ul></details>
         <p class="admin-help">Para que te avise si el sitio se cae, da de alta <b>https://www.workjeans.mx/health</b> en un monitor gratuito como UptimeRobot (revisa cada 5 minutos y manda correo).</p>
         <div class="admin-sys-actions"><button type="button" class="btn btn-secondary btn-sm" id="sysRefreshBtn">Actualizar</button></div>`;
       $('sysRefreshBtn').addEventListener('click', loadStatus);
       $('sysErrorsBtn')?.addEventListener('click', () => { $('sysErrors').open = true; $('sysErrors').scrollIntoView({ block: 'nearest' }); });
+      $('sysSegBtn')?.addEventListener('click', () => { $('sysSeguridad').open = true; $('sysSeguridad').scrollIntoView({ block: 'nearest' }); });
     } catch (err) {
       box.innerHTML = `<p class="admin-error">${esc(err.message)}</p>`;
     }

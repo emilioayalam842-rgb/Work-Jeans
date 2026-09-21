@@ -61,6 +61,32 @@ function logError(scope, err, extra) {
     }
   } catch { /* sin disco: queda en memoria */ }
 }
+// Un token que no llega o un permiso denegado no son fallas del servidor: son el sistema haciendo
+// su trabajo. Se guardan aparte para que el contador de errores signifique algo.
+const SEGURIDAD_PATH = path.join(DATA_DIR, 'seguridad.log');
+const eventosSeguridad = [];
+function logSeguridad(tipo, detalle, contexto) {
+  const entrada = { at: new Date().toISOString(), tipo, detalle: String(detalle || '').slice(0, 300) };
+  if (contexto) entrada.contexto = String(contexto).slice(0, 200);
+  eventosSeguridad.push(entrada);
+  if (eventosSeguridad.length > 300) eventosSeguridad.shift();
+  try {
+    fs.appendFileSync(SEGURIDAD_PATH, JSON.stringify(entrada) + '\n');
+    if (Math.random() < 0.02) {
+      const lineas = fs.readFileSync(SEGURIDAD_PATH, 'utf-8').trim().split('\n');
+      if (lineas.length > 1500) writeFileSafe(SEGURIDAD_PATH, lineas.slice(-800).join('\n') + '\n');
+    }
+  } catch { /* sin disco: queda en memoria */ }
+}
+function leerSeguridad(horas = 24) {
+  const desde = Date.now() - horas * 3600000;
+  let lineas = [];
+  try { lineas = fs.readFileSync(SEGURIDAD_PATH, 'utf-8').trim().split('\n').filter(Boolean); } catch { /* sin archivo */ }
+  const out = [];
+  for (const l of lineas) { try { const e = JSON.parse(l); if (new Date(e.at).getTime() >= desde) out.push(e); } catch { /* línea rota */ } }
+  return out;
+}
+
 function readErrors(hours = 24) {
   const since = Date.now() - hours * 3600000;
   let lines = [];
@@ -968,12 +994,15 @@ const CSP = [
   "frame-ancestors 'self'",
   "form-action 'self'",
   "img-src 'self' data: blob: https://maps.gstatic.com https://maps.googleapis.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  // Sin estilos escritos dentro del HTML: todo vive en hojas de estilo del propio sitio.
+  "style-src 'self' https://fonts.googleapis.com",
+  "style-src-attr 'none'",
   "font-src 'self' data: https://fonts.gstatic.com",
   "script-src 'self' https://www.googletagmanager.com",
   "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com",
   "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com",
   "upgrade-insecure-requests",
+  "report-uri /api/csp-report",
 ].join('; ');
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
@@ -1043,7 +1072,7 @@ app.use((req, res, next) => {
   try { host = new URL(origen).host; } catch { host = ''; }
   const propios = new Set([req.headers.host, CANONICAL_HOST, 'www.workjeans.mx', 'workjeans.mx'].filter(Boolean));
   if (propios.has(host)) return next();
-  logError('csrf', `origen ajeno ${host}`, `${req.method} ${req.path}`);
+  logSeguridad('origen_ajeno', `origen ${host}`, `${req.method} ${req.path}`);
   res.status(403).json({ error: 'Petición rechazada: viene de otro sitio.' });
 });
 
@@ -1065,13 +1094,13 @@ app.use((req, res, next) => {
   if (!CAMBIAN_DATOS.has(req.method) || !req.path.startsWith('/api/admin/')) return next();
   if (req.path === '/api/admin/login' || req.path === '/api/admin/login/mfa' || req.path === '/api/admin/logout') return next();
   if (csrfValido(req)) return next();
-  logError('csrf', 'token ausente o distinto', `${req.method} ${req.path}`);
+  logSeguridad('csrf', 'token ausente o distinto', `${req.method} ${req.path}`);
   res.status(403).json({ error: 'Tu sesión cambió. Recarga la página e inténtalo de nuevo.', code: 'csrf' });
 });
 
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
-  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/reviews.json', '/stock-alerts.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/contenido-extra.js', '/migracion-seo.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
+  '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/reviews.json', '/stock-alerts.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/errors.log', '/seguridad.log', '/resumen-diario.txt', '/server.js', '/seguridad.js', '/contenido.js', '/contenido-extra.js', '/migracion-seo.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
   '/.env', '/.env.example', '/.gitignore', '/npm install',
 ]);
 app.use((req, res, next) => {
@@ -1417,7 +1446,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260921m';
+const ASSET_V = '20260921r';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1597,7 +1626,7 @@ app.get('/producto/:id/ficha', (req, res) => {
     CATEGORY: escapeHtml(categoryOf(product).name),
     SKU_LINE: [product.sku ? `SKU ${escapeHtml(product.sku)}` : '', product.specs?.internalCode ? `Código interno ${escapeHtml(product.specs.internalCode)}` : '', `workjeans.mx/producto/${product.id}`].filter(Boolean).join(' · '),
     IMAGE: `/img/800/${images[0]}`,
-    EXTRA_PHOTOS: images.slice(1, 3).map((img) => `<img class="photo" style="margin-top:10px" src="/img/480/${img}" alt="" width="480" height="600">`).join(''),
+    EXTRA_PHOTOS: images.slice(1, 3).map((img) => `<img class="photo mt-10" src="/img/480/${img}" alt="" width="480" height="600">`).join(''),
     DESCRIPTION: escapeHtml(product.longDescription || product.description),
     FEATURES: product.features?.length ? `<h2>Características</h2><ul>${product.features.map((f) => `<li>${escapeHtml(f)}</li>`).join('')}</ul>` : '',
     SPECS: specRows.length ? `<h2>Especificaciones</h2><table>${specRows.map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`).join('')}</table>` : '<h2>Especificaciones</h2><p class="pending">Especificaciones técnicas en proceso de confirmación.</p>',
@@ -2209,7 +2238,7 @@ function mfaEnforced(user) {
 function requireAdmin(req, res, next) {
   const user = loadSessionUser(req);
   if (!user) {
-    if (req.session?.uid) req.session.destroy(() => {});
+    if (req.session?.uid) { logSeguridad('sesion_expirada', 'sesión vencida o invalidada', `${req.method} ${req.path}`); req.session.destroy(() => {}); }
     res.status(401).json({ error: 'No autorizado.' });
     return;
   }
@@ -2269,6 +2298,7 @@ function perm(...needed) {
   return (req, res, next) => {
     const ok = needed.some((p) => SEC.roleHas(req.adminUser.role, p));
     if (!ok) {
+      logSeguridad('permiso_denegado', `${req.adminUser.username} (${req.adminUser.role}) pidió ${needed.join(', ')}`, `${req.method} ${req.path}`);
       res.status(403).json({ error: 'Tu usuario no tiene permiso para esta acción.', code: 'forbidden' });
       return;
     }
@@ -2614,8 +2644,19 @@ app.delete('/api/admin/users/:id', requireAdmin, perm('usuarios'), requireReauth
 });
 
 app.get('/api/admin/audit', requireAdmin, perm('auditoria'), (req, res) => {
-  const limit = Math.min(500, Math.max(1, parseInt(req.query.limit, 10) || 200));
-  res.json(security.getAudit().slice(-limit).reverse());
+  const lista = security.getAudit().slice().reverse();
+  const resultado = paginar(lista, req, {
+    buscar: (e) => [e.action, e.user, e.ip, e.details, e.target].filter(Boolean).join(' '),
+    ordenables: { fecha: (e) => e.at || '', accion: (e) => e.action || '', usuario: (e) => e.user || '' },
+    porDefecto: 100,
+  });
+  // Compatibilidad: sin página se sigue respetando el límite de antes.
+  if (resultado.completo) {
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit, 10) || 200));
+    res.json(resultado.items.slice(0, limit));
+    return;
+  }
+  responderLista(res, resultado);
 });
 
 app.put('/api/admin/security', requireAdmin, perm('usuarios'), requireReauth, (req, res) => {
@@ -2728,6 +2769,13 @@ function applySiteTexts(html) {
   });
   return out;
 }
+// El navegador avisa aquí cuando algo intenta saltarse la política de contenido.
+app.post('/api/csp-report', express.json({ type: ['application/csp-report', 'application/json'], limit: '20kb' }), (req, res) => {
+  const r = (req.body && (req.body['csp-report'] || req.body)) || {};
+  logSeguridad('csp', String(r['violated-directive'] || r.violatedDirective || 'desconocida').slice(0, 80), String(r['blocked-uri'] || r.blockedURI || '').slice(0, 160));
+  res.status(204).end();
+});
+
 app.get('/health', (req, res) => {
   // Solo dice si el sitio responde. Los detalles (tiempo encendido, versiones, datos) viven en el
   // panel, detrás de autenticación: un monitor externo no necesita conocer la infraestructura.
@@ -2849,7 +2897,7 @@ function uploadedImages(req) {
   const files = todos.filter((f) => {
     if (archivoEsImagen(f.path)) return true;
     try { fs.unlinkSync(f.path); } catch { /* ya no está */ }
-    logError('subida.rechazada', 'el archivo no es una imagen real', f.originalname);
+    logSeguridad('subida_rechazada', 'el archivo no es una imagen real', f.originalname);
     return false;
   });
   // Versión WebP junto a cada foto: pesa mucho menos y el navegador que la acepta la recibe sola.
@@ -3018,9 +3066,44 @@ function stripOrderCosts(orders) {
   return orders.map((o) => ({ ...o, items: (o.items || []).map(({ costCents, ...i }) => i) }));
 }
 
+// Listas del panel con paginación, búsqueda y orden desde el servidor. Si la petición no pide
+// página ni límite, se devuelve la lista completa como antes, para no romper nada que ya funcione.
+function paginar(lista, req, { buscar = null, ordenables = {}, porDefecto = 50 } = {}) {
+  let items = lista;
+  const q = String(req.query.q || '').trim().toLowerCase();
+  if (q && buscar) items = items.filter((x) => buscar(x).toLowerCase().includes(q));
+  const orden = String(req.query.sort || '');
+  if (orden && ordenables[orden]) {
+    const dir = String(req.query.dir || 'desc') === 'asc' ? 1 : -1;
+    items = [...items].sort((a, b) => {
+      const va = ordenables[orden](a);
+      const vb = ordenables[orden](b);
+      if (va === vb) return 0;
+      return (va > vb ? 1 : -1) * dir;
+    });
+  }
+  const total = items.length;
+  const pidePagina = req.query.page !== undefined || req.query.limit !== undefined;
+  if (!pidePagina) return { completo: true, items, total };
+  const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || porDefecto));
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const desde = (page - 1) * limit;
+  return { completo: false, items: items.slice(desde, desde + limit), total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) };
+}
+function responderLista(res, resultado) {
+  if (resultado.completo) { res.json(resultado.items); return; }
+  const { completo, ...resto } = resultado;
+  res.json(resto);
+}
+
 app.get('/api/admin/orders', requireAdmin, perm('pedidos.ver'), (req, res) => {
   const orders = getOrders().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  res.json(hasPerm(req, 'costos.ver') ? orders : stripOrderCosts(orders));
+  const visibles = hasPerm(req, 'costos.ver') ? orders : stripOrderCosts(orders);
+  const filtrados = req.query.status ? visibles.filter((o) => o.status === req.query.status) : visibles;
+  responderLista(res, paginar(filtrados, req, {
+    buscar: (o) => [o.id, o.customerName, o.customerEmail, o.customerPhone, o.tracking?.number].filter(Boolean).join(' '),
+    ordenables: { fecha: (o) => o.createdAt || '', total: (o) => o.totalCents || 0, cliente: (o) => (o.customerName || '').toLowerCase(), estado: (o) => o.status || '' },
+  }));
 });
 
 app.post('/api/admin/orders', requireAdmin, perm('pedidos.editar'), (req, res) => {
@@ -3178,9 +3261,18 @@ app.post('/api/admin/orders/:id/email', requireAdmin, perm('pedidos.editar'), as
 // --- Inventario (protegido) ---
 
 app.get('/api/admin/inventory', requireAdmin, perm('inventario.ver'), (req, res) => {
-  const limit = Math.max(1, Math.min(500, parseInt(req.query.limit, 10) || 200));
-  const log = getInventoryLog().slice(-limit).reverse();
-  res.json(log);
+  const lista = getInventoryLog().slice().reverse();
+  const resultado = paginar(lista, req, {
+    buscar: (m) => [m.productName, m.size, m.sku, m.reason, m.orderId, m.warehouse].filter(Boolean).join(' '),
+    ordenables: { fecha: (m) => m.at || '', producto: (m) => (m.productName || '').toLowerCase(), cantidad: (m) => Math.abs(m.delta || 0) },
+    porDefecto: 100,
+  });
+  if (resultado.completo) {
+    const limit = Math.max(1, Math.min(500, parseInt(req.query.limit, 10) || 200));
+    res.json(resultado.items.slice(0, limit));
+    return;
+  }
+  responderLista(res, resultado);
 });
 
 // Entrada de mercancía: varias tallas de un producto, con proveedor y costo.
@@ -3283,7 +3375,12 @@ app.get('/api/admin/stock', requireAdmin, perm('inventario.ver'), (req, res) => 
       });
     }
   }
-  res.json({ warehouses: names, threshold: lowStockThreshold(), rows });
+  const resultado = paginar(rows, req, {
+    buscar: (r) => [r.productName, r.label, r.sku, r.barcode, r.color].filter(Boolean).join(' '),
+    ordenables: { producto: (r) => (r.productName || '').toLowerCase(), existencia: (r) => r.stock || 0, valor: (r) => (r.stock || 0) * (r.costCents || 0), talla: (r) => r.label || '' },
+    porDefecto: 100,
+  });
+  res.json({ warehouses: names, threshold: lowStockThreshold(), rows: resultado.items, total: resultado.total, ...(resultado.completo ? {} : { page: resultado.page, limit: resultado.limit, pages: resultado.pages }) });
 });
 
 // Resumen ligero para detectar pedidos nuevos desde el panel sin recargar.
@@ -4066,7 +4163,11 @@ function normalizeArticle(body, existing = {}) {
 }
 
 app.get('/api/admin/articles', requireAdmin, perm('contenido.editar'), (req, res) => {
-  res.json(getArticles().map((a) => ({ ...a, ...readingStats(articleBodyHtml(a.bodySource)) })).sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || '')));
+  const lista = getArticles().map((a) => ({ ...a, ...readingStats(articleBodyHtml(a.bodySource)) })).sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+  responderLista(res, paginar(lista, req, {
+    buscar: (a) => [a.h1, a.slug, a.title].filter(Boolean).join(' '),
+    ordenables: { fecha: (a) => a.publishedAt || '', titulo: (a) => (a.h1 || '').toLowerCase(), palabras: (a) => a.words || 0 },
+  }));
 });
 
 app.post('/api/admin/articles', requireAdmin, perm('contenido.editar'), (req, res) => {
@@ -4740,7 +4841,11 @@ app.get('/api/admin/customers', requireAdmin, perm('clientes.ver'), (req, res) =
     if (o.createdAt > c.lastAt) c.lastAt = o.createdAt;
     customers.set(key, c);
   }
-  res.json([...customers.values()].sort((a, b) => b.totalCents - a.totalCents || (b.createdAt || '').localeCompare(a.createdAt || '')));
+  const lista = [...customers.values()].sort((a, b) => b.totalCents - a.totalCents || (b.createdAt || '').localeCompare(a.createdAt || ''));
+  responderLista(res, paginar(lista, req, {
+    buscar: (c) => [c.name, c.email, c.phone, c.company].filter(Boolean).join(' '),
+    ordenables: { total: (c) => c.totalCents || 0, pedidos: (c) => c.orders || 0, nombre: (c) => (c.name || '').toLowerCase(), ultimo: (c) => c.lastAt || '' },
+  }));
 });
 
 function normalizeCustomer(body, existing = {}) {
@@ -4891,6 +4996,62 @@ app.post('/api/admin/restore', requireAdmin, perm('respaldo'), requireReauth, ex
 });
 
 // --- Respaldos automáticos: uno al día en el servidor (se conservan 14) y uno a la semana por correo ---
+// Los respaldos llevan pedidos, clientes y direcciones. Si se define BACKUP_KEY en las variables
+// del servidor, se guardan cifrados: quien acceda al disco no puede leerlos sin esa llave.
+// Sin la llave se guardan en claro, y el panel lo avisa.
+function llaveRespaldo() {
+  const k = String(process.env.BACKUP_KEY || '').trim();
+  if (k.length < 16) return null;
+  return crypto.createHash('sha256').update(k).digest();
+}
+function cifrarRespaldo(texto) {
+  const llave = llaveRespaldo();
+  if (!llave) return { datos: Buffer.from(texto, 'utf-8'), cifrado: false };
+  const iv = crypto.randomBytes(12);
+  const c = crypto.createCipheriv('aes-256-gcm', llave, iv);
+  const cuerpo = Buffer.concat([c.update(texto, 'utf-8'), c.final()]);
+  // Formato: WJ1 + iv(12) + etiqueta(16) + cuerpo
+  return { datos: Buffer.concat([Buffer.from('WJ1'), iv, c.getAuthTag(), cuerpo]), cifrado: true };
+}
+function descifrarRespaldo(buffer) {
+  if (buffer.slice(0, 3).toString() !== 'WJ1') return buffer.toString('utf-8');
+  const llave = llaveRespaldo();
+  if (!llave) throw new Error('Este respaldo está cifrado y falta la llave BACKUP_KEY en el servidor.');
+  const iv = buffer.slice(3, 15);
+  const tag = buffer.slice(15, 31);
+  const d = crypto.createDecipheriv('aes-256-gcm', llave, iv);
+  d.setAuthTag(tag);
+  return Buffer.concat([d.update(buffer.slice(31)), d.final()]).toString('utf-8');
+}
+function leerRespaldo(nombre) {
+  return JSON.parse(descifrarRespaldo(fs.readFileSync(path.join(BACKUPS_DIR, nombre))));
+}
+
+// Las fotos no caben en el archivo, así que se guardan aparte: cada día se copian las que aún no
+// estén respaldadas. Así una foto borrada por error se puede recuperar.
+const FOTOS_DIR = () => path.join(BACKUPS_DIR, 'fotos');
+function respaldarFotos() {
+  let copiadas = 0;
+  try {
+    fs.mkdirSync(FOTOS_DIR(), { recursive: true });
+    for (const n of fs.readdirSync(PRODUCTS_IMG_DIR)) {
+      if (!/\.(jpe?g|png|webp|avif)$/i.test(n)) continue;
+      const destino = path.join(FOTOS_DIR(), n);
+      if (fs.existsSync(destino)) continue;
+      fs.copyFileSync(path.join(PRODUCTS_IMG_DIR, n), destino);
+      copiadas += 1;
+    }
+  } catch (err) { logError('respaldo.fotos', err); }
+  return copiadas;
+}
+function resumenFotosRespaldadas() {
+  try {
+    const nombres = fs.readdirSync(FOTOS_DIR()).filter((n) => /\.(jpe?g|png|webp|avif)$/i.test(n));
+    const bytes = nombres.reduce((s, n) => s + fs.statSync(path.join(FOTOS_DIR(), n)).size, 0);
+    return { total: nombres.length, bytes };
+  } catch { return { total: 0, bytes: 0 }; }
+}
+
 const BACKUP_NAME = /^respaldo-\d{4}-\d{2}-\d{2}\.json$/;
 function listBackups() {
   try {
@@ -4907,7 +5068,9 @@ function runAutoBackup(force = false) {
   fs.mkdirSync(BACKUPS_DIR, { recursive: true });
   const file = path.join(BACKUPS_DIR, `respaldo-${localDate()}.json`);
   if (!force && fs.existsSync(file)) return null;
-  writeFileSafe(file, JSON.stringify(buildBackup()));
+  const { datos } = cifrarRespaldo(JSON.stringify(buildBackup()));
+  writeFileSafe(file, datos);
+  respaldarFotos();
   listBackups().slice(14).forEach((b) => { try { fs.unlinkSync(path.join(BACKUPS_DIR, b.name)); } catch { /* ya no está */ } });
   return file;
 }
@@ -5013,13 +5176,16 @@ app.get('/api/admin/backups/:name', requireAdmin, perm('respaldo'), requireReaut
   const name = String(req.params.name || '');
   if (!BACKUP_NAME.test(name) || !fs.existsSync(path.join(BACKUPS_DIR, name))) { res.status(404).json({ error: 'Respaldo no encontrado.' }); return; }
   auditLog(req, 'respaldo.descargar', { details: name });
-  res.download(path.join(BACKUPS_DIR, name), `respaldo-works-jeans-${name.slice(9)}`);
+  let texto;
+  try { texto = descifrarRespaldo(fs.readFileSync(path.join(BACKUPS_DIR, name))); } catch (err) { res.status(500).json({ error: err.message }); return; }
+  res.set('Content-Disposition', `attachment; filename="respaldo-works-jeans-${name.slice(9)}"`);
+  res.type('application/json').send(texto);
 });
 app.post('/api/admin/backups/:name/restore', requireAdmin, perm('respaldo'), requireReauth, (req, res) => {
   const name = String(req.params.name || '');
   if (!BACKUP_NAME.test(name) || !fs.existsSync(path.join(BACKUPS_DIR, name))) { res.status(404).json({ error: 'Respaldo no encontrado.' }); return; }
   let b;
-  try { b = JSON.parse(fs.readFileSync(path.join(BACKUPS_DIR, name), 'utf-8')); } catch { res.status(400).json({ error: 'El respaldo está dañado.' }); return; }
+  try { b = leerRespaldo(name); } catch (err) { res.status(400).json({ error: err.message.includes('BACKUP_KEY') ? err.message : 'El respaldo está dañado o la llave no corresponde.' }); return; }
   const problema = problemaDelRespaldo(b);
   if (problema) { res.status(400).json({ error: problema }); return; }
   auditLog(req, 'respaldo.restaurar', { details: name });
@@ -5029,6 +5195,7 @@ app.post('/api/admin/backups/:name/restore', requireAdmin, perm('respaldo'), req
 // --- Estado del sistema para el panel ---
 app.get('/api/admin/system-status', requireAdmin, perm('respaldo'), (req, res) => {
   const errors = readErrors(24);
+  const seguridad = leerSeguridad(24);
   const backups = listBackups();
   let dataBytes = 0;
   try { fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json')).forEach((f) => { dataBytes += fs.statSync(path.join(DATA_DIR, f)).size; }); } catch { /* sin acceso */ }
@@ -5041,8 +5208,9 @@ app.get('/api/admin/system-status', requireAdmin, perm('respaldo'), (req, res) =
     node: process.version,
     memoryMb: Math.round(process.memoryUsage().rss / 1048576),
     data: { bytes: dataBytes, external: USES_EXTERNAL_DATA, writable, orders: getOrders().length, products: getProducts().length },
-    backups: { count: backups.length, last: backups[0] || null, emailWeekly: getSettings().backupEmail !== false, lastEmailAt: lastBackupEmailAt(), emailConfigured: Boolean(notifyTarget()) },
+    backups: { count: backups.length, last: backups[0] || null, emailWeekly: getSettings().backupEmail !== false, lastEmailAt: lastBackupEmailAt(), emailConfigured: Boolean(notifyTarget()), cifrados: Boolean(llaveRespaldo()), fotos: resumenFotosRespaldadas() },
     errors: { last24h: errors.length, list: errors.slice(-20).reverse() },
+    seguridad: { last24h: seguridad.length, list: seguridad.slice(-20).reverse() },
     email: { configured: Boolean(process.env.RESEND_API_KEY), notifyTo: Boolean(notifyTarget()), customerFrom: Boolean(process.env.NOTIFY_FROM), ...emailState },
     payments: paymentsInfo(),
   });

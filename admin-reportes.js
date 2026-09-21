@@ -2,6 +2,14 @@
 // Todo se calcula en el navegador a partir de pedidos, productos y devoluciones ya cargados.
 
 (function () {
+
+  // El ancho de cada barra se asigna como propiedad, no como estilo escrito en el HTML.
+  function aplicarAnchos(raiz) {
+    (raiz || document).querySelectorAll('.admin-rank-bar i[data-ancho]').forEach((el) => {
+      el.style.setProperty('--ancho', `${Math.max(0, Math.min(100, Number(el.dataset.ancho) || 0))}%`);
+    });
+  }
+  new MutationObserver(() => aplicarAnchos()).observe(document.body, { childList: true, subtree: true });
   window.__reportsV2 = true;
   const DAY = 24 * 60 * 60 * 1000;
   let returnsCache = [];
@@ -65,7 +73,7 @@
     el.innerHTML = rows.length ? rows.map((r) => `
       <li class="admin-rank-row">
         <span class="admin-rank-name">${esc(r.label)}</span>
-        <span class="admin-rank-bar"><i style="width:${Math.round((r.value / max) * 100)}%"></i></span>
+        <span class="admin-rank-bar"><i data-ancho="${Math.round((r.value / max) * 100)}"></i></span>
         <span class="admin-rank-value">${money ? formatPrice(r.value) : r.value}${suffix}</span>
       </li>`).join('') : '<li class="admin-muted">Sin datos todavía.</li>';
   }

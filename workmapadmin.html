@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260921m">
-  <link rel="stylesheet" href="admin.css?v=20260921m">
+  <link rel="stylesheet" href="styles.css?v=20260921r">
+  <link rel="stylesheet" href="admin.css?v=20260921r">
 </head>
 <body class="admin-body">
 
@@ -291,7 +291,7 @@
         <div class="admin-toolbar">
           <h2>Clientes</h2>
           <p class="admin-help admin-help--inline">Se arman solos a partir de los pedidos y también puedes capturarlos a mano. Haz clic en un nombre para ver su ficha.</p>
-          <input type="search" id="customersSearch" class="admin-filter" placeholder="Buscar por nombre, teléfono, correo o empresa…" style="min-width:260px">
+          <input type="search" id="customersSearch" class="admin-filter" placeholder="Buscar por nombre, teléfono, correo o empresa…" class="admin-min-260">
           <button type="button" id="newCustomerBtn" class="btn btn-primary admin-btn-icon">+ Nuevo cliente</button>
         </div>
         <div class="admin-table-wrap">
@@ -376,9 +376,9 @@
         </div>
         <div class="admin-filters">
           <label class="admin-search-box"><svg class="admin-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="stockSearch" placeholder="Buscar modelo, SKU, color o talla"></label>
-          <select id="stockColor" class="admin-filter"><option value="">Todos los colores</option></select>
+          <select id="stockColor" aria-label="Filtrar existencias por color" class="admin-filter"><option value="">Todos los colores</option></select>
           <select id="stockWarehouse" class="admin-filter"><option value="">Todos los almacenes</option></select>
-          <select id="stockLevel" class="admin-filter"><option value="">Todas</option><option value="low">Stock bajo</option><option value="out">Agotadas</option></select>
+          <select id="stockLevel" aria-label="Filtrar existencias por nivel" class="admin-filter"><option value="">Todas</option><option value="low">Stock bajo</option><option value="out">Agotadas</option></select>
         </div>
         <div class="admin-alerts" id="stockAlerts"></div>
         <div class="admin-table-wrap">
@@ -427,7 +427,7 @@
           <div class="admin-stat-card"><p class="admin-stat-label">Saldo por pagar</p><p class="admin-stat-value" id="poDue">$0.00</p></div>
         </div>
         <div class="admin-filters">
-          <select id="poStatusFilter" class="admin-filter"><option value="">Todas</option><option value="abiertas">Abiertas</option><option value="borrador">Borrador</option><option value="enviada">Enviada</option><option value="parcial">Recibida parcial</option><option value="recibida">Recibida</option><option value="cancelada">Cancelada</option></select>
+          <select id="poStatusFilter" aria-label="Filtrar órdenes de compra por estado" class="admin-filter"><option value="">Todas</option><option value="abiertas">Abiertas</option><option value="borrador">Borrador</option><option value="enviada">Enviada</option><option value="parcial">Recibida parcial</option><option value="recibida">Recibida</option><option value="cancelada">Cancelada</option></select>
         </div>
         <div class="admin-table-wrap">
           <table class="admin-table">
@@ -440,7 +440,7 @@
       <div id="tabResenas" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
           <h2>Reseñas de clientes</h2>
-          <select id="reviewFilter" class="admin-filter"><option value="pendiente">Pendientes</option><option value="">Todas</option><option value="aprobada">Aprobadas</option><option value="rechazada">Rechazadas</option></select>
+          <select id="reviewFilter" aria-label="Filtrar reseñas por estado" class="admin-filter"><option value="pendiente">Pendientes</option><option value="">Todas</option><option value="aprobada">Aprobadas</option><option value="rechazada">Rechazadas</option></select>
         </div>
         <p class="admin-muted">Aprueba las reseñas reales; se publican en la ficha del producto. <span id="reviewCounts"></span></p>
         <details class="admin-howto"><summary>¿Cómo funciona?</summary><p>Solo pueden reseñar clientes con pedido entregado, desde el enlace que reciben por correo (o el que copies desde el detalle del pedido). Se publican con nombre de pila e inicial del apellido. Con 3 o más aprobadas por modelo, Google puede mostrar estrellas en el resultado de búsqueda.</p></details>
@@ -455,7 +455,7 @@
       <div id="tabCotizaciones" class="admin-tab-panel" hidden>
         <div class="admin-toolbar">
           <h2>Cotizaciones de empresas</h2>
-          <select id="leadStatusFilter" class="admin-filter">
+          <select id="leadStatusFilter" aria-label="Filtrar cotizaciones por estado" class="admin-filter">
             <option value="abiertas">Abiertas</option>
             <option value="">Todas</option>
             <option value="nuevo">Nuevas</option>
@@ -566,7 +566,7 @@
         <div class="admin-toolbar">
           <h2>Reportes</h2>
           <div class="admin-toolbar-actions">
-            <select id="reportPeriod" class="admin-filter">
+            <select id="reportPeriod" aria-label="Periodo del reporte" class="admin-filter">
               <option value="month">Este mes</option>
               <option value="30">Últimos 30 días</option>
               <option value="90">Últimos 90 días</option>
@@ -799,7 +799,7 @@
         </div>
         <div>
           <label for="fieldSku">SKU del modelo</label>
-          <input type="text" id="fieldSku" name="sku" placeholder="Ej. STR01" style="text-transform:uppercase">
+          <input type="text" id="fieldSku" name="sku" placeholder="Ej. STR01" class="admin-upper">
         </div>
       </div>
 
@@ -980,7 +980,7 @@
       <button type="button" id="addOrderItemBtn" class="btn btn-secondary admin-add-item-btn admin-btn-icon"><svg class="admin-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Agregar producto</button>
 
       <div class="admin-field-grid">
-        <div><label for="orderCode">Cupón (opcional)</label><input type="text" id="orderCode" placeholder="Ej. HOLA10" style="text-transform:uppercase"></div>
+        <div><label for="orderCode">Cupón (opcional)</label><input type="text" id="orderCode" placeholder="Ej. HOLA10" class="admin-upper"></div>
         <div><label for="orderDiscount">Descuento manual (MXN, opcional)</label><input type="number" id="orderDiscount" min="0" step="0.01" placeholder="0"></div>
       </div>
 
@@ -1303,7 +1303,7 @@
             <option value="free_shipping">Envío gratis</option>
           </select>
         </div>
-        <div><label for="promoCode">Código (vacío = automática)</label><input type="text" id="promoCode" placeholder="Ej. HOLA10" style="text-transform:uppercase"></div>
+        <div><label for="promoCode">Código (vacío = automática)</label><input type="text" id="promoCode" placeholder="Ej. HOLA10" class="admin-upper"></div>
       </div>
       <p class="admin-help" id="promoFirstNote" hidden>"Primera compra" aplica el porcentaje a quien use el código; el sistema no verifica que sea su primera compra, revísalo en el pedido.</p>
       <div class="admin-field-grid">
@@ -1436,20 +1436,21 @@
     </div>
   </div>
 
-  <script src="admin-reauth.js?v=20260921m"></script>
-  <script src="admin.js?v=20260921m"></script>
-  <script src="admin-catalogo.js?v=20260921m"></script>
-  <script src="admin-compras.js?v=20260921m"></script>
-  <script src="admin-marketing.js?v=20260921m"></script>
-  <script src="admin-reportes.js?v=20260921m"></script>
-  <script src="admin-dashboard.js?v=20260921m"></script>
-  <script src="admin-pedidos.js?v=20260921m"></script>
-  <script src="admin-ui.js?v=20260921m"></script>
-  <script src="admin-mas.js?v=20260921m"></script>
-  <script src="admin-seguridad.js?v=20260921m"></script>
-  <script src="admin-leads.js?v=20260921m"></script>
-  <script src="admin-resenas.js?v=20260921m"></script>
-  <script src="admin-contenido.js?v=20260921m"></script>
-  <script src="admin-sistema.js?v=20260921m"></script>
+  <p class="admin-sr-live" id="stockLive" role="status" aria-live="polite"></p>
+  <script src="admin-reauth.js?v=20260921r"></script>
+  <script src="admin.js?v=20260921r"></script>
+  <script src="admin-catalogo.js?v=20260921r"></script>
+  <script src="admin-compras.js?v=20260921r"></script>
+  <script src="admin-marketing.js?v=20260921r"></script>
+  <script src="admin-reportes.js?v=20260921r"></script>
+  <script src="admin-dashboard.js?v=20260921r"></script>
+  <script src="admin-pedidos.js?v=20260921r"></script>
+  <script src="admin-ui.js?v=20260921r"></script>
+  <script src="admin-mas.js?v=20260921r"></script>
+  <script src="admin-seguridad.js?v=20260921r"></script>
+  <script src="admin-leads.js?v=20260921r"></script>
+  <script src="admin-resenas.js?v=20260921r"></script>
+  <script src="admin-contenido.js?v=20260921r"></script>
+  <script src="admin-sistema.js?v=20260921r"></script>
 </body>
 </html>

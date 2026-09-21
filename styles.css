@@ -2491,3 +2491,12 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 .size-modal-body > p:first-child { margin-top: 0; }
 .size-modal-note { font-size: 0.84rem; color: #666; }
 @media (max-width: 640px) { .size-modal { padding: 0; align-items: flex-end; } .size-modal-box { max-height: 92vh; border-radius: var(--radius-card) var(--radius-card) 0 0; } }
+
+/* Clases que sustituyen a los estilos escritos dentro del HTML, para poder prohibirlos en la
+   política de contenido del navegador. */
+.mt-18 { margin-top: 18px; }
+.mt-22 { margin-top: 22px; }
+.mt-10 { margin-top: 10px; }
+.uppercase-input { text-transform: uppercase; }
+.map-embed { border: 0; }
+.hazard--offset { margin: -72px -24px 56px; }

@@ -182,6 +182,137 @@ test('sesión: cambiar la contraseña tumba las sesiones anteriores', async () =
   assert.ok([401, 403].includes(viejaTrasCambio.status) || viejaTrasCambio.status === 200, 'la sesión que cambió la clave sigue siendo suya');
 });
 
+test('sesión: marca de segura cuando la conexión es https', async () => {
+  // Detrás del proxy, la cookie debe marcarse como Secure en cuanto la petición llega por https.
+  const r = await fetch(`${BASE}/api/admin/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Forwarded-Proto': 'https' },
+    body: JSON.stringify({ username: 'admin', password: CLAVE }),
+  });
+  const set = r.headers.get('set-cookie') || '';
+  assert.match(set, /Secure/i, 'por https la cookie debe ser Secure');
+  assert.match(set, /HttpOnly/i);
+});
+
+test('sesión: caducidad absoluta cercana a doce horas', async () => {
+  const e = await entrar('admin', CLAVE);
+  const set = e.headers.get('set-cookie') || '';
+  const m = set.match(/Max-Age=(\d+)/i);
+  const expira = m ? Number(m[1]) : null;
+  if (expira !== null) {
+    assert.ok(expira > 10 * 3600 && expira <= 12 * 3600 + 60, `caducidad inesperada: ${expira} s`);
+  } else {
+    const exp = set.match(/Expires=([^;]+)/i);
+    assert.ok(exp, 'la cookie debe traer caducidad');
+    const horas = (new Date(exp[1]).getTime() - Date.now()) / 3600000;
+    assert.ok(horas > 10 && horas <= 12.5, `caducidad inesperada: ${horas.toFixed(1)} h`);
+  }
+});
+
+test('sesión: cerrar todas mis sesiones deja fuera a las demás', async () => {
+  const usuario = 'utodas';
+  const clave = 'Clave-Todas-2026';
+  const csrfPrevio = csrf;
+  await pedir('/api/admin/users', { metodo: 'POST', cuerpo: { username: usuario, name: 'Todas', role: 'ventas', password: clave } });
+  let e = await entrar(usuario, clave);
+  csrf = e.json.csrf;
+  await pedir('/api/admin/me/password', { metodo: 'POST', cookie: e.cookie, cuerpo: { currentPassword: clave, newPassword: `${clave}-b` } });
+  const a = await entrar(usuario, `${clave}-b`);
+  const b = await entrar(usuario, `${clave}-b`);
+  csrf = b.json.csrf;
+  assert.equal((await pedir('/api/admin/orders', { cookie: a.cookie })).status, 200);
+  const cerrar = await pedir('/api/admin/me/logout-all', { metodo: 'POST', cookie: b.cookie });
+  assert.equal(cerrar.status, 200, cerrar.texto);
+  assert.equal((await pedir('/api/admin/orders', { cookie: a.cookie })).status, 401, 'la otra sesión debía quedar fuera');
+  csrf = csrfPrevio;
+});
+
+test('csrf: se exige en los cuatro métodos que cambian datos', async () => {
+  const casos = [
+    ['POST', '/api/admin/promotions', { name: 'x', type: 'percent', value: 1 }],
+    ['PUT', '/api/admin/settings', { storeName: 'x' }],
+    ['DELETE', '/api/admin/promotions/inexistente', undefined],
+  ];
+  for (const [metodo, ruta, cuerpo] of casos) {
+    const r = await pedir(ruta, { metodo, cuerpo, sinCsrf: true });
+    assert.equal(r.status, 403, `${metodo} ${ruta} debería exigir token`);
+    assert.equal(r.json.code, 'csrf');
+  }
+});
+
+test('reautenticación: se exige en respaldos, usuarios, contraseñas y segundo factor', async () => {
+  // Se deja vencer la confirmación anterior entrando de nuevo
+  const e = await entrar('admin', CLAVE);
+  const csrfPrevio = csrf;
+  csrf = e.json.csrf;
+  const rutas = [
+    ['GET', '/api/admin/backup'],
+    ['POST', '/api/admin/restore'],
+    ['POST', '/api/admin/users/usr_admin/reset-password'],
+    ['POST', '/api/admin/users/usr_admin/mfa-reset'],
+    ['PUT', '/api/admin/users/usr_admin'],
+  ];
+  for (const [metodo, ruta] of rutas) {
+    const r = await pedir(ruta, { metodo, cookie: e.cookie, cuerpo: metodo === 'GET' ? undefined : {} });
+    assert.equal(r.status, 403, `${ruta} debería pedir confirmar identidad`);
+    assert.equal(r.json.code, 'reauth_required', `${ruta} respondió ${JSON.stringify(r.json)}`);
+  }
+  csrf = csrfPrevio;
+});
+
+test('paginación: las listas grandes se piden por página, con búsqueda y orden', async () => {
+  for (const ruta of ['/api/admin/orders', '/api/admin/customers', '/api/admin/audit', '/api/admin/inventory', '/api/admin/articles']) {
+    const completo = await pedir(ruta);
+    assert.equal(completo.status, 200, `${ruta} sin paginar`);
+    assert.ok(Array.isArray(completo.json), `${ruta} debe seguir devolviendo lista sin paginar`);
+
+    const pagina = await pedir(`${ruta}?page=1&limit=3`);
+    assert.equal(pagina.status, 200);
+    assert.ok(Array.isArray(pagina.json.items), `${ruta} paginado debe traer items`);
+    assert.ok(pagina.json.items.length <= 3, `${ruta} devolvió más de lo pedido`);
+    assert.equal(typeof pagina.json.total, 'number');
+    assert.equal(typeof pagina.json.pages, 'number');
+    assert.equal(pagina.json.page, 1);
+
+    const segunda = await pedir(`${ruta}?page=2&limit=3`);
+    assert.equal(segunda.json.page, 2);
+    if (pagina.json.total > 3) {
+      assert.notDeepEqual(segunda.json.items, pagina.json.items, `${ruta} devolvió la misma página`);
+    }
+    // El límite no se puede forzar a cualquier tamaño
+    const enorme = await pedir(`${ruta}?page=1&limit=99999`);
+    assert.ok(enorme.json.limit <= 200, `${ruta} permitió un límite excesivo`);
+  }
+  const buscado = await pedir('/api/admin/orders?page=1&limit=20&q=ana');
+  assert.ok(buscado.json.total <= (await pedir('/api/admin/orders?page=1&limit=20')).json.total);
+});
+
+test('respaldos: cifrados en disco cuando hay llave, y las fotos se guardan aparte', async () => {
+  await pedir('/api/admin/reauth', { metodo: 'POST', cuerpo: { password: CLAVE } });
+  await pedir('/api/admin/backups/run', { metodo: 'POST' });
+  const estado = await pedir('/api/admin/system-status');
+  assert.equal(estado.status, 200);
+  assert.ok('cifrados' in estado.json.backups, 'el estado debe decir si están cifrados');
+  assert.ok(estado.json.backups.fotos, 'el estado debe informar de las fotos respaldadas');
+  const archivos = fs.readdirSync(path.join(DATA_DIR, 'backups'));
+  assert.ok(archivos.some((n) => /^respaldo-\d{4}-\d{2}-\d{2}\.json$/.test(n)), 'debe existir el respaldo del día');
+  assert.ok(archivos.includes('fotos'), 'debe existir la carpeta de fotos respaldadas');
+});
+
+test('eventos de seguridad: los rechazos no cuentan como errores del servidor', async () => {
+  const antes = (await pedir('/api/admin/system-status')).json;
+  // Se provocan tres rechazos esperados
+  await pedir('/api/admin/settings', { metodo: 'PUT', cuerpo: { storeName: 'x' }, sinCsrf: true });
+  await pedir('/api/admin/products', { metodo: 'POST', cabeceras: { Origin: 'https://otro.example' }, cuerpo: {} });
+  await pedir('/api/admin/users', { cookie: 'wj.sid=noexiste' });
+  const despues = (await pedir('/api/admin/system-status')).json;
+  assert.equal(despues.errors.last24h, antes.errors.last24h, 'los rechazos no deben subir el contador de errores');
+  assert.ok(despues.seguridad.last24h > antes.seguridad.last24h, 'sí deben registrarse como eventos de seguridad');
+  const tipos = despues.seguridad.list.map((e) => e.tipo);
+  assert.ok(tipos.includes('csrf'), 'debe registrar el token ausente');
+  assert.ok(tipos.includes('origen_ajeno'), 'debe registrar el origen ajeno');
+});
+
 // ---------- 4. Segundo factor ----------
 test('segundo factor: no se puede saltar llamando la API directamente', async () => {
   const usuario = 'umfa';
@@ -212,11 +343,16 @@ test('segundo factor: el secreto nunca aparece en la bitácora', async () => {
 
 // ---------- 5. Reautenticación ----------
 test('reautenticación: se valida en el servidor y no con datos del navegador', async () => {
-  const inventada = await pedir('/api/admin/backup', { cabeceras: { 'X-Reauth-At': String(Date.now()) } });
+  // Sesión nueva: la confirmación de otra sesión no debe servir aquí.
+  const e = await entrar('admin', CLAVE);
+  const csrfPrevio = csrf;
+  csrf = e.json.csrf;
+  const inventada = await pedir('/api/admin/backup', { cookie: e.cookie, cabeceras: { 'X-Reauth-At': String(Date.now()), 'X-Reauth': 'true' } });
   assert.equal(inventada.status, 403, 'no debe creerle a una cabecera del navegador');
   assert.equal(inventada.json.code, 'reauth_required');
-  assert.equal((await pedir('/api/admin/reauth', { metodo: 'POST', cuerpo: { password: CLAVE } })).status, 200);
-  assert.equal((await pedir('/api/admin/backup')).status, 200);
+  assert.equal((await pedir('/api/admin/reauth', { metodo: 'POST', cookie: e.cookie, cuerpo: { password: CLAVE } })).status, 200);
+  assert.equal((await pedir('/api/admin/backup', { cookie: e.cookie })).status, 200);
+  csrf = csrfPrevio;
 });
 
 // ---------- 6 y 7. Autorización y objetos ajenos ----------
