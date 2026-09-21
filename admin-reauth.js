@@ -92,10 +92,28 @@
     });
   };
 
+  // Token de sesión: se adjunta a todo lo que cambia datos en el panel.
+  window.wjCsrf = '';
+  const CAMBIAN = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+  function conToken(recurso, opciones) {
+    const url = typeof recurso === 'string' ? recurso : (recurso && recurso.url) || '';
+    const metodo = String((opciones && opciones.method) || (recurso && recurso.method) || 'GET').toUpperCase();
+    if (!window.wjCsrf || !CAMBIAN.has(metodo) || !url.includes('/api/admin/')) return opciones;
+    const cabeceras = new Headers((opciones && opciones.headers) || (recurso && recurso.headers) || {});
+    cabeceras.set('X-CSRF-Token', window.wjCsrf);
+    return { ...(opciones || {}), headers: cabeceras };
+  }
+
   // Cualquier petición que reciba "reauth_required" se reintenta sola después de confirmar.
   const fetchOriginal = window.fetch;
-  window.fetch = async function (recurso, opciones) {
+  window.fetch = async function (recurso, opcionesOriginales) {
+    const opciones = conToken(recurso, opcionesOriginales);
     const res = await fetchOriginal(recurso, opciones);
+    // La sesión entrega el token: se guarda para las siguientes peticiones.
+    const url0 = typeof recurso === 'string' ? recurso : (recurso && recurso.url) || '';
+    if (res.ok && (url0.includes('/api/admin/session') || url0.includes('/api/admin/login'))) {
+      try { const d = await res.clone().json(); if (d && d.csrf) window.wjCsrf = d.csrf; } catch { /* sin token */ }
+    }
     const url = typeof recurso === 'string' ? recurso : (recurso && recurso.url) || '';
     if (res.status !== 403 || !url.includes('/api/admin/') || url.includes('/api/admin/reauth')) return res;
     let cuerpo;
@@ -104,6 +122,6 @@
     try {
       await window.pedirReauth(cuerpo.error);
     } catch { return res; }
-    return fetchOriginal(recurso, opciones);
+    return fetchOriginal(recurso, conToken(recurso, opcionesOriginales));
   };
 })();

@@ -13,8 +13,15 @@ const DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'works-jeans-test-'));
 let server;
 let cookie = '';
 
+let csrf = '';
 const api = async (route, opts = {}) => {
-  const headers = { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}), ...(opts.headers || {}) };
+  const metodo = String(opts.method || 'GET').toUpperCase();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(cookie ? { Cookie: cookie } : {}),
+    ...(csrf && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo) && route.startsWith('/api/admin/') ? { 'X-CSRF-Token': csrf } : {}),
+    ...(opts.headers || {}),
+  };
   const r = await fetch(BASE + route, { ...opts, headers, body: opts.body && typeof opts.body !== 'string' ? JSON.stringify(opts.body) : opts.body, redirect: 'manual' });
   const text = await r.text();
   let json = null;
@@ -181,12 +188,13 @@ test('carrito: escalones de envío por cantidad de piezas', async () => {
   // El envío sube por escalones porque la paquetería cobra por peso y caja.
   const login = await api('/api/admin/login', { method: 'POST', body: { username: 'admin', password: 'prueba-1234' } });
   const sesion = (login.headers.get('set-cookie') || '').split(';')[0];
+  const token = login.json.csrf;
   const ajustes = await api('/api/settings');
   const envio = { ...ajustes.json.shipping, freeFromCents: 0, quoteFromQty: 0 };
   envio.zones = envio.zones.map((z, i) => (i === 0
     ? { ...z, tiers: [{ maxQty: 3, costCents: 9900 }, { maxQty: 10, costCents: 18000 }] }
     : { ...z, tiers: [] }));
-  const guardar = await api('/api/admin/settings', { method: 'PUT', headers: { Cookie: sesion }, body: { shipping: envio } });
+  const guardar = await api('/api/admin/settings', { method: 'PUT', headers: { Cookie: sesion, 'X-CSRF-Token': token }, body: { shipping: envio } });
   assert.equal(guardar.status, 200, guardar.text);
 
   const productos = (await api('/products.json')).json;
@@ -204,7 +212,7 @@ test('carrito: escalones de envío por cantidad de piezas', async () => {
   // Google recibe la tarifa de una pieza
   const ficha = (await api(`/producto/${p.id}`)).text;
   assert.match(ficha, /"value": ?"99\.00"/);
-  await api('/api/admin/logout', { method: 'POST', headers: { Cookie: sesion } });
+  await api('/api/admin/logout', { method: 'POST', headers: { Cookie: sesion, 'X-CSRF-Token': token } });
 });
 
 test('api: cuerpo inválido devuelve 400 con mensaje, no 500', async () => {
@@ -260,7 +268,9 @@ test('panel: inicio de sesión y lectura de pedidos', async () => {
   assert.equal(r.status, 200, r.text);
   assert.equal(r.json.ok, true);
   cookie = (r.headers.get('set-cookie') || '').split(';')[0];
+  csrf = r.json.csrf;
   assert.ok(cookie);
+  assert.ok(csrf, 'el inicio de sesión debe entregar el token de sesión');
   const orders = await api('/api/admin/orders');
   assert.equal(orders.status, 200);
 });

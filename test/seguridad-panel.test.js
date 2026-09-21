@@ -13,12 +13,15 @@ const DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'works-jeans-sec-'));
 const CLAVE_ADMIN = 'prueba-segura-1234';
 let server;
 
+const tokens = new Map(); // cookie -> token de sesión
 const api = async (ruta, { metodo = 'GET', cuerpo, cookie, cabeceras = {} } = {}) => {
+  const token = cookie ? tokens.get(cookie) : null;
   const r = await fetch(BASE + ruta, {
     method: metodo,
     headers: {
       'Content-Type': 'application/json',
       ...(cookie ? { Cookie: cookie } : {}),
+      ...(token && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo) && ruta.startsWith('/api/admin/') ? { 'X-CSRF-Token': token } : {}),
       ...cabeceras,
     },
     body: cuerpo === undefined ? undefined : (typeof cuerpo === 'string' ? cuerpo : JSON.stringify(cuerpo)),
@@ -32,7 +35,9 @@ const api = async (ruta, { metodo = 'GET', cuerpo, cookie, cabeceras = {} } = {}
 
 const entrar = async (usuario, clave) => {
   const r = await api('/api/admin/login', { metodo: 'POST', cuerpo: { username: usuario, password: clave } });
-  return { ok: r.status === 200, cookie: (r.headers.get('set-cookie') || '').split(';')[0], json: r.json };
+  const ck = (r.headers.get('set-cookie') || '').split(';')[0];
+  if (r.json && r.json.csrf) tokens.set(ck, r.json.csrf);
+  return { ok: r.status === 200, cookie: ck, json: r.json };
 };
 
 let cookieSuper = '';

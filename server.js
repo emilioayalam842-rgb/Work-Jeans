@@ -848,10 +848,20 @@ function auditLog(req, action, details) {
 
 // --- Stock helpers ---
 
+// Cola de una sola fila para leer y escribir existencias: dos pedidos que llegan al mismo tiempo
+// se atienden uno detrás de otro, nunca a la vez sobre la misma copia del archivo.
+let colaExistencias = Promise.resolve();
+function conExistenciasBloqueadas(tarea) {
+  const siguiente = colaExistencias.then(tarea, tarea);
+  colaExistencias = siguiente.then(() => undefined, () => undefined);
+  return siguiente;
+}
+
 function decrementStock(products, items, { strict, orderId = null, reason = 'Pedido' }) {
   const threshold = lowStockThreshold();
   const alerts = [];
   const movements = [];
+  const faltantes = [];
   for (const item of items) {
     const product = products.find((p) => p.id === item.id);
     if (!product || !item.size) continue;
@@ -860,6 +870,11 @@ function decrementStock(products, items, { strict, orderId = null, reason = 'Ped
 
     if (strict && sizeEntry.stock < item.quantity) {
       throw new Error(`Sin stock suficiente de ${product.name} ${variantLabel(sizeEntry)} (disponible: ${sizeEntry.stock}).`);
+    }
+    // Si el pedido ya está pagado no se puede rechazar, pero sí avisar: alguien compró lo último
+    // dos veces y hay que contactar al cliente antes de que espere una prenda que no existe.
+    if (!strict && sizeEntry.stock < item.quantity) {
+      faltantes.push({ producto: product.name, talla: variantLabel(sizeEntry), pedidas: item.quantity, disponibles: sizeEntry.stock, orderId });
     }
     const before = sizeEntry.stock;
     applyStockDelta(sizeEntry, -item.quantity, item.warehouse);
@@ -870,7 +885,18 @@ function decrementStock(products, items, { strict, orderId = null, reason = 'Ped
   }
   logInventory(movements);
   if (alerts.length) notifyLowStock(alerts, threshold);
+  if (faltantes.length) avisarSobreventa(faltantes);
   return products;
+}
+
+// Aviso al dueño cuando se vendió más de lo que había: hay que hablar con el cliente.
+function avisarSobreventa(faltantes) {
+  const detalle = faltantes.map((f) => `${f.producto} talla ${f.talla}: se pidieron ${f.pedidas} y había ${f.disponibles}`).join('; ');
+  logError('sobreventa', detalle, faltantes[0]?.orderId || '');
+  sendEmail({
+    subject: `Atención: se vendió más de lo que había (${faltantes.length} ${faltantes.length === 1 ? 'talla' : 'tallas'})`,
+    html: emailLayout('Revisar existencias', `<p>Un pedido pagado incluye tallas que ya no tenían existencia suficiente. Conviene avisar al cliente antes de que espere:</p><ul>${faltantes.map((f) => `<li><b>${escapeHtml(f.producto)}</b> talla ${escapeHtml(String(f.talla))}: se pidieron ${f.pedidas}, había ${f.disponibles}${f.orderId ? ` · pedido ${escapeHtml(f.orderId)}` : ''}</li>`).join('')}</ul><p>Revisa el pedido en el panel y repón la talla o contacta a la persona.</p>`),
+  }).catch(() => {});
 }
 
 // Devuelve al inventario las piezas de un pedido (al cancelarlo).
@@ -993,6 +1019,21 @@ app.use(express.json({ limit: '1mb' }));
 // debe venir del propio dominio. La cookie ya es SameSite=Lax, esto lo refuerza para navegadores
 // viejos y para peticiones sin cookie de navegación.
 const CAMBIAN_DATOS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+// Token de un solo origen: el panel lo lee de su sesión y lo manda en cada operación que cambia
+// datos. Validar el encabezado Origin no basta, porque hay navegadores y proxies que no lo envían.
+function tokenCsrf(req) {
+  if (!req.session) return '';
+  if (!req.session.csrf) req.session.csrf = crypto.randomBytes(24).toString('hex');
+  return req.session.csrf;
+}
+function csrfValido(req) {
+  const enviado = req.headers['x-csrf-token'] || (req.body && req.body._csrf) || '';
+  const esperado = req.session && req.session.csrf;
+  if (!esperado || !enviado) return false;
+  const a = Buffer.from(String(enviado));
+  const b = Buffer.from(String(esperado));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
 const SIN_ORIGEN = new Set(['/api/stripe/webhook', '/api/openpay/webhook']);
 app.use((req, res, next) => {
   if (!CAMBIAN_DATOS.has(req.method) || SIN_ORIGEN.has(req.path)) return next();
@@ -1006,6 +1047,7 @@ app.use((req, res, next) => {
   res.status(403).json({ error: 'Petición rechazada: viene de otro sitio.' });
 });
 
+
 app.use(session({
   name: 'wj.sid',
   secret: security.sessionSecret(),
@@ -1018,6 +1060,15 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production' ? true : 'auto',
   },
 }));
+// En el panel, además del origen, se exige el token de la propia sesión.
+app.use((req, res, next) => {
+  if (!CAMBIAN_DATOS.has(req.method) || !req.path.startsWith('/api/admin/')) return next();
+  if (req.path === '/api/admin/login' || req.path === '/api/admin/login/mfa' || req.path === '/api/admin/logout') return next();
+  if (csrfValido(req)) return next();
+  logError('csrf', 'token ausente o distinto', `${req.method} ${req.path}`);
+  res.status(403).json({ error: 'Tu sesión cambió. Recarga la página e inténtalo de nuevo.', code: 'csrf' });
+});
+
 // Archivos que nunca deben servirse públicamente.
 const PRIVATE_FILES = new Set([
   '/orders.json', '/inventory.json', '/suppliers.json', '/purchases.json', '/returns.json', '/promotions.json', '/leads.json', '/analytics.json', '/articles.json', '/customers.json', '/pending-checkouts.json', '/reviews.json', '/stock-alerts.json', '/admin-auth.json', '/users.json', '/audit.json', '/session-secret.txt', '/server.js', '/seguridad.js', '/contenido.js', '/contenido-extra.js', '/migracion-seo.js', '/Dockerfile', '/railway.json', '/package.json', '/package-lock.json',
@@ -1366,7 +1417,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260921k';
+const ASSET_V = '20260921m';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -2291,7 +2342,7 @@ function finishLogin(req, res, user) {
   delete req.session.mfaPending;
   security.updateUser(user.id, { lastLoginAt: new Date().toISOString() });
   security.audit({ action: 'login', userId: user.id, user: user.username, ip: clientIp(req) });
-  res.json({ ok: true, user: security.publicUser(user), mfaSuggested: Boolean(SEC.ROLES[user.role]?.mfa) && !user.mfa?.enabled });
+  res.json({ ok: true, csrf: tokenCsrf(req), user: security.publicUser(user), mfaSuggested: Boolean(SEC.ROLES[user.role]?.mfa) && !user.mfa?.enabled });
 }
 
 app.post('/api/admin/login/mfa', (req, res) => {
@@ -2341,6 +2392,7 @@ app.get('/api/admin/session', (req, res) => {
   }
   res.json({
     isAdmin: true,
+    csrf: tokenCsrf(req),
     user: security.publicUser(user),
     mfaRequired: mfaEnforced(user),
     mfaSuggested: Boolean(SEC.ROLES[user.role]?.mfa) && !user.mfa?.enabled,
@@ -2369,6 +2421,7 @@ function changeOwnPassword(req, res) {
   }
   const salt = crypto.randomBytes(16).toString('hex');
   const updated = security.updateUser(user.id, (u) => { u.salt = salt; u.hash = SEC.hashPassword(newPassword, salt); u.mustChangePassword = false; u.sessionVersion += 1; });
+  delete req.session.reauthAt; // cambiar la contraseña anula la confirmación previa
   req.session.sv = updated.sessionVersion; // esta sesión sigue; las demás se cierran
   auditLog(req, 'me.password_cambiada', {});
   res.json({ ok: true });
@@ -2773,8 +2826,32 @@ app.get('/api/admin/products', requireAdmin, perm('productos.ver'), (req, res) =
 
 const productUpload = upload.fields([{ name: 'image', maxCount: 1 }, { name: 'images', maxCount: 8 }]);
 
+// Las firmas reales de los formatos permitidos. El navegador puede mentir en el tipo declarado,
+// así que se leen los primeros bytes del archivo ya guardado.
+const FIRMAS_IMAGEN = [
+  { ext: '.jpg', prueba: (b) => b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF },
+  { ext: '.png', prueba: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47 },
+  { ext: '.webp', prueba: (b) => b.slice(0, 4).toString('ascii') === 'RIFF' && b.slice(8, 12).toString('ascii') === 'WEBP' },
+];
+function archivoEsImagen(ruta) {
+  let fd;
+  try {
+    fd = fs.openSync(ruta, 'r');
+    const buf = Buffer.alloc(16);
+    fs.readSync(fd, buf, 0, 16, 0);
+    return FIRMAS_IMAGEN.some((f) => f.prueba(buf));
+  } catch { return false; } finally { if (fd !== undefined) try { fs.closeSync(fd); } catch { /* ya cerrado */ } }
+}
+
 function uploadedImages(req) {
-  const files = [...(req.files?.image || []), ...(req.files?.images || [])];
+  const todos = [...(req.files?.image || []), ...(req.files?.images || [])];
+  // Se descarta lo que no sea una imagen de verdad, aunque el navegador haya dicho que lo era.
+  const files = todos.filter((f) => {
+    if (archivoEsImagen(f.path)) return true;
+    try { fs.unlinkSync(f.path); } catch { /* ya no está */ }
+    logError('subida.rechazada', 'el archivo no es una imagen real', f.originalname);
+    return false;
+  });
   // Versión WebP junto a cada foto: pesa mucho menos y el navegador que la acepta la recibe sola.
   files.forEach((f) => {
     if (!/\.(jpe?g|png)$/i.test(f.filename)) return;
@@ -3636,11 +3713,15 @@ app.post('/api/checkout', async (req, res) => {
   if (!quote.lines.length) { res.status(400).json({ error: 'El carrito no tiene productos válidos.' }); return; }
   if (quote.codeError && b.code) { res.status(400).json({ error: quote.codeError }); return; }
   if (['quote_required', 'invalid_cp', 'unknown_cp', 'need_cp'].includes(quote.shipping.status)) { res.status(400).json({ error: quote.shipping.label, code: quote.shipping.status }); return; }
-  const stockProducts = getProducts();
-  for (const l of quote.lines) {
-    const v = findVariant(stockProducts.find((p) => p.id === l.id), l.size);
-    if (v && v.stock < l.quantity) { res.status(400).json({ error: `Solo quedan ${v.stock} piezas de ${l.name} talla ${l.size}. Ajusta la cantidad.` }); return; }
-  }
+  const faltante = await conExistenciasBloqueadas(() => {
+    const stockProducts = getProducts();
+    for (const l of quote.lines) {
+      const v = findVariant(stockProducts.find((p) => p.id === l.id), l.size);
+      if (v && v.stock < l.quantity) return { linea: l, disponibles: v.stock };
+    }
+    return null;
+  });
+  if (faltante) { res.status(400).json({ error: `Solo quedan ${faltante.disponibles} piezas de ${faltante.linea.name} talla ${faltante.linea.size}. Ajusta la cantidad.` }); return; }
   const order = buildCheckoutOrder({ quote, customer, shipping: { ...shipping, postalCode: b.postalCode }, invoice, method });
   const [firstName, ...rest] = order.customerName.split(/\s+/);
   const pieces = order.items.reduce((s, i) => s + i.quantity, 0);
@@ -4794,6 +4875,7 @@ function restoreBackup(b) {
 
 app.get('/api/admin/backup', requireAdmin, perm('respaldo'), requireReauth, (req, res) => {
   const backup = buildBackup();
+  auditLog(req, 'respaldo.descargar', { details: `completo · ${backup.orders.length} pedidos, ${backup.customers?.length || 0} clientes` });
   res.set('Content-Disposition', `attachment; filename="respaldo-works-jeans-${backup.exportedAt.slice(0, 10)}.json"`);
   res.json(backup);
 });
@@ -4930,6 +5012,7 @@ app.post('/api/admin/backups/email', requireAdmin, perm('respaldo'), async (req,
 app.get('/api/admin/backups/:name', requireAdmin, perm('respaldo'), requireReauth, (req, res) => {
   const name = String(req.params.name || '');
   if (!BACKUP_NAME.test(name) || !fs.existsSync(path.join(BACKUPS_DIR, name))) { res.status(404).json({ error: 'Respaldo no encontrado.' }); return; }
+  auditLog(req, 'respaldo.descargar', { details: name });
   res.download(path.join(BACKUPS_DIR, name), `respaldo-works-jeans-${name.slice(9)}`);
 });
 app.post('/api/admin/backups/:name/restore', requireAdmin, perm('respaldo'), requireReauth, (req, res) => {
