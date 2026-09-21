@@ -2397,16 +2397,6 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 .faq-item summary::after { right: 0; }
 .faq-item p { padding: 0 0 18px; }
 @media (max-width: 760px) { .faq-list { grid-template-columns: 1fr; } }
-.catalog-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 16px; margin: 0 0 22px; padding: 14px 16px; background: #fff; border: 1px solid var(--line-2); border-radius: var(--radius-card); box-shadow: var(--shadow-soft); }
-.catalog-filter { display: grid; gap: 4px; font-family: var(--label); font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.catalog-filter--search { flex: 1 1 220px; }
-.catalog-filter input[type="search"], .catalog-filter select { font: inherit; font-family: var(--label); font-size: 0.95rem; letter-spacing: 0.02em; text-transform: none; color: var(--black); padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--radius); background: #fff; min-width: 120px; }
-.catalog-filter input[type="search"]:focus, .catalog-filter select:focus { outline: none; border-color: var(--black); box-shadow: 0 0 0 3px rgba(255,214,0,0.4); }
-.catalog-filter--check { display: inline-flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0.02em; font-size: 0.9rem; color: var(--black); padding: 10px 0; cursor: pointer; }
-.catalog-filter--check input { width: 18px; height: 18px; accent-color: var(--black); }
-.catalog-filter-clear { border: 0; background: var(--gray); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
-.catalog-filter-count { font-size: 0.85rem; color: var(--muted); margin-left: auto; }
-.catalog-empty { grid-column: 1 / -1; padding: 30px; text-align: center; color: var(--muted); }
 .product-card[hidden] { display: none !important; }
 .size-calc { margin: 18px 0 22px; padding: 18px 20px 20px; background: #fff; border: 1px solid var(--line-2); border-left: 6px solid var(--yellow); border-radius: var(--radius-card); box-shadow: var(--shadow-soft); }
 .size-calc-head p { margin: 4px 0 0; font-size: 0.92rem; color: #444; line-height: 1.5; }
@@ -2602,45 +2592,6 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
   .product-card h2,
   .product-card h3 { font-size: 0.9rem; }
   .product-card .card-ficha { font-size: 0.74rem; letter-spacing: 0.04em; }
-}
-
-/* ============================================================
-   Filtros del catálogo en celular: plegados detrás de un botón.
-   Con seis modelos, dejarlos abiertos cuesta un cuarto de pantalla antes del primer producto.
-   ============================================================ */
-.catalog-filters-toggle { display: none; }
-
-@media (max-width: 700px) {
-  .catalog-filters-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    min-height: 44px;
-    margin: 0 0 12px;
-    padding: 11px 14px;
-    border: 1px solid var(--line-2);
-    border-radius: var(--radius);
-    background: var(--paper);
-    font: inherit;
-    font-family: var(--label);
-    font-size: 0.78rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text);
-    cursor: pointer;
-  }
-  .catalog-filters-toggle:hover { background: var(--gray); }
-  .catalog-filters-toggle .chevron { transition: transform 0.2s ease; }
-  .catalog-filters-toggle[aria-expanded="true"] .chevron { transform: rotate(180deg); }
-  .catalog-filters-toggle .cuenta { font-family: var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); font-size: 0.8125rem; }
-
-  .catalog-filters[data-plegado="1"] { display: none; }
-  .catalog-filters { flex-direction: column; align-items: stretch; gap: 12px; }
-  .catalog-filter--check { min-height: 44px; display: flex; align-items: center; gap: 10px; }
-  .catalog-filter input[type="search"],
-  .catalog-filter select { min-height: 44px; }
 }
 
 /* ============================================================
@@ -2922,7 +2873,6 @@ h1 { text-transform: uppercase; }   /* el titular de portada sí conserva la fue
 /* Etiquetas de formulario y filtros */
 .size-label,
 .filtro label,
-.catalog-filters label,
 .cf-label,
 .category-links,
 .form-card label small { text-transform: none; letter-spacing: 0.01em; }
@@ -2964,8 +2914,6 @@ h1 { text-transform: none; }
 .size-modal-card, .product-modal-card { border-radius: var(--radius-card); }
 
 /* --- Detalles que quedaban en mayúsculas --- */
-.catalog-filters-toggle,
-.catalog-filters-toggle span { font-family: var(--body); letter-spacing: 0; text-transform: none; font-size: 0.95rem; }
 .filters-bar label, .filters-bar .filtro-label { text-transform: none; letter-spacing: 0.01em; }
 
 /* --- La portada también baja el tono --- */
