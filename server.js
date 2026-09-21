@@ -1000,7 +1000,7 @@ const CSP = [
   "font-src 'self' data: https://fonts.gstatic.com",
   "script-src 'self' https://www.googletagmanager.com",
   "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com",
-  "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com",
+  "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://www.google.com https://maps.google.com",
   "upgrade-insecure-requests",
   "report-uri /api/csp-report",
 ].join('; ');
@@ -1446,7 +1446,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260922m';
+const ASSET_V = '20260922n';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));

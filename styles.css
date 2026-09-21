@@ -2983,3 +2983,41 @@ h1 { text-transform: none; }
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* ============================================================
+   Tipografía de titulares: Figtree en lugar de Anton.
+   Anton es una condensada de cartel: en mayúsculas y a tamaño grande se sentía dura. Figtree
+   tiene las mismas ganas de peso pero formas redondas y abiertas, y se lee bien en español.
+   ============================================================ */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url('assets/fonts/figtree-var.woff2') format('woff2');
+}
+:root {
+  --display: 'Figtree', 'Inter', system-ui, sans-serif;
+  --label: 'Figtree', 'Inter', system-ui, sans-serif;
+}
+h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.015em; }
+h1 { font-size: clamp(2.3rem, 5.2vw, 3.7rem); line-height: 1.04; }
+h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.08; }
+h3 { font-size: clamp(1.05rem, 1.4vw, 1.2rem); line-height: 1.3; }
+.hero h1 { text-transform: none; }
+
+/* Elementos que usaban la condensada y necesitan peso propio */
+.price, .pdp-price { font-weight: 800; letter-spacing: -0.01em; }
+.num { font-weight: 800; -webkit-text-stroke-width: 1.5px; }
+.nosotros-quote p { font-weight: 800; text-transform: none; letter-spacing: -0.015em; }
+.hero-figure figcaption strong { font-weight: 800; }
+.logo-text, .footer-logo { font-weight: 800; }
+
+/* ============================================================
+   Preguntas frecuentes: el título iba pegado a la primera tarjeta
+   ============================================================ */
+.faq-list { margin-top: 22px; }
+h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px; }
+.faq-list + h2, .faq-list + h3 { margin-top: 44px; }
+.faq-item summary { padding: 20px 44px 20px 0; }
+.faq-list { gap: 14px; }
