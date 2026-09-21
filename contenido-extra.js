@@ -125,18 +125,14 @@ function ciudad(slug, nombre, contexto, faqLocal, propio = {}) {
     h1Html: `Ropa de trabajo<br>en ${nombre}.`,
     title: `Ropa de Trabajo en ${corto}, N.L. | Works Jeans${corto.length > 11 ? '' : ' Monterrey'}`,
     description: `Pantalones y camisas de trabajo de mezclilla para empresas y trabajadores de ${corto}, N.L. Stock inmediato, mayoreo, bordado y entrega desde Monterrey.`,
-    intro: `Atendemos a empresas y trabajadores de ${nombre} desde nuestra tienda en Monterrey: stock de todas las tallas, cotización por WhatsApp y entrega sin semanas de espera.`,
+    intro: propio.intro || `Atendemos a empresas y trabajadores de ${nombre} desde nuestra tienda en Monterrey: stock de todas las tallas y entrega sin semanas de espera.`,
     products: () => true,
     body: `
       <h2>Uniformes de mezclilla para ${nombre}</h2>
       <p>${contexto}</p>
-      <h2>Lo que fabricamos</h2>
-      <p><a href="/pantalones-de-trabajo">Pantalones de trabajo</a> de mezclilla 100% algodón con cinco bolsas, costuras reforzadas y corte recto, en tallas 28 a 50; <a href="/camisas-de-trabajo">camisas de trabajo</a> con botones reforzados y bolsillo frontal, de XCH a 5XG; y ambos en versión con <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a> verde o naranja para áreas con maquinaria o poca luz.</p>
-      <h2>Cómo comprar desde ${nombre}</h2>
-      <p>Compra en línea desde una pieza y recibe por paquetería con número de guía, o pasa a nuestra tienda en Calle Emiliano Zapata 3737, colonia Venustiano Carranza, Monterrey, de lunes a viernes de 9:00 a. m. a 6:00 p. m., a probarte la talla y llevarte el pedido el mismo día. Para pedidos de empresa, arma tu corrida de tallas en el <a href="/empresas">cotizador</a> y te respondemos con precio de distribuidor o de socio según el volumen.</p>
-      <h2>Logotipo de tu empresa</h2>
-      <p>Bordamos o estampamos en DTF el logotipo en camisas y pantalones para pedidos de mayoreo, y facturamos con CFDI.</p>
+      <p>Bordamos o estampamos en DTF el logotipo de tu empresa en pedidos de mayoreo y facturamos con CFDI. Las condiciones completas están en <a href="/uniformes-industriales">uniformes industriales</a>.</p>
       ${propio.secciones || ''}
+      <p><a class="btn btn-primary" href="/empresas">Cotizar para mi empresa</a></p>
     `,
     faq: [
       faqLocal,
@@ -151,7 +147,7 @@ const CIUDADES = {
   'ropa-de-trabajo-apodaca': ciudad('ropa-de-trabajo-apodaca', 'Apodaca',
     'Apodaca concentra parques industriales, empresas de manufactura y operaciones de logística alrededor del aeropuerto. Uniformamos cuadrillas de planta, almacén y mantenimiento con mezclilla que aguanta el turno completo, con o sin reflejante para las áreas de montacargas.',
     ['¿Tienen tienda en Apodaca?', 'No, nuestra tienda está en Monterrey, en la colonia Venustiano Carranza. Enviamos a Apodaca por paquetería o puedes recoger en tienda.'],
-    { secciones: `
+    { intro: 'Uniformamos plantas, almacenes y operaciones de logística de Apodaca con mezclilla que aguanta el turno completo, con o sin reflejante para las áreas de montacargas.', secciones: `
       <h2>Qué se trabaja en Apodaca</h2>
       <p>Apodaca es de los municipios con más superficie industrial del área metropolitana y buena parte de esa actividad gira alrededor del aeropuerto: manufactura, almacenes, empresas de transporte y operaciones de carga. Eso cambia la prenda que conviene. En una planta el problema es el roce y el corte sin partes sueltas; en un almacén con montacargas circulando, el problema es que te vean.</p>
       <h2>Prenda recomendada según el área</h2>
@@ -165,7 +161,7 @@ const CIUDADES = {
   'ropa-de-trabajo-guadalupe': ciudad('ropa-de-trabajo-guadalupe', 'Guadalupe',
     'Guadalupe es vecino inmediato de nuestra tienda: talleres, comercios, empresas de servicios y plantas de manufactura que necesitan uniformes resistentes sin comprar por contenedor. Aquí puedes pedir desde una pieza o la corrida completa para tu cuadrilla.',
     ['¿Qué tan lejos está la tienda de Guadalupe?', 'Estamos en Calle Emiliano Zapata 3737, colonia Venustiano Carranza, Monterrey, a unos minutos de Guadalupe. Abrimos de lunes a viernes de 9:00 a. m. a 6:00 p. m.'],
-    { secciones: `
+    { intro: 'Estamos a unos minutos de Guadalupe: puedes venir a probarte la talla y llevarte el pedido el mismo día, o pedir la corrida completa para tu cuadrilla.', secciones: `
       <h2>Qué se trabaja en Guadalupe</h2>
       <p>Guadalupe mezcla zona habitacional con comercio, servicios y talleres, además de plantas de manufactura. Esa mezcla se nota en los pedidos: aquí compra tanto la empresa que uniforma a treinta personas como el mecánico o el instalador que necesita dos pantalones que le duren el año.</p>
       <h2>Prenda recomendada según el oficio</h2>
@@ -179,7 +175,7 @@ const CIUDADES = {
   'ropa-de-trabajo-san-nicolas': ciudad('ropa-de-trabajo-san-nicolas', 'San Nicolás de los Garza',
     'San Nicolás es una de las zonas industriales más antiguas del área metropolitana: metalmecánica, manufactura, talleres y empresas de mantenimiento. Para ese trabajo pesado hacemos pantalones y camisas de mezclilla 100% algodón con costuras dobles, en tallas completas.',
     ['¿Pueden surtir un pedido grande para una planta de San Nicolás?', 'Sí. Tenemos stock de todas las tallas en Monterrey; arma la corrida en el cotizador para empresas y te respondemos con precio por volumen y tiempo de entrega.'],
-    { secciones: `
+    { intro: 'Para metalmecánica, talleres y mantenimiento en San Nicolás: mezclilla que aguanta roce, grasa y lavado frecuente, en todas las tallas.', secciones: `
       <h2>Qué se trabaja en San Nicolás</h2>
       <p>San Nicolás es una de las zonas industriales más antiguas del área metropolitana y eso se nota en el tipo de trabajo: metalmecánica, talleres, empresas de mantenimiento y proveeduría. Es trabajo pesado, con roce contra metal y herramienta, donde una prenda ligera dura semanas.</p>
       <h2>Prenda recomendada para trabajo pesado</h2>
@@ -193,7 +189,7 @@ const CIUDADES = {
   'ropa-de-trabajo-santa-catarina': ciudad('ropa-de-trabajo-santa-catarina', 'Santa Catarina',
     'Santa Catarina reúne industria pesada, plantas de manufactura y empresas de transporte sobre la carretera a Saltillo. Uniformes de mezclilla para planta y patio, con cinta reflejante verde o naranja para el personal que trabaja cerca de camiones y maquinaria.',
     ['¿Manejan uniformes reflejantes para transporte en Santa Catarina?', 'Sí, camisa y pantalón con cintas reflejantes cosidas. No son prendas certificadas de alta visibilidad; si tu cliente exige certificación, consúltanos antes.'],
-    { secciones: `
+    { intro: 'Para industria pesada, materiales y transporte en Santa Catarina: índigo oscuro que disimula el polvo, doble costura y opción reflejante para patio.', secciones: `
       <h2>Qué se trabaja en Santa Catarina</h2>
       <p>Santa Catarina concentra industria pesada y empresas de materiales en el corredor poniente, además de talleres y operaciones de transporte. Es trabajo con polvo, carga y maniobra, donde la ropa se ensucia todos los días y se lava con la misma frecuencia.</p>
       <h2>Prenda recomendada para polvo y carga</h2>
@@ -207,7 +203,7 @@ const CIUDADES = {
   'ropa-de-trabajo-escobedo': ciudad('ropa-de-trabajo-escobedo', 'General Escobedo',
     'Escobedo crece con parques industriales, centros de distribución y empresas de construcción. Uniformamos a personal de almacén, obra y manufactura con ropa de mezclilla hecha en Monterrey, con entrega por paquetería o recolección en tienda.',
     ['¿Cuánto tarda un pedido a Escobedo?', 'Preparamos el pedido en 1 a 2 días hábiles y la paquetería entrega en 3 a 7 días hábiles. Si tienes prisa, puedes recoger en nuestra tienda de Monterrey.'],
-    { secciones: `
+    { intro: 'Para el corredor industrial del norte: prenda que aguanta el turno de línea y existencia de todas las tallas para vestir a quien entra a media quincena.', secciones: `
       <h2>Qué se trabaja en Escobedo</h2>
       <p>Escobedo creció alrededor del corredor industrial del norte: manufactura, proveeduría automotriz y empresas de ensamble. Es trabajo de línea, con turnos largos y rotación de personal, y eso define dos necesidades concretas: prenda que aguante el turno y existencia de todas las tallas para vestir a quien entra a media quincena.</p>
       <h2>Prenda recomendada para línea de producción</h2>
@@ -221,7 +217,7 @@ const CIUDADES = {
   'ropa-de-trabajo-garcia': ciudad('ropa-de-trabajo-garcia', 'García',
     'García es una de las zonas de mayor crecimiento industrial de Nuevo León, con parques nuevos y cuadrillas de construcción en obra todo el año. Pantalones y camisas de mezclilla para obra y planta, con cinta reflejante para quienes trabajan junto a maquinaria.',
     ['¿Atienden constructoras en García?', 'Sí. Cotizamos corridas completas de tallas con bordado del logotipo y factura CFDI; arma tu pedido en la página para empresas.'],
-    { secciones: `
+    { intro: 'Para plantas en operación y cuadrillas de obra en García: mezclilla con doble costura donde más sufre y reposición sin esperar producción.', secciones: `
       <h2>Qué se trabaja en García</h2>
       <p>García es de los municipios de mayor crecimiento industrial de Nuevo León, con parques nuevos y obra activa durante todo el año. Eso significa dos tipos de comprador muy distintos: la planta que ya opera y uniforma a su gente, y el contratista que llega con cuadrilla a construir la siguiente nave.</p>
       <h2>Prenda recomendada para obra</h2>
