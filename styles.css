@@ -2801,3 +2801,185 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
   .product-card--static h2 { font-size: 0.95rem; padding: 12px 12px 0; }
   .product-card--static .btn { margin: 10px 12px 12px; width: calc(100% - 24px); padding: 11px 10px; font-size: 0.78rem; }
 }
+
+/* ============================================================
+   Tono más amable
+   La página se sentía tosca: titulares enormes en mayúsculas, texto de máquina con mucho
+   espacio entre letras, negro puro, esquinas duras y franjas de peligro gruesas. Se baja la
+   escala tipográfica, se quitan mayúsculas donde no aportan, se redondean los bordes y se
+   suaviza el negro y el amarillo. La identidad se mantiene: Anton en los titulares, amarillo
+   de señalamiento y mezclilla.
+   ============================================================ */
+:root {
+  --yellow: #ffcf2f;
+  --yellow-deep: #efbb12;
+  --ink-deep: #15171c;       /* negro con una pizca de azul, menos duro que el negro puro */
+  --radius-card: 20px;
+  --radius: 12px;
+  --line: #e7e7e7;
+  --line-2: #e0e0e0;
+  --gray-2: #ededed;
+  --text: #2b2d33;
+  --muted: #71747c;
+  --shadow-soft: 0 1px 2px rgba(20, 22, 28, 0.04), 0 8px 24px rgba(20, 22, 28, 0.06);
+  --shadow-lift: 0 2px 6px rgba(20, 22, 28, 0.06), 0 16px 36px rgba(20, 22, 28, 0.10);
+}
+
+/* --- Titulares: de gritar a hablar fuerte --- */
+h1 { font-size: clamp(2.5rem, 6vw, 4.3rem); line-height: 1; }
+h2 { font-size: clamp(1.75rem, 3.4vw, 2.7rem); line-height: 1.02; }
+h3 { font-size: clamp(1.1rem, 1.5vw, 1.25rem); line-height: 1.2; }
+h1, h2, h3, h4 { letter-spacing: 0.01em; }
+
+body { line-height: 1.7; color: var(--text); }
+p { color: #4a4d55; }
+
+/* --- Menos mayúsculas y menos espacio entre letras --- */
+.kicker {
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  border-radius: 999px;
+  padding: 7px 14px 6px;
+}
+.nav-links a {
+  font-family: var(--body);
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.product-sizes {
+  font-family: var(--body);
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+.product-card .product-category {
+  font-family: var(--body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.price small { letter-spacing: 0.04em; }
+.promo-bar { font-size: 0.82rem; }
+
+/* --- Botones de píldora, en la tipografía del texto --- */
+.btn {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: 999px;
+  padding: 14px 26px;
+}
+.btn-dark { background: var(--ink-deep); }
+.btn-dark:hover { background: #262a33; }
+.btn-primary { box-shadow: 0 1px 2px rgba(20,22,28,0.06), 0 8px 20px rgba(255,207,47,0.30); }
+
+/* --- Esquinas y bordes más suaves --- */
+.qty-picker, .size-select, .pdp-pill, .cart-item-qty, .checkout-method,
+.cotizador-field input, .cotizador-field select, .cotizador-field textarea,
+.contact-form input, .contact-form select, .contact-form textarea,
+.checkout-fields input, .checkout-fields select, .track-form input,
+.form-card input, .form-card select, .form-card textarea { border-radius: var(--radius); }
+.features, .steps, .product-card, .feature-card, .article-card { border-color: var(--line); }
+
+/* --- La franja de peligro adelgaza --- */
+.hazard { height: 7px; }
+.hazard--thin { height: 5px; }
+
+/* --- Secciones oscuras con el negro suave --- */
+.section--dark, .mayoreo { background: var(--ink-deep); }
+
+/* --- Un respiro más entre el titular y lo que sigue --- */
+.section-head { margin-bottom: 32px; }
+.section-head > p, .section-aside { line-height: 1.7; }
+
+/* --- Segunda pasada: menos mayúsculas en lo que se repite --- */
+h2, h3, h4 { text-transform: none; }
+h1 { text-transform: uppercase; }   /* el titular de portada sí conserva la fuerza */
+
+/* El nombre del producto se lee mejor en la tipografía del texto */
+.product-card h2,
+.product-card h3,
+.product-card--static h2 {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Etiquetas de formulario y filtros */
+.size-label,
+.filtro label,
+.catalog-filters label,
+.cf-label,
+.category-links,
+.form-card label small { text-transform: none; letter-spacing: 0.01em; }
+
+.category-links a { font-family: var(--body); font-weight: 600; text-transform: none; letter-spacing: 0; }
+
+/* Barra de avisos de arriba */
+.promo-bar { letter-spacing: 0; text-transform: none; }
+.marquee, .marquee span, .marquee-track { letter-spacing: 0.06em; }
+
+/* --- Tercera pasada: el titular en mayúsculas se queda solo en la portada --- */
+h1 { text-transform: none; }
+.hero h1 { text-transform: uppercase; }
+
+.breadcrumbs {
+  font-family: var(--body);
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.pdp-availability {
+  font-family: var(--body);
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+}
+.pdp-price-sizes > span { font-family: var(--body); letter-spacing: 0; text-transform: none; }
+.pdp-price small { letter-spacing: 0.06em; }
+.pdp-zoom-hint { font-family: var(--body); letter-spacing: 0; text-transform: none; }
+.pm-sizechart-toggle, .pdp-sizeguide, #pdpSizeGuide {
+  font-family: var(--body);
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 0.9rem;
+}
+.pdp-pill { border-radius: var(--radius); font-family: var(--body); }
+.size-modal-card, .product-modal-card { border-radius: var(--radius-card); }
+
+/* --- Detalles que quedaban en mayúsculas --- */
+.catalog-filters-toggle,
+.catalog-filters-toggle span { font-family: var(--body); letter-spacing: 0; text-transform: none; font-size: 0.95rem; }
+.filters-bar label, .filters-bar .filtro-label { text-transform: none; letter-spacing: 0.01em; }
+
+/* --- La portada también baja el tono --- */
+.hero h1 { text-transform: none; letter-spacing: 0.005em; }
+/* El numeral gigante y la etiqueta "01 / Pantalón" sobraban sobre la foto */
+.hero-figure > .num, .hero-figure > .kicker { display: none; }
+.hero-figure figcaption strong { font-family: var(--display); text-transform: none; }
+.ticker span { font-size: 0.8rem; letter-spacing: 0.08em; }
+
+/* --- La cinta de avisos de arriba, en tono normal --- */
+.announcement {
+  background: var(--ink-deep);
+  font-family: var(--body);
+  font-size: 0.82rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
