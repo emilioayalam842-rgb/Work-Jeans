@@ -1429,3 +1429,16 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 .admin-right { text-align: right; }
 .admin-preview-frame { width: 100%; height: 60vh; border: 1px solid #e5e5e5; border-radius: 12px; background: #f3f3f3; }
 .admin-rank-bar i { display: block; height: 100%; width: var(--ancho, 0%); }
+
+/* Código de verificación del webhook de Openpay */
+.admin-code {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  background: #f3f4f6;
+  border: 1px solid #e0e2e6;
+  border-radius: 8px;
+  padding: 3px 9px;
+  user-select: all;
+}

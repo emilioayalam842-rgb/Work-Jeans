@@ -1446,7 +1446,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260922r';
+const ASSET_V = '20260922s';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3691,12 +3691,24 @@ const OPENPAY = process.env.OPENPAY_MERCHANT_ID && process.env.OPENPAY_PRIVATE_K
   base: process.env.OPENPAY_BASE_URL || (process.env.OPENPAY_SANDBOX === 'false' ? 'https://api.openpay.mx/v1' : 'https://sandbox-api.openpay.mx/v1'),
   sandbox: process.env.OPENPAY_SANDBOX !== 'false',
 } : null;
+// Openpay manda un código de verificación cuando das de alta el webhook. Antes solo salía en
+// los registros del servidor; se guarda aquí para que aparezca en el panel.
+const OPENPAY_VERIF_PATH = path.join(DATA_DIR, 'openpay-verificacion.json');
+function guardarVerificacionOpenpay(code) {
+  const dato = { code: String(code || '').slice(0, 40), at: new Date().toISOString() };
+  try { writeFileSafe(OPENPAY_VERIF_PATH, JSON.stringify(dato, null, 2) + '\n'); } catch { /* sin disco */ }
+  return dato;
+}
+function verificacionOpenpay() {
+  try { return JSON.parse(fs.readFileSync(OPENPAY_VERIF_PATH, 'utf-8')); } catch { return null; }
+}
+
 const PENDING_CHECKOUTS_PATH = path.join(DATA_DIR, 'pending-checkouts.json');
 const getPendingCheckouts = () => readJsonList(PENDING_CHECKOUTS_PATH);
 const savePendingCheckouts = (list) => writeFileSafe(PENDING_CHECKOUTS_PATH, JSON.stringify(list, null, 2) + '\n');
 
 function paymentsInfo() {
-  return { provider: OPENPAY ? 'openpay' : (stripe ? 'stripe' : null), spei: Boolean(OPENPAY), store: Boolean(OPENPAY) && process.env.OPENPAY_STORES !== 'false', sandbox: Boolean(OPENPAY?.sandbox) };
+  return { provider: OPENPAY ? 'openpay' : (stripe ? 'stripe' : null), spei: Boolean(OPENPAY), store: Boolean(OPENPAY) && process.env.OPENPAY_STORES !== 'false', sandbox: Boolean(OPENPAY?.sandbox) , verificacion: verificacionOpenpay()};
 }
 
 async function openpayRequest(method, route, body) {
@@ -3881,6 +3893,7 @@ app.post('/api/openpay/webhook', express.json({ limit: '200kb' }), async (req, r
   const ev = req.body || {};
   if (ev.type === 'verification') {
     console.log(`Openpay webhook: código de verificación ${ev.verification_code}`);
+    guardarVerificacionOpenpay(ev.verification_code);
     res.status(200).json({ ok: true });
     return;
   }
