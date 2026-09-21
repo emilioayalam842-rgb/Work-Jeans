@@ -892,7 +892,7 @@ const CSP = [
   "font-src 'self' data: https://fonts.gstatic.com",
   "script-src 'self' https://www.googletagmanager.com",
   "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com",
-  "frame-src https://www.youtube-nocookie.com https://www.youtube.com",
+  "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com",
   "upgrade-insecure-requests",
 ].join('; ');
 app.use((req, res, next) => {

@@ -626,6 +626,212 @@ const LANDINGS_EXTRA = { ...INDUSTRIAS, ...CIUDADES, ...PRODUCTO_Y_CLIENTE, ...A
 
 // --- Artículos nuevos ------------------------------------------------------
 
+const ARTICLES_2026_09_21 = {
+  'que-ropa-debe-usar-un-trabajador-de-planta': {
+    kicker: 'Artículo',
+    h1: 'Qué ropa debe usar un trabajador de planta',
+    h1Html: 'Qué ropa usar<br>en planta.',
+    title: 'Qué Ropa Debe Usar un Trabajador de Planta | Works Jeans',
+    description: 'Qué prenda conviene en piso de planta: tela que respire, corte sin partes sueltas, visibilidad cuando hay montacargas y qué decide el análisis de riesgos.',
+    intro: 'En planta la ropa tiene que cumplir tres cosas a la vez: aguantar el turno, no engancharse con nada y dejar ver a la persona. El orden importa.',
+    productsFilter: 'all',
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>Primero: qué dice el análisis de riesgos</h2>
+      <p>Antes de elegir tela o color, la pregunta correcta es qué riesgos tiene el puesto. La <a href="/articulos/ropa-de-trabajo-y-normas-de-seguridad-en-mexico">NOM-017-STPS</a> obliga al patrón a analizar cada puesto y entregar el equipo que corresponda. Si en ese análisis aparece riesgo de arco eléctrico o exposición a fuego, la respuesta no es un pantalón de mezclilla: se necesita prenda retardante certificada, y conviene saberlo antes de comprar cien piezas equivocadas.</p>
+      <p>Para la mayoría de las líneas de producción, en cambio, el riesgo real es otro: atrapamiento con partes móviles, golpes, roce y calor.</p>
+      <h2>Corte sin partes sueltas</h2>
+      <p>Es el punto que más se pasa por alto. Cordones, jaretas colgando, bolsas de fuelle que sobresalen y prendas muy holgadas son un problema cerca de bandas transportadoras, engranes y montacargas. Un corte recto, con bolsas al ras y sin nada que cuelgue, resuelve el 90% de eso sin necesidad de una prenda especial. Nuestros <a href="/pantalones-industriales">pantalones industriales</a> están hechos con ese criterio.</p>
+      <h2>Tela que respire</h2>
+      <p>Una nave industrial en el norte de México en verano no perdona. El algodón absorbe el sudor y lo deja evaporar; el poliéster lo retiene contra la piel y en un turno de ocho horas la diferencia se siente. Por eso trabajamos <a href="/ropa-de-trabajo">mezclilla 100% algodón</a> y no mezclas sintéticas ligeras, que además se rompen antes en hombros y codos.</p>
+      <h2>Visibilidad si hay tráfico interno</h2>
+      <p>Si en el área circulan montacargas, camiones o hay zonas con poca luz, conviene cinta reflejante en pecho, espalda, mangas y piernas. Aquí hay que ser claro: una prenda con <a href="/ropa-de-trabajo-reflejante">cinta reflejante cosida</a> ayuda a que te vean, pero no equivale a una prenda certificada de alta visibilidad bajo ANSI/ISEA 107 o ISO 20471. Si el reglamento interno de la planta exige certificación, hay que comprar certificado.</p>
+      <h2>Arriba y abajo</h2>
+      <p>La combinación que más usamos en planta es <a href="/camisas-de-trabajo">camisa de mezclilla</a> de manga larga y <a href="/pantalones-de-trabajo">pantalón de trabajo</a>. La manga larga protege del roce y del sol en patios, y en algodón no se siente más caliente que la corta. La camisa abotonada también permite quitársela rápido, que en algunos puestos cuenta.</p>
+      <h2>Lo que no es ropa de trabajo</h2>
+      <p>La playera de algodón y el jean de moda se ven bien el primer mes. El problema aparece después: la playera se rompe en los hombros, el jean se abre del tiro y ninguno de los dos tiene refuerzo donde hace falta. Sale más caro reponer cuatro veces al año que comprar una prenda hecha para el trabajo.</p>
+      <h2>Cuántos juegos</h2>
+      <p>Dos o tres por persona, en rotación. Cada prenda descansa entre lavados y el conjunto dura bastante más que dos puestas a diario. Lo desarrollamos en <a href="/articulos/cuantos-uniformes-necesita-cada-trabajador">cuántos uniformes necesita cada trabajador</a>.</p>
+      <h2>Siguiente paso</h2>
+      <p>Si vas a uniformar un área completa, arma la corrida de tallas con la <a href="/guia-de-tallas">guía de tallas</a> y pide precio en el <a href="/empresas">cotizador para empresas</a>. Si solo quieres probar una prenda antes, puedes comprar una pieza.</p>
+    `,
+    faq: [
+      ['¿Es obligatorio el reflejante en planta?', 'Depende del análisis de riesgos del puesto, no de una regla general. Donde circulan montacargas o hay poca luz suele pedirse; la norma obliga a analizar cada puesto, no nombra una prenda concreta.'],
+      ['¿Manga larga o manga corta?', 'Manga larga en algodón protege del roce y del sol sin sentirse más caliente. La corta solo conviene en áreas sin exposición ni roce.'],
+      ['¿La mezclilla sirve si hay chispas o soldadura?', 'No. Para trabajo con fuego, chispa o arco eléctrico se necesita prenda retardante certificada; la mezclilla de algodón no lo es.'],
+    ],
+  },
+
+  'mezclilla-100-algodon-o-con-elastano-para-trabajar': {
+    kicker: 'Artículo',
+    h1: 'Mezclilla 100% algodón o con elastano: cuál aguanta el trabajo',
+    h1Html: 'Algodón puro<br>o con elastano.',
+    title: 'Mezclilla 100% Algodón o con Elastano | Works Jeans',
+    description: 'Diferencias reales entre mezclilla 100% algodón y mezclilla con elastano para trabajar: comodidad, calor, duración de la costura y qué pasa con el lavado.',
+    intro: 'El elastano se siente mejor el primer día. La pregunta es qué pasa a los seis meses de uso diario.',
+    productsFilter: 'pantalones',
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>Qué es cada una</h2>
+      <p>La mezclilla 100% algodón es tela de algodón puro. La mezclilla con elastano lleva un pequeño porcentaje de fibra elástica, normalmente entre 1% y 3%, que le da estiramiento. Casi todo el jean de moda de hoy es de este segundo tipo.</p>
+      <h2>Comodidad el primer día</h2>
+      <p>Aquí gana el elastano sin discusión. Cede, se amolda y no se siente rígido. Una prenda 100% algodón se siente firme los primeros usos y se ablanda después, con el uso y los lavados.</p>
+      <h2>Qué pasa con el calor</h2>
+      <p>El algodón absorbe el sudor y lo deja evaporar. La fibra elástica es sintética y no lo hace; en una prenda con poco porcentaje la diferencia es chica, pero existe y se nota más en turnos largos con calor. Lo tratamos a fondo en <a href="/articulos/ropa-de-trabajo-para-clima-caliente">ropa de trabajo para clima caliente</a>.</p>
+      <h2>Qué pasa a los seis meses</h2>
+      <p>Aquí se invierte la cosa. La fibra elástica se fatiga con el uso, el lavado y el calor: la prenda empieza a quedar floja en rodillas y asentaderas y ya no recupera la forma. En un jean de fin de semana eso tarda años en importar; en una prenda que se usa y se lava cinco días a la semana pasa mucho antes. El algodón puro no se deforma así: se desgasta, que es distinto, y avisa antes de fallar.</p>
+      <h2>La costura</h2>
+      <p>Una tela que estira somete más a las costuras, porque la tela se mueve y el hilo no. En zonas de tensión como el tiro y la entrepierna eso se traduce en costuras abiertas antes de tiempo. En una tela sin estiramiento la costura trabaja parejo, y si además lleva doble costura y remaches, aguanta mucho más.</p>
+      <h2>Encogimiento</h2>
+      <p>Un punto a favor de nuestra mezclilla: viene preencogida, así que la talla que compras es la que conservas. Con o sin elastano, cualquier mezclilla sin ese acabado puede encoger en el primer lavado con agua caliente.</p>
+      <h2>Entonces, ¿cuál elegir?</h2>
+      <p>Para trabajo diario con esfuerzo físico, 100% algodón preencogido. Aguanta más, se deforma menos y la costura trabaja mejor. Es lo que usamos en nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a>. Si lo que buscas es un pantalón para estar sentado en oficina, el elastano es más cómodo y el desgaste nunca va a ser el problema.</p>
+      <h2>Cómo hacerlo durar</h2>
+      <p>Sin importar la tela: lavar del revés, con agua fría, sin cloro, y secar a la sombra. Más detalles en <a href="/articulos/como-cuidar-la-ropa-de-trabajo-de-mezclilla-para-que-dure-mas">cómo cuidar la ropa de trabajo de mezclilla</a>.</p>
+    `,
+    faq: [
+      ['¿El 100% algodón se siente muy duro?', 'Los primeros usos se siente firme y después se ablanda con el uso y los lavados. Es el mismo proceso de cualquier jean de mezclilla tradicional.'],
+      ['¿Encoge la mezclilla 100% algodón?', 'La nuestra viene preencogida, así que no. Una mezclilla sin ese acabado sí puede encoger con agua caliente.'],
+      ['¿Ustedes manejan mezclilla con elastano?', 'No. Trabajamos mezclilla 100% algodón preencogida porque es la que mejor aguanta el uso diario y el lavado frecuente.'],
+    ],
+  },
+
+  'como-elegir-uniformes-industriales-para-una-empresa': {
+    kicker: 'Artículo',
+    h1: 'Cómo elegir uniformes industriales para una empresa',
+    h1Html: 'Cómo elegir<br>uniformes.',
+    title: 'Cómo Elegir Uniformes Industriales | Works Jeans',
+    description: 'Los seis criterios que deciden si un programa de uniformes funciona: riesgos del puesto, tela, tallas, reposición, personalización y facturación.',
+    intro: 'Elegir uniforme no es escoger un color. Son seis decisiones y el orden en que las tomas cambia el resultado.',
+    productsFilter: 'all',
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>1. Empieza por los riesgos, no por el catálogo</h2>
+      <p>La primera pregunta no es qué prenda quieres sino qué hace tu gente. Si hay exposición a fuego o arco eléctrico, la decisión ya está tomada y necesitas prenda certificada. Si hay tráfico de montacargas o turnos de noche, entra el reflejante. Si es trabajo físico normal, lo que manda es la resistencia. Un proveedor serio te dice cuándo no es el indicado.</p>
+      <h2>2. La tela decide el costo real</h2>
+      <p>El precio por pieza engaña. Lo que importa es cuántas veces repones al año. Una camisa ligera barata que se rompe en cuatro meses cuesta más que una de <a href="/uniformes-de-mezclilla">mezclilla</a> que dura el año. Pide que te digan la composición exacta, no solo "tela resistente".</p>
+      <h2>3. Que exista tu corrida completa de tallas</h2>
+      <p>Este punto tumba más programas de uniformes que cualquier otro. Muchos proveedores llegan a la talla 40 o 42 y a la XG, y dejan a parte del equipo sin uniforme o con uno que no le queda. Antes de cerrar, pregunta hasta qué talla llegan y si hay existencia hoy. Nosotros vamos del 28 al 50 en <a href="/pantalones-de-trabajo">pantalón</a> y de la XCH a la 5XG en <a href="/camisas-de-trabajo">camisa</a>.</p>
+      <h2>4. Cómo vas a reponer</h2>
+      <p>Entra gente nueva a media quincena, alguien rompe un pantalón, alguien baja dos tallas. Si tu proveedor produce por pedido, cada reposición son semanas. Si mantiene existencia, es un día. Pregúntalo antes, porque es lo que vas a vivir todo el año.</p>
+      <h2>5. Personalización</h2>
+      <p>Bordado o estampado DTF con el logotipo. El bordado dura más y se ve mejor sobre mezclilla; el DTF permite más detalle y color. Las prendas personalizadas normalmente no tienen cambio, así que conviene confirmar tallas antes de mandarlas a bordar. Lo comparamos en <a href="/articulos/bordado-o-dtf-como-poner-tu-logotipo-en-uniformes-de-trabajo">bordado o DTF</a>.</p>
+      <h2>6. Facturación y entrega</h2>
+      <p>Factura con CFDI, tiempos por escrito y, si vas a repartir entre varias áreas o sucursales, prendas separadas y etiquetadas por talla. Suena menor hasta que llega una caja revuelta de doscientas piezas.</p>
+      <h2>Cómo probar sin arriesgar</h2>
+      <p>Compra una pieza de cada prenda antes de la corrida completa. Revisa tela, costuras y talla con la gente que la va a usar. Es la forma más barata de evitar un error de cincuenta piezas.</p>
+      <h2>Siguiente paso</h2>
+      <p>Cuando tengas claros los seis puntos, arma la corrida con la <a href="/guia-de-tallas">guía de tallas</a> y pide cotización en <a href="/uniformes-industriales">uniformes industriales</a>. Te respondemos con precio por talla, personalización, tiempo de entrega, envío y política de cambios por escrito.</p>
+    `,
+    faq: [
+      ['¿Conviene un solo proveedor o varios?', 'Uno solo simplifica la reposición y la factura, siempre que tenga existencia de todas las tallas. Con varios proveedores terminas con prendas de tonos distintos en la misma cuadrilla.'],
+      ['¿Cuánto tiempo debe durar un uniforme?', 'Depende del turno y del trabajo. La señal para reponer es clara: tela adelgazada en rodillas o asentaderas, o una costura que empieza a abrirse.'],
+      ['¿Qué pido si no sé las tallas de mi gente?', 'Con el número de personas armamos una corrida estimada y la ajustamos después. Lo ideal es medir con la guía de tallas, que toma unos minutos por persona.'],
+    ],
+  },
+
+  'que-ropa-usar-en-un-taller-mecanico': {
+    kicker: 'Artículo',
+    h1: 'Qué ropa usar en un taller mecánico',
+    h1Html: 'Qué ropa usar<br>en el taller.',
+    title: 'Qué Ropa Usar en un Taller Mecánico | Works Jeans',
+    description: 'Qué prenda aguanta grasa, roce y lavado frecuente en un taller mecánico, qué corte conviene cerca de partes móviles y cómo tratar las manchas.',
+    intro: 'En el taller la ropa pelea contra tres cosas: grasa, roce contra metal y lavado casi diario. Eso descarta la mitad de las opciones.',
+    productsFilter: 'all',
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>La grasa manda</h2>
+      <p>En un taller la prenda se mancha todos los días y se lava casi igual de seguido. Una tela ligera no resiste ese ritmo: pierde cuerpo, se adelgaza y se rompe donde más roza. La mezclilla de algodón aguanta el lavado frecuente y los tratamientos para grasa sin deshacerse, que es justo lo que se necesita.</p>
+      <h2>Dónde se rompe la ropa de taller</h2>
+      <p>Rodillas, de arrodillarse en el piso. Asentaderas, de sentarse en cualquier superficie. Bolsas, de meter y sacar herramienta. Y codos, si se trabaja recargado. Por eso importa la doble costura en las zonas de tensión y los remaches, no el nombre del modelo. Es el criterio detrás de nuestros <a href="/pantalones-industriales">pantalones industriales</a>.</p>
+      <h2>Bolsas: útiles, no colgantes</h2>
+      <p>En taller las bolsas se usan de verdad. Conviene que estén al ras y bien cosidas, no de fuelle ni con solapas que cuelguen: cerca de una banda, un ventilador o un motor girando, cualquier cosa suelta es un riesgo. Nuestro <a href="/pantalones-de-trabajo">pantalón de trabajo</a> lleva cinco bolsas, todas al ras.</p>
+      <h2>Arriba: camisa antes que playera</h2>
+      <p>Una <a href="/camisas-de-trabajo">camisa de mezclilla</a> protege más los brazos del roce y de salpicaduras calientes que una playera, y se lava mejor. La manga larga es preferible cuando hay trabajo bajo el vehículo o cerca de escape caliente.</p>
+      <h2>Visibilidad en patio</h2>
+      <p>Si el taller maneja movimiento de unidades en patio, vale la pena la versión con <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a> para quienes salen a maniobrar. Dentro de la nave no suele hacer falta.</p>
+      <h2>Cómo tratar la mancha de grasa</h2>
+      <p>La regla que más ropa salva: trata la mancha antes de lavar y revisa que haya salido antes de secar. El calor de la secadora fija la grasa y ya no sale. Lava del revés, con agua fría y sin cloro. Más detalle en <a href="/articulos/como-cuidar-la-ropa-de-trabajo-de-mezclilla-para-que-dure-mas">cómo cuidar la ropa de trabajo de mezclilla</a>.</p>
+      <h2>Cuántos juegos para taller</h2>
+      <p>Aquí conviene tener uno más que en otros giros, porque el lavado es casi diario. Con tres juegos por persona nadie se queda sin prenda limpia mientras otra está en la lavadora.</p>
+      <h2>Siguiente paso</h2>
+      <p>Para uniformar un taller completo, arma la corrida con la <a href="/guia-de-tallas">guía de tallas</a> y pide precio en el <a href="/empresas">cotizador para empresas</a>, con bordado del logotipo si lo quieres.</p>
+    `,
+    faq: [
+      ['¿Overol o pantalón y camisa?', 'El overol cubre más pero es más incómodo para entrar y salir y para ir al baño. La combinación de pantalón y camisa es la que más usan los talleres que atendemos. Nosotros fabricamos pantalón y camisa, no overol.'],
+      ['¿Se puede quitar la grasa de la mezclilla?', 'Buena parte sí, si tratas la mancha antes de lavar y no la metes a la secadora hasta que salga. El calor la fija de forma permanente.'],
+      ['¿Qué color conviene en taller?', 'El índigo oscuro disimula mejor las manchas que un color claro, y es el tono que manejamos.'],
+    ],
+  },
+
+  'como-hacer-un-pedido-de-uniformes-para-una-empresa': {
+    kicker: 'Artículo',
+    h1: 'Cómo hacer un pedido de uniformes para una empresa',
+    h1Html: 'Cómo pedir<br>uniformes.',
+    title: 'Cómo Hacer un Pedido de Uniformes | Works Jeans',
+    description: 'Los cinco pasos para pedir uniformes sin errores: contar personas, medir tallas, probar una muestra, cotizar por escrito y confirmar la entrega.',
+    intro: 'La mayoría de los problemas con un pedido de uniformes no son del proveedor: son de un paso que se saltó al pedirlo.',
+    productsFilter: 'all',
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>Paso 1: cuenta personas y define prendas</h2>
+      <p>Empieza por lo simple: cuántas personas y qué necesita cada una. Pantalón, camisa o las dos. Si hay áreas con montacargas o turnos de noche, separa cuántas llevan <a href="/ropa-de-trabajo-reflejante">reflejante</a> y cuántas no. Con ese número ya se puede cotizar aunque todavía no tengas tallas.</p>
+      <h2>Paso 2: toma las tallas bien</h2>
+      <p>Es el paso que más pedidos arruina. No hace falta medir a cada persona con cinta: basta con que cada quien mida una prenda que ya le quede bien, extendida sobre una mesa, y compare con la tabla. Es más rápido, más exacto y nadie se siente incómodo. El método completo está en la <a href="/guia-de-tallas">guía de tallas</a>, y para equipos grandes en <a href="/articulos/como-elegir-talla-de-uniforme-para-tu-cuadrilla">cómo elegir tallas para tu cuadrilla</a>.</p>
+      <p>Regla práctica: quien queda entre dos tallas, pide la mayor. La mezclilla no da de sí y en el trabajo conviene el espacio.</p>
+      <h2>Paso 3: pide una muestra antes</h2>
+      <p>Compra una pieza de cada prenda y ponla en manos de quien la va a usar una semana. Cuesta poco y evita el error caro: descubrir con cincuenta piezas ya bordadas que la tela no convence o que el corte no funciona en ese puesto.</p>
+      <h2>Paso 4: cotiza por escrito</h2>
+      <p>Una cotización que sirve trae prenda y composición, tallas y precio por talla, personalización, tiempo de entrega, costo de envío, facturación, vigencia y política de cambios. Si falta alguno, pídelo antes de comparar con otro proveedor. La lista completa está en <a href="/articulos/que-debe-incluir-una-cotizacion-de-uniformes">qué debe incluir una cotización de uniformes</a>.</p>
+      <h2>Paso 5: confirma entrega, factura y reposición</h2>
+      <p>Antes de autorizar, deja tres cosas claras por escrito: cuándo llega, cómo llega separado (lo ideal es etiquetado por talla, para repartir sin abrir paquetes) y cómo se repone una talla suelta cuando entre alguien nuevo. Y confirma los datos de facturación desde el principio, no al final.</p>
+      <h2>Cuántas piezas por persona</h2>
+      <p>Dos o tres juegos según el turno y el lavado. Conviene además dejar un pequeño colchón de las tallas más comunes para ingresos nuevos. Está explicado en <a href="/articulos/cuantos-uniformes-necesita-cada-trabajador">cuántos uniformes necesita cada trabajador</a>.</p>
+      <h2>Cómo lo hacemos nosotros</h2>
+      <p>En el <a href="/empresas">cotizador para empresas</a> capturas prenda y piezas por talla y te respondemos por escrito con todo lo anterior. Si no tienes las tallas todavía, con el número de personas armamos una corrida estimada y la ajustamos antes de producir. Las condiciones de volumen están en <a href="/mayoreo-ropa-de-trabajo">mayoreo</a>.</p>
+    `,
+    faq: [
+      ['¿Cuánto tarda un pedido de empresa?', 'Si es de inventario, sale en uno o dos días hábiles y la paquetería entrega entre tres y siete según el destino. Con bordado o DTF el tiempo se confirma por escrito en la cotización.'],
+      ['¿Puedo cambiar tallas después de recibir?', 'Sí, dentro de 15 días naturales, con la prenda sin usar, sin lavar y con etiquetas. Las prendas ya personalizadas no tienen cambio salvo defecto de fabricación.'],
+      ['¿Entregan separado por área o por persona?', 'Separamos y etiquetamos por talla para pedidos de empresa. Si necesitas separación por área o sucursal, coméntalo al cotizar.'],
+    ],
+  },
+
+  'que-buscar-en-un-pantalon-para-trabajo-pesado': {
+    kicker: 'Artículo',
+    h1: 'Qué buscar en un pantalón para trabajo pesado',
+    h1Html: 'Qué buscar en<br>un pantalón.',
+    title: 'Qué Buscar en un Pantalón de Trabajo Pesado | Works Jeans',
+    description: 'Seis cosas que revisar antes de comprar un pantalón para trabajo pesado: tela, costuras, remaches, corte, bolsas y tallas disponibles.',
+    intro: 'Un pantalón de trabajo se juzga en seis puntos concretos, y todos se pueden revisar antes de comprar.',
+    productsFilter: 'pantalones',
+    publishedAt: '2026-09-21',
+    body: `
+      <h2>1. La tela, con nombre y apellido</h2>
+      <p>Pide la composición exacta, no "tela resistente". Mezclilla 100% algodón se comporta distinto a una mezcla con poliéster o con elastano: respira mejor, aguanta más lavados y no se deforma con el uso. Lo comparamos en <a href="/articulos/mezclilla-100-algodon-o-con-elastano-para-trabajar">mezclilla 100% algodón o con elastano</a>. Que además venga preencogida importa: significa que la talla que compras es la que conservas.</p>
+      <h2>2. Las costuras en las zonas de tensión</h2>
+      <p>Voltea el pantalón del revés y revisa el tiro, la entrepierna y las esquinas de las bolsas traseras. Ahí debe haber doble costura, no una sola línea de hilo. Es la diferencia entre un pantalón que se abre a los tres meses y uno que aguanta el año.</p>
+      <h2>3. Remaches donde hay jalón</h2>
+      <p>En las esquinas de las bolsas delanteras, que es donde se concentra la fuerza cada vez que metes la mano o cuelgas algo. Un remache ahí evita que la tela se rasgue desde la esquina.</p>
+      <h2>4. Corte recto, sin nada que cuelgue</h2>
+      <p>Recto para poder agacharse, arrodillarse y subir escaleras sin que jale. Y sin cordones, jaretas ni bolsas de fuelle que sobresalgan, porque cerca de maquinaria cualquier cosa suelta es un riesgo. Es el criterio de nuestros <a href="/pantalones-industriales">pantalones industriales</a>.</p>
+      <h2>5. Bolsas que sirvan</h2>
+      <p>Cinco bolsas cubren el uso normal: dos delanteras, dos traseras y una relojera. Revisa que estén bien cosidas al ras. Si necesitas bolsas especiales para herramienta, eso se cotiza aparte y conviene decirlo desde el principio.</p>
+      <h2>6. Que exista tu talla, y que la repongan</h2>
+      <p>De poco sirve el mejor pantalón si tu talla está agotada tres meses al año o si el proveedor solo llega a la 40. Pregunta hasta qué talla manejan y si hay existencia hoy. Nosotros vamos del 28 al 50, y para tallas grandes hay detalle en <a href="/ropa-de-trabajo-tallas-grandes">ropa de trabajo en tallas grandes</a>.</p>
+      <h2>Lo que no debe prometerte nadie</h2>
+      <p>Que un pantalón de mezclilla te protege del fuego o del arco eléctrico. El algodón no es retardante a la flama, y para esos riesgos se necesita prenda certificada. Cualquier proveedor que no haga esa distinción está vendiendo, no asesorando.</p>
+      <h2>Siguiente paso</h2>
+      <p>Revisa los seis puntos en nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a>, elige talla con la <a href="/guia-de-tallas">guía de tallas</a> y compra una pieza para probar. Si vas a uniformar a un equipo, pide precio en el <a href="/empresas">cotizador para empresas</a>.</p>
+    `,
+    faq: [
+      ['¿Más gramaje siempre es mejor?', 'No siempre. Una tela más pesada aguanta más roce pero da más calor y tarda más en secar. Para turnos largos con calor conviene un punto medio en algodón que respire.'],
+      ['¿Cómo sé si las costuras son dobles?', 'Voltea la prenda del revés y mira el tiro y la entrepierna: deben verse dos líneas paralelas de hilo, no una.'],
+      ['¿Un pantalón de trabajo sirve para diario fuera del trabajo?', 'Sí, aunque el corte es recto y sin entalle, pensado para moverse y no para vestir. Mucha gente lo usa a diario justamente por lo que dura.'],
+    ],
+  },
+};
+
 const ARTICLES_EXTRA = {
   'verde-o-naranja-que-color-de-reflejante-conviene': {
     kicker: 'Artículo',
@@ -857,4 +1063,4 @@ const ARTICLES_EXTRA = {
   },
 };
 
-module.exports = { LANDINGS_EXTRA, ARTICLES_EXTRA, PUBLISHED_2 };
+module.exports = { LANDINGS_EXTRA, ARTICLES_EXTRA: { ...ARTICLES_EXTRA, ...ARTICLES_2026_09_21 }, PUBLISHED_2 };
