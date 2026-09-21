@@ -2500,3 +2500,185 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 .uppercase-input { text-transform: uppercase; }
 .map-embed { border: 0; }
 .hazard--offset { margin: -72px -24px 56px; }
+
+/* ============================================================
+   Catálogo en celular: dos columnas y tarjeta compacta.
+   Con la tarjeta larga se recorría una pantalla completa por producto; así se ven cuatro
+   de un vistazo. La talla y la cantidad se eligen en la ficha, donde los botones son grandes
+   y hay barra fija de compra.
+   ============================================================ */
+.product-open { display: none; }
+
+@media (max-width: 700px) {
+  .products-grid,
+  #productsGrid,
+  #catalogo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .product-card {
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+
+  /* Lo que se decide en la ficha, no en la rejilla */
+  .product-card .product-desc,
+  .product-card .product-thumbs,
+  .product-card .product-wholesale,
+  .product-card .card-row,
+  .product-card .stock-note { display: none; }
+  .product-card .add-to-cart,
+  .product-card button.add-to-cart { display: none !important; }
+
+  .product-card .product-photo,
+  .product-card picture { display: block; width: 100%; }
+  .product-card picture img { width: 100%; height: auto; }
+
+  .product-card .product-category { font-size: 0.68rem; padding: 10px 12px 0; }
+  .product-card h2,
+  .product-card h3 { font-size: 0.95rem; line-height: 1.25; padding: 6px 12px 0; }
+  .product-card .product-sizes { font-size: 0.8125rem; padding: 4px 12px 0; }
+  .product-card .price { font-size: 1.05rem; padding: 2px 12px 0; }
+  .product-card .price small { font-size: 0.6875rem; }
+
+  .product-card .product-open {
+    display: block;
+    width: calc(100% - 24px);
+    margin: 10px 12px 12px;
+    min-height: 44px;
+    padding: 11px 10px;
+    font-size: 0.78rem;
+    text-align: center;
+  }
+  /* El precio empuja el botón al fondo para que las dos columnas queden parejas */
+  .product-card .price { margin-bottom: auto; }
+}
+
+@media (max-width: 390px) {
+  .product-card h2,
+  .product-card h3 { font-size: 0.9rem; }
+  .product-card .product-open { font-size: 0.74rem; letter-spacing: 0.04em; }
+}
+
+/* ============================================================
+   Filtros del catálogo en celular: plegados detrás de un botón.
+   Con seis modelos, dejarlos abiertos cuesta un cuarto de pantalla antes del primer producto.
+   ============================================================ */
+.catalog-filters-toggle { display: none; }
+
+@media (max-width: 700px) {
+  .catalog-filters-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    margin: 0 0 12px;
+    padding: 11px 14px;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    background: var(--paper);
+    font: inherit;
+    font-family: var(--label);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .catalog-filters-toggle:hover { background: var(--gray); }
+  .catalog-filters-toggle .chevron { transition: transform 0.2s ease; }
+  .catalog-filters-toggle[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+  .catalog-filters-toggle .cuenta { font-family: var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); font-size: 0.8125rem; }
+
+  .catalog-filters[data-plegado="1"] { display: none; }
+  .catalog-filters { flex-direction: column; align-items: stretch; gap: 12px; }
+  .catalog-filter--check { min-height: 44px; display: flex; align-items: center; gap: 10px; }
+  .catalog-filter input[type="search"],
+  .catalog-filter select { min-height: 44px; }
+}
+
+/* ============================================================
+   Celular: todo lo que se toca mide al menos 44px y ningún texto de lectura baja de 15px.
+   Solo cambia el área tocable y el tamaño de letra; los colores y el estilo siguen igual.
+   ============================================================ */
+@media (max-width: 860px) {
+  /* Enlaces de listas: el área crece sin mover el diseño */
+  .footer-links a,
+  .footer-cols a,
+  .footer-nap a,
+  .category-links a,
+  .pdp-link,
+  .section-aside a { display: inline-block; min-height: 44px; line-height: 44px; }
+  .footer-cols li,
+  .footer-links li { line-height: 1.1; }
+  .footer-cols a { line-height: 40px; min-height: 40px; }
+
+  /* Cantidad: los botones eran de 23px de ancho */
+  .qty-picker { gap: 6px; }
+  .qty-picker button { min-width: 44px; min-height: 44px; font-size: 1.1rem; }
+  .qty-picker input,
+  .qty-input { min-height: 44px; }
+
+  /* Botones y campos al mínimo recomendado */
+  .btn,
+  .btn-sm,
+  .cs-btn,
+  .size-select,
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="search"],
+  input[type="number"],
+  select,
+  textarea { min-height: 44px; }
+
+  .cart-close,
+  .cart-item-remove { min-width: 44px; min-height: 44px; }
+
+  /* Texto de lectura: mínimo 15px. Las etiquetas en mayúsculas conservan su tamaño. */
+  body { font-size: 1rem; }
+  p, li, td, label, .product-desc, .cart-item-name, .form-status { font-size: max(0.9375rem, 1em); }
+  .cart-item-price, .cart-ship-msg, .form-note, .footer-credit, small { font-size: 0.875rem; }
+  .kicker, .eyebrow, .size-label, .product-category, .admin-upper { font-size: 0.75rem; }
+}
+
+/* Los que quedaban por debajo de 44px: enlaces sueltos del pie, la franja superior,
+   el botón de guía de tallas, las pestañas de la ficha y los enlaces de artículos. */
+@media (max-width: 860px) {
+  .announcement a,
+  .footer-nap a,
+  .footer-cols a,
+  .footer-links a,
+  #mapsLink,
+  .pdp-tabs button,
+  .pdp-tab,
+  .pdp-size-link,
+  .related-links a,
+  .content-related a { min-height: 44px; display: inline-flex; align-items: center; }
+  .pdp-tabs { flex-wrap: wrap; gap: 4px; }
+  .pdp-tabs button { padding-left: 12px; padding-right: 12px; }
+  .footer-cols a { line-height: 1.3; }
+  .announcement-track a { padding: 0 4px; }
+}
+
+/* Últimos controles por debajo del mínimo: migas de pan, índice de la ficha, la calculadora
+   de talla, los nombres de producto en la rejilla y los enlaces de la tienda. */
+@media (max-width: 860px) {
+  .breadcrumbs a,
+  .pdp-jump a,
+  .size-calc-unit button,
+  .map-placeholder a,
+  .footer-nap span a { min-height: 44px; display: inline-flex; align-items: center; }
+  .pdp-jump { gap: 2px 10px; }
+  .size-calc-unit button { padding: 0 18px; }
+}
+
+@media (max-width: 700px) {
+  /* El nombre del producto en la rejilla es el enlace principal de la tarjeta: se toca entero */
+  .product-card h2 a,
+  .product-card h3 a { display: block; min-height: 44px; }
+}

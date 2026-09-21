@@ -560,6 +560,7 @@ function renderProductCard(product) {
       <p class="price">${priceHtml(product)}</p>
       ${wholesaleHtml(product)}
       <p class="product-desc">${product.description}</p>
+      <a class="btn btn-dark product-open" href="/producto/${product.id}">Ver producto</a>
       <div class="card-row">
         <div>
           <label class="size-label" for="size-${product.id}">Talla</label>

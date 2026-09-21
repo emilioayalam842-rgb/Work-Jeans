@@ -21,7 +21,24 @@
     <label class="catalog-filter catalog-filter--check"><input type="checkbox" id="cfStock"> Solo con existencia</label>
     <button type="button" class="catalog-filter-clear" id="cfClear" hidden>Limpiar</button>
     <span class="catalog-filter-count" id="cfCount" aria-live="polite"></span>`;
+  // En celular los filtros van plegados: seis modelos no justifican un cuarto de pantalla de controles.
+  const boton = document.createElement('button');
+  boton.type = 'button';
+  boton.className = 'catalog-filters-toggle';
+  boton.setAttribute('aria-expanded', 'false');
+  boton.setAttribute('aria-controls', 'catalogFilters');
+  boton.innerHTML = '<span>Filtrar y buscar</span><span class="cuenta" id="cfToggleCount"></span><svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  bar.id = 'catalogFilters';
+  const enCelular = () => window.matchMedia('(max-width: 700px)').matches;
+  const plegar = (plegado) => {
+    bar.dataset.plegado = plegado ? '1' : '0';
+    boton.setAttribute('aria-expanded', String(!plegado));
+  };
+  boton.addEventListener('click', () => plegar(bar.dataset.plegado !== '1'));
+  grid.parentNode.insertBefore(boton, grid);
   grid.parentNode.insertBefore(bar, grid);
+  plegar(enCelular());
+  window.addEventListener('resize', () => { if (!enCelular()) plegar(false); });
 
   const $ = (id) => document.getElementById(id);
   const cards = () => Array.from(grid.querySelectorAll('.product-card[data-sizes]'));
@@ -53,7 +70,10 @@
     const total = cards().length;
     const active = q || size || reflect || stock;
     $('cfClear').hidden = !active;
-    $('cfCount').textContent = active ? (shown ? `${shown} de ${total} modelos` : 'Ningún modelo coincide. Prueba otra talla o escríbenos por WhatsApp.') : '';
+    const resumen = active ? (shown ? `${shown} de ${total} modelos` : 'Ningún modelo coincide. Prueba otra talla o escríbenos por WhatsApp.') : '';
+    $('cfCount').textContent = resumen;
+    const enBoton = document.getElementById('cfToggleCount');
+    if (enBoton) enBoton.textContent = active ? `${shown} de ${total}` : `${total} modelos`;
     let empty = grid.querySelector('.catalog-empty');
     if (!shown && total) {
       if (!empty) { empty = document.createElement('p'); empty.className = 'catalog-empty'; empty.textContent = 'No hay modelos con esos filtros.'; grid.appendChild(empty); }
