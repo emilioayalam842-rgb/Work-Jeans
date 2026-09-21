@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260921i">
-  <link rel="stylesheet" href="admin.css?v=20260921i">
+  <link rel="stylesheet" href="styles.css?v=20260921k">
+  <link rel="stylesheet" href="admin.css?v=20260921k">
 </head>
 <body class="admin-body">
 
@@ -716,7 +716,7 @@
         <h2 class="admin-section-spacer admin-backup-box">Respaldo</h2>
         <div class="admin-backup-box admin-panel-box admin-settings-form">
           <p class="admin-help">Descarga un archivo con productos, pedidos, clientes, inventario y configuración. Guárdalo en tu computadora o en la nube de vez en cuando. No incluye las fotos.</p>
-          <a class="btn btn-primary admin-btn-icon" href="/api/admin/backup" download><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Descargar respaldo</a>
+          <button type="button" class="btn btn-primary admin-btn-icon" id="descargarRespaldo"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Descargar respaldo</button>
           <label for="restoreFile" class="admin-section-spacer">Restaurar desde un respaldo</label>
           <input type="file" id="restoreFile" accept="application/json,.json">
           <button type="button" id="restoreBtn" class="btn btn-secondary">Restaurar</button>
@@ -755,7 +755,7 @@
         </div>
         <p class="admin-muted">Cada persona entra con su propio usuario y solo ve lo que su rol permite. El servidor valida cada acción, no solo el menú.</p>
         <div class="admin-panel-box admin-security-box">
-          <label class="admin-check"><input type="checkbox" id="requireMfaAdmins"> <span><strong>Exigir verificación en dos pasos</strong> a super admins y administradores. Hasta activarla no podrán usar el panel.</span></label>
+          <label class="admin-check"><input type="checkbox" id="requireMfaAdmins" checked> <span><strong>Exigir verificación en dos pasos</strong> a super admins y administradores. Viene activada: si la apagas, cualquiera con la contraseña entra al panel sin segundo factor.</span></label>
         </div>
         <div class="admin-table-wrap">
           <table class="admin-table">
@@ -1167,7 +1167,11 @@
       <p class="admin-small admin-muted" id="userRoleHelp"></p>
       <div id="userPasswordWrap">
         <label for="userPassword">Contraseña temporal (mínimo 8 caracteres)</label>
-        <input type="text" id="userPassword" autocomplete="off" minlength="8">
+        <div class="admin-password-field">
+          <input type="password" id="userPassword" autocomplete="new-password" minlength="8" spellcheck="false">
+          <button type="button" class="admin-password-toggle" data-toggle-password="userPassword" aria-label="Mostrar la contraseña" aria-pressed="false">Mostrar</button>
+        </div>
+        <p class="admin-help">La persona deberá cambiarla la primera vez que entre. Anótala ahora: no se puede volver a consultar después.</p>
         <p class="admin-small admin-muted">Compártela en persona. Al entrar por primera vez tendrá que cambiarla.</p>
       </div>
       <div class="admin-form-actions">
@@ -1432,19 +1436,20 @@
     </div>
   </div>
 
-  <script src="admin.js?v=20260921i"></script>
-  <script src="admin-catalogo.js?v=20260921i"></script>
-  <script src="admin-compras.js?v=20260921i"></script>
-  <script src="admin-marketing.js?v=20260921i"></script>
-  <script src="admin-reportes.js?v=20260921i"></script>
-  <script src="admin-dashboard.js?v=20260921i"></script>
-  <script src="admin-pedidos.js?v=20260921i"></script>
-  <script src="admin-ui.js?v=20260921i"></script>
-  <script src="admin-mas.js?v=20260921i"></script>
-  <script src="admin-seguridad.js?v=20260921i"></script>
-  <script src="admin-leads.js?v=20260921i"></script>
-  <script src="admin-resenas.js?v=20260921i"></script>
-  <script src="admin-contenido.js?v=20260921i"></script>
-  <script src="admin-sistema.js?v=20260921i"></script>
+  <script src="admin-reauth.js?v=20260921k"></script>
+  <script src="admin.js?v=20260921k"></script>
+  <script src="admin-catalogo.js?v=20260921k"></script>
+  <script src="admin-compras.js?v=20260921k"></script>
+  <script src="admin-marketing.js?v=20260921k"></script>
+  <script src="admin-reportes.js?v=20260921k"></script>
+  <script src="admin-dashboard.js?v=20260921k"></script>
+  <script src="admin-pedidos.js?v=20260921k"></script>
+  <script src="admin-ui.js?v=20260921k"></script>
+  <script src="admin-mas.js?v=20260921k"></script>
+  <script src="admin-seguridad.js?v=20260921k"></script>
+  <script src="admin-leads.js?v=20260921k"></script>
+  <script src="admin-resenas.js?v=20260921k"></script>
+  <script src="admin-contenido.js?v=20260921k"></script>
+  <script src="admin-sistema.js?v=20260921k"></script>
 </body>
 </html>

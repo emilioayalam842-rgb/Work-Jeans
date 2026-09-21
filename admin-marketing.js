@@ -36,9 +36,9 @@
     document.getElementById('promoSales').textContent = formatPrice(sales);
     document.getElementById('promoGiven').textContent = formatPrice(given);
     document.getElementById('promotionsTableBody').innerHTML = promos.length ? promos.map((p) => `
-      <tr data-id="${p.id}" class="${p.isActive ? '' : 'admin-row-hidden'}">
-        <td><strong>${p.name}</strong><br><span class="admin-muted admin-small">${describe(p)}</span></td>
-        <td>${p.code ? `<code>${p.code}</code>` : '<span class="admin-muted">Automática</span>'}</td>
+      <tr data-id="${esc(p.id)}" class="${p.isActive ? '' : 'admin-row-hidden'}">
+        <td><strong>${esc(p.name)}</strong><br><span class="admin-muted admin-small">${describe(p)}</span></td>
+        <td>${p.code ? `<code>${esc(p.code)}</code>` : '<span class="admin-muted">Automática</span>'}</td>
         <td>${[p.startsAt ? `desde ${p.startsAt}` : '', p.endsAt ? `hasta ${p.endsAt}` : ''].filter(Boolean).join(' ') || 'Sin límite'}${p.maxUses ? `<br><span class="admin-muted admin-small">máx. ${p.maxUses} usos</span>` : ''}</td>
         <td>${p.uses || 0}</td>
         <td>${formatPrice(p.stats?.salesCents || 0)}</td>

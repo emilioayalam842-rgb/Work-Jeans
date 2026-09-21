@@ -26,8 +26,8 @@
       const mine = pos.filter((p) => p.supplierId === s.id);
       const due = mine.reduce((sum, p) => sum + (p.totals?.dueCents || 0), 0);
       return `
-      <tr data-id="${s.id}">
-        <td><strong>${s.name}</strong>${s.products ? `<br><span class="admin-muted admin-small">${s.products}</span>` : ''}</td>
+      <tr data-id="${esc(s.id)}">
+        <td><strong>${esc(s.name)}</strong>${s.products ? `<br><span class="admin-muted admin-small">${esc(s.products)}</span>` : ''}</td>
         <td>${[s.contact, s.phone, s.email].filter(Boolean).join('<br>') || '—'}</td>
         <td>${mine.length}</td>
         <td class="${due ? 'admin-stock-low' : ''}">${formatPrice(due)}</td>
@@ -97,10 +97,10 @@
     document.getElementById('poPending').textContent = pending;
     document.getElementById('poOpen').textContent = purchases.filter((p) => ['enviada', 'parcial'].includes(p.status)).length;
     document.getElementById('purchasesTableBody').innerHTML = rows.length ? rows.map((p) => `
-      <tr data-id="${p.id}" class="admin-clickable-row">
-        <td><strong>${p.id}</strong><br><span class="admin-muted admin-small">${fmtDate(p.createdAt)}</span></td>
+      <tr data-id="${esc(p.id)}" class="admin-clickable-row">
+        <td><strong>${esc(p.id)}</strong><br><span class="admin-muted admin-small">${fmtDate(p.createdAt)}</span></td>
         <td>${p.supplierName}</td>
-        <td class="admin-order-items-cell">${p.items.map((i) => `${i.productName}${i.size ? ` (${i.size})` : ''} ×${i.qty}`).join('<br>')}</td>
+        <td class="admin-order-items-cell">${p.items.map((i) => `${esc(i.productName)}${i.size ? ` (${esc(i.size)})` : ''} ×${i.qty}`).join('<br>')}</td>
         <td>${p.totals.received} / ${p.totals.ordered}</td>
         <td>${formatPrice(p.totals.totalCents)}<br><span class="admin-muted admin-small">${p.totals.dueCents ? `Debe ${formatPrice(p.totals.dueCents)}` : 'Pagada'}</span></td>
         <td>${p.eta ? fmtDate(p.eta) : '—'}</td>
@@ -115,7 +115,7 @@
     const row = document.createElement('div');
     row.className = 'admin-po-line';
     row.innerHTML = `
-      <select class="po-product admin-filter">${productsCache.map((p) => `<option value="${p.id}" ${line.productId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}</select>
+      <select class="po-product admin-filter">${productsCache.map((p) => `<option value="${esc(p.id)}" ${line.productId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
       <select class="po-variant admin-filter"></select>
       <input type="number" class="po-qty" min="1" step="1" placeholder="Cant." value="${line.qty || ''}">
       <input type="number" class="po-cost" min="0" step="0.01" placeholder="Costo c/u" value="${line.costMxn || ''}">
@@ -123,7 +123,7 @@
     const fill = () => {
       const product = productsCache.find((p) => p.id === row.querySelector('.po-product').value);
       const sel = row.querySelector('.po-variant');
-      sel.innerHTML = product ? product.sizes.map((s) => `<option value="${variantLabel(s)}">${variantLabel(s)}</option>`).join('') : '';
+      sel.innerHTML = product ? product.sizes.map((s) => `<option value="${esc(variantLabel(s))}">${esc(variantLabel(s))}</option>`).join('') : '';
       if (product && !row.querySelector('.po-cost').value && product.costCents) row.querySelector('.po-cost').value = (product.costCents / 100).toFixed(2);
     };
     row.querySelector('.po-product').addEventListener('change', fill);
@@ -148,7 +148,7 @@
     await fetchSuppliers();
     document.getElementById('poError').textContent = '';
     document.getElementById('poForm').reset();
-    document.getElementById('poSupplier').innerHTML = '<option value="">Sin proveedor registrado</option>' + suppliers.map((s) => `<option value="${s.id}">${s.name}</option>`).join('');
+    document.getElementById('poSupplier').innerHTML = '<option value="">Sin proveedor registrado</option>' + suppliers.map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
     document.getElementById('poLines').innerHTML = '';
     addPoLine();
     poOverlay.hidden = false;
@@ -193,19 +193,19 @@
   function renderPoDetail() {
     const po = activePo;
     const names = warehouseList();
-    document.getElementById('poDetailTitle').textContent = `${po.id} · ${po.supplierName}`;
-    document.getElementById('poDetailMeta').innerHTML = `<span class="admin-badge po-${po.status}">${PO_LABELS[po.status]}</span> · Creada ${fmtDate(po.createdAt)}${po.eta ? ` · Llega ${fmtDate(po.eta)}` : ''}${po.invoice ? ` · Factura ${po.invoice}` : ''}${po.notes ? `<br><span class="admin-muted">${po.notes}</span>` : ''}`;
+    document.getElementById('poDetailTitle').textContent = `${esc(po.id)} · ${po.supplierName}`;
+    document.getElementById('poDetailMeta').innerHTML = `<span class="admin-badge po-${po.status}">${PO_LABELS[po.status]}</span> · Creada ${fmtDate(po.createdAt)}${po.eta ? ` · Llega ${fmtDate(po.eta)}` : ''}${po.invoice ? ` · Factura ${po.invoice}` : ''}${po.notes ? `<br><span class="admin-muted">${esc(po.notes)}</span>` : ''}`;
     const canReceive = ['enviada', 'parcial', 'borrador'].includes(po.status);
     document.getElementById('poDetailItems').innerHTML = `
       <table class="admin-table admin-detail-table">
         <thead><tr><th>Producto</th><th>Variante</th><th>Pedidas</th><th>Recibidas</th><th>Costo</th>${canReceive ? '<th>Recibir ahora</th>' : ''}</tr></thead>
         <tbody>${po.items.map((i, idx) => `<tr>
-          <td>${i.productName}</td><td>${i.size || '—'}</td><td>${i.qty}</td><td>${i.received || 0}</td><td>${formatPrice(i.costCents)}</td>
+          <td>${esc(i.productName)}</td><td>${esc(i.size || '—')}</td><td>${i.qty}</td><td>${i.received || 0}</td><td>${formatPrice(i.costCents)}</td>
           ${canReceive ? `<td><input type="number" class="po-receive-qty" data-index="${idx}" min="0" max="${i.qty - (i.received || 0)}" value="${i.qty - (i.received || 0)}" style="width:80px"></td>` : ''}
         </tr>`).join('')}</tbody>
       </table>
       <p class="admin-order-total">Total ${formatPrice(po.totals.totalCents)} · Pagado ${formatPrice(po.totals.paidCents)} · <strong>${po.totals.dueCents ? `Pendiente ${formatPrice(po.totals.dueCents)}` : 'Liquidada'}</strong></p>
-      ${(po.payments || []).length ? `<p class="admin-muted admin-small">Pagos: ${po.payments.map((p) => `${fmtDate(p.date)} ${formatPrice(p.amountCents)}${p.note ? ` (${p.note})` : ''}`).join(' · ')}</p>` : ''}`;
+      ${(po.payments || []).length ? `<p class="admin-muted admin-small">Pagos: ${po.payments.map((p) => `${fmtDate(p.date)} ${formatPrice(p.amountCents)}${p.note ? ` (${esc(p.note)})` : ''}`).join(' · ')}</p>` : ''}`;
     document.getElementById('poReceiveWrap').hidden = !canReceive;
     document.getElementById('poReceiveWarehouse').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
     document.getElementById('poReceiveWarehouseWrap').hidden = names.length < 2;
@@ -219,7 +219,7 @@
   document.getElementById('poReceiveBtn').addEventListener('click', async () => {
     const items = Array.from(document.querySelectorAll('.po-receive-qty')).map((i) => ({ index: parseInt(i.dataset.index, 10), qty: parseInt(i.value, 10) || 0 })).filter((i) => i.qty > 0);
     if (!items.length) { document.getElementById('poDetailError').textContent = 'Indica cuántas piezas llegaron.'; return; }
-    const res = await fetch(`/api/admin/purchases/${activePo.id}/receive`, {
+    const res = await fetch(`/api/admin/purchases/${esc(activePo.id)}/receive`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items, warehouse: document.getElementById('poReceiveWarehouse').value, updateCost: document.getElementById('poReceiveUpdateCost').checked }),
@@ -234,11 +234,11 @@
   document.getElementById('poPayBtn').addEventListener('click', async () => {
     const amount = document.getElementById('poPayAmount').value;
     if (!parseFloat(amount)) { document.getElementById('poDetailError').textContent = 'Escribe el monto del pago.'; return; }
-    const res = await fetch(`/api/admin/purchases/${activePo.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payment: { amountMxn: amount, note: document.getElementById('poPayNote').value } }) });
+    const res = await fetch(`/api/admin/purchases/${esc(activePo.id)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payment: { amountMxn: amount, note: document.getElementById('poPayNote').value } }) });
     if (res.ok) { await loadPurchases(); activePo = purchases.find((p) => p.id === activePo.id); renderPoDetail(); }
   });
   document.getElementById('poStatusSelect').addEventListener('change', async (e) => {
-    const res = await fetch(`/api/admin/purchases/${activePo.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: e.target.value }) });
+    const res = await fetch(`/api/admin/purchases/${esc(activePo.id)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: e.target.value }) });
     if (res.ok) { await loadPurchases(); activePo = purchases.find((p) => p.id === activePo.id); renderPoDetail(); }
   });
 
@@ -255,14 +255,14 @@
     document.getElementById('retTopReason').textContent = topReason ? `${REASON_LABELS[topReason[0]]} (${topReason[1]})` : '—';
     document.getElementById('retInsights').innerHTML = stats.bySize.filter((s) => s.sold >= 3 && s.rate >= 0.1).slice(0, 5).map((s) => {
       const main = Object.entries(s.reasons).sort((a, b) => b[1] - a[1])[0];
-      return `<div class="admin-alert"><strong>Revisar patronaje</strong>${s.productName} · ${s.size}<span>${Math.round(s.rate * 100)}% de devoluciones (${s.returned} de ${s.sold}), sobre todo "${REASON_LABELS[main[0]]}".</span></div>`;
+      return `<div class="admin-alert"><strong>Revisar patronaje</strong>${esc(s.productName)} · ${esc(s.size)}<span>${Math.round(s.rate * 100)}% de devoluciones (${s.returned} de ${s.sold}), sobre todo "${REASON_LABELS[main[0]]}".</span></div>`;
     }).join('');
-    document.getElementById('retBySizeBody').innerHTML = stats.bySize.length ? stats.bySize.slice(0, 20).map((s) => `<tr><td>${s.productName}</td><td>${s.size || '—'}</td><td>${s.returned}</td><td>${s.sold}</td><td class="${s.rate >= 0.1 ? 'admin-stock-low' : ''}">${s.rate != null ? `${Math.round(s.rate * 100)}%` : '—'}</td><td>${Object.entries(s.reasons).map(([r, n]) => `${REASON_LABELS[r]} ${n}`).join(', ')}</td></tr>`).join('') : '<tr><td colspan="6">Sin devoluciones registradas.</td></tr>';
+    document.getElementById('retBySizeBody').innerHTML = stats.bySize.length ? stats.bySize.slice(0, 20).map((s) => `<tr><td>${esc(s.productName)}</td><td>${esc(s.size || '—')}</td><td>${s.returned}</td><td>${s.sold}</td><td class="${s.rate >= 0.1 ? 'admin-stock-low' : ''}">${s.rate != null ? `${Math.round(s.rate * 100)}%` : '—'}</td><td>${Object.entries(s.reasons).map(([r, n]) => `${REASON_LABELS[r]} ${n}`).join(', ')}</td></tr>`).join('') : '<tr><td colspan="6">Sin devoluciones registradas.</td></tr>';
     document.getElementById('returnsTableBody').innerHTML = returnsList.length ? returnsList.map((r) => `<tr>
-      <td><strong>${r.id}</strong><br><span class="admin-muted admin-small">${fmtDate(r.createdAt)}</span></td>
+      <td><strong>${esc(r.id)}</strong><br><span class="admin-muted admin-small">${fmtDate(r.createdAt)}</span></td>
       <td>${esc(r.customerName) || '—'}<br><span class="admin-muted admin-small">${esc(r.orderId)}</span></td>
       <td>${r.type === 'cambio' ? 'Cambio' : 'Devolución'}</td>
-      <td class="admin-order-items-cell">${r.items.map((i) => `${i.productName} (${i.size || '—'}) ×${i.qty} · ${REASON_LABELS[i.reason]}`).join('<br>')}${r.exchangeItems?.length ? `<br><span class="admin-muted">Se entregó: ${r.exchangeItems.map((e) => `${e.productName} (${e.size}) ×${e.qty}`).join(', ')}</span>` : ''}</td>
+      <td class="admin-order-items-cell">${r.items.map((i) => `${esc(i.productName)} (${esc(i.size || '—')}) ×${i.qty} · ${REASON_LABELS[i.reason]}`).join('<br>')}${r.exchangeItems?.length ? `<br><span class="admin-muted">Se entregó: ${r.exchangeItems.map((e) => `${esc(e.productName)} (${esc(e.size)}) ×${e.qty}`).join(', ')}</span>` : ''}</td>
       <td>${r.refundCents ? formatPrice(r.refundCents) : '—'}</td>
       <td>${r.restocked ? 'Sí' : 'No'}</td>
     </tr>`).join('') : '<tr><td colspan="6">Sin devoluciones registradas.</td></tr>';
@@ -280,15 +280,15 @@
   }
   function fillExchangeVariants() {
     const product = productsCache.find((p) => p.id === document.getElementById('exchangeProduct').value);
-    document.getElementById('exchangeVariant').innerHTML = product ? product.sizes.map((s) => `<option value="${variantLabel(s)}" ${s.stock <= 0 ? 'disabled' : ''}>${variantLabel(s)} (${s.stock} disp.)</option>`).join('') : '';
+    document.getElementById('exchangeVariant').innerHTML = product ? product.sizes.map((s) => `<option value="${esc(variantLabel(s))}" ${s.stock <= 0 ? 'disabled' : ''}>${esc(variantLabel(s))} (${s.stock} disp.)</option>`).join('') : '';
   }
   document.getElementById('newReturnBtn').addEventListener('click', async () => {
     await loadOrders();
     document.getElementById('returnError').textContent = '';
     document.getElementById('returnForm').reset();
     const candidates = [...ordersCache].filter((o) => !['cancelado'].includes(o.status)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 200);
-    document.getElementById('returnOrder').innerHTML = candidates.map((o) => `<option value="${o.id}">${new Date(o.createdAt).toLocaleDateString('es-MX')} · ${esc(o.customerName) || 'Sin nombre'} · ${formatPrice(o.totalCents)}</option>`).join('');
-    document.getElementById('exchangeProduct').innerHTML = productsCache.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+    document.getElementById('returnOrder').innerHTML = candidates.map((o) => `<option value="${esc(o.id)}">${new Date(o.createdAt).toLocaleDateString('es-MX')} · ${esc(o.customerName) || 'Sin nombre'} · ${formatPrice(o.totalCents)}</option>`).join('');
+    document.getElementById('exchangeProduct').innerHTML = productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
     const names = warehouseList();
     document.getElementById('returnWarehouse').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
     document.getElementById('returnWarehouseWrap').hidden = names.length < 2;

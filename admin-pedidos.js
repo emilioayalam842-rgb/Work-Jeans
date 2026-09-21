@@ -88,14 +88,14 @@
   window.renderOrders = function (orders) {
     baseRenderOrders(orders);
     orders.forEach((o) => {
-      const tr = document.querySelector(`#ordersTableBody tr[data-id="${o.id}"]`);
+      const tr = document.querySelector(`#ordersTableBody tr[data-id="${esc(o.id)}"]`);
       if (!tr) return;
       const n = needs(o);
       const cell = tr.querySelector('.admin-status-select')?.parentElement;
       if (cell && n.length) {
         const wrap = document.createElement('div');
         wrap.className = 'admin-needs';
-        wrap.innerHTML = n.map((x) => `<span class="admin-need is-${x.level}">${x.label}</span>`).join('');
+        wrap.innerHTML = n.map((x) => `<span class="admin-need is-${x.level}">${esc(x.label)}</span>`).join('');
         cell.appendChild(wrap);
       }
       if (n.some((x) => x.level === 'warn')) tr.classList.add('is-urgent');
@@ -113,7 +113,7 @@
     baseRenderProducts(products);
     const limit = lowStockLimit();
     products.forEach((p) => {
-      const tr = document.querySelector(`#productsTableBody tr[data-id="${p.id}"]:not(.admin-stock-row)`);
+      const tr = document.querySelector(`#productsTableBody tr[data-id="${esc(p.id)}"]:not(.admin-stock-row)`);
       if (!tr) return;
       const nameCell = tr.children[2];
       if (!nameCell || nameCell.querySelector('.admin-size-chips')) return;

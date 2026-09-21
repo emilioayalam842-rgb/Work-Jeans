@@ -28,7 +28,7 @@
     if (!(await fetchStock())) return;
     const productSel = document.getElementById('variantsProduct');
     const current = productSel.value;
-    productSel.innerHTML = '<option value="">Todos los modelos</option>' + productsCache.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+    productSel.innerHTML = '<option value="">Todos los modelos</option>' + productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
     productSel.value = current;
     renderVariants();
   };
@@ -50,9 +50,9 @@
     document.getElementById('variantsSummary').textContent = `${rows.length} variantes · ${rows.reduce((s, r) => s + r.stock, 0)} piezas`;
     document.getElementById('variantsTableBody').innerHTML = rows.length ? rows.map((r) => `
       <tr class="${r.status !== 'activo' ? 'admin-row-hidden' : ''}">
-        <td>${r.productName}${r.status !== 'activo' ? ` <span class="admin-tag admin-tag--draft">${r.status}</span>` : ''}</td>
-        <td><strong>${r.label}</strong></td>
-        <td><code>${r.sku || '—'}</code></td>
+        <td>${esc(r.productName)}${r.status !== 'activo' ? ` <span class="admin-tag admin-tag--draft">${r.status}</span>` : ''}</td>
+        <td><strong>${esc(r.label)}</strong></td>
+        <td><code>${esc(r.sku || '—')}</code></td>
         <td>${r.barcode ? `<code>${r.barcode}</code>` : '—'}</td>
         <td>${formatPrice(r.priceCents)}</td>
         <td>${r.costCents ? formatPrice(r.costCents) : '—'}</td>
@@ -114,11 +114,11 @@
     });
     document.getElementById('categoriesList').innerHTML = cats.length ? cats.map((c, i) => { const st = stats[c.name] || { products: 0, active: 0, pieces: 0, sold: 0 }; return `
       <div class="admin-list-item">
-        <div><strong>${c.name}</strong> <span class="admin-muted admin-small">/${c.slug}</span>
+        <div><strong>${esc(c.name)}</strong> <span class="admin-muted admin-small">/${esc(c.slug)}</span>
           <div class="admin-list-stats"><span><b>${st.active}</b> activos${st.products !== st.active ? ` · ${st.products - st.active} ocultos` : ''}</span><span><b>${st.pieces}</b> pzas en stock</span><span><b>${st.sold}</b> vendidas en 30 días</span></div>
         </div>
         <div class="admin-list-actions">
-          <a class="admin-inline-btn" href="/${c.slug}" target="_blank" rel="noopener">Ver página</a>
+          <a class="admin-inline-btn" href="/${esc(c.slug)}" target="_blank" rel="noopener">Ver página</a>
           ${iconBtn('remove-category', 'trash', 'Eliminar', `data-index="${i}"`)}
         </div>
       </div>`; }).join('') : '<p class="admin-muted">Sin categorías.</p>';
@@ -147,7 +147,7 @@
     const cats = [...(settingsCache.categories || [])];
     const cat = cats[parseInt(btn.dataset.index, 10)];
     const inUse = productsCache.filter((p) => p.category === cat.name).length;
-    if (inUse && !confirm(`${inUse} productos usan "${cat.name}". Seguirán con ese nombre pero sin página propia. ¿Eliminar la categoría?`)) return;
+    if (inUse && !confirm(`${inUse} productos usan "${esc(cat.name)}". Seguirán con ese nombre pero sin página propia. ¿Eliminar la categoría?`)) return;
     cats.splice(parseInt(btn.dataset.index, 10), 1);
     if (await saveSettingsPartial({ categories: cats })) renderCategories();
   });
@@ -225,17 +225,17 @@
     document.getElementById('stockAlerts').innerHTML = alerts.map((r) => `
       <div class="admin-alert ${r.stock === 0 ? 'is-out' : ''}">
         <strong>${r.stock === 0 ? 'Agotado' : 'Stock bajo'}</strong>
-        ${r.productName} · ${r.label}${r.sku ? ` · ${r.sku}` : ''}
+        ${esc(r.productName)} · ${esc(r.label)}${r.sku ? ` · ${esc(r.sku)}` : ''}
         <span>${r.stock === 0 ? 'Sin piezas.' : `Solo quedan ${r.stock} ${r.stock === 1 ? 'pieza' : 'piezas'}.`}</span>
       </div>`).join('');
 
     const multi = stockMeta.warehouses.length > 1;
     document.getElementById('stockTableHead').innerHTML = `<tr><th>Modelo</th><th>Variante</th><th>SKU</th>${multi ? stockMeta.warehouses.map((w) => `<th>${w}</th>`).join('') : ''}<th>Físico</th><th>Apartadas</th><th>Disponible</th><th>Valor a costo</th><th></th></tr>`;
     document.getElementById('stockTableBody').innerHTML = rows.length ? rows.map((r) => `
-      <tr data-product="${r.productId}" data-size="${r.label}">
-        <td>${r.productName}</td>
-        <td><strong>${r.label}</strong></td>
-        <td><code>${r.sku || '—'}</code></td>
+      <tr data-product="${r.productId}" data-size="${esc(r.label)}">
+        <td>${esc(r.productName)}</td>
+        <td><strong>${esc(r.label)}</strong></td>
+        <td><code>${esc(r.sku || '—')}</code></td>
         ${multi ? r.warehouses.map((w) => `<td>${w.qty}</td>`).join('') : ''}
         <td>${r.stock + (r.reserved || 0)}</td>
         <td>${r.reserved || 0}</td>
@@ -318,7 +318,7 @@
   function fillTransferVariants() {
     const product = productsCache.find((p) => p.id === document.getElementById('transferProduct').value);
     const sel = document.getElementById('transferVariant');
-    sel.innerHTML = product ? product.sizes.map((s) => `<option value="${variantLabel(s)}">${variantLabel(s)} (${s.stock} pzas)</option>`).join('') : '';
+    sel.innerHTML = product ? product.sizes.map((s) => `<option value="${esc(variantLabel(s))}">${esc(variantLabel(s))} (${s.stock} pzas)</option>`).join('') : '';
     updateTransferInfo();
   }
 
@@ -333,7 +333,7 @@
   document.getElementById('stockTransferBtn').addEventListener('click', () => {
     const names = warehouseList();
     document.getElementById('transferError').textContent = '';
-    document.getElementById('transferProduct').innerHTML = productsCache.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+    document.getElementById('transferProduct').innerHTML = productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
     document.getElementById('transferFrom').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
     document.getElementById('transferTo').innerHTML = names.map((n, i) => `<option value="${n}" ${i === 1 ? 'selected' : ''}>${n}</option>`).join('');
     document.getElementById('transferQty').value = 1;

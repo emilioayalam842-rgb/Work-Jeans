@@ -30,8 +30,8 @@
     const area = `${path(cur)} L${x(cur.length - 1).toFixed(1)},${(padT + innerH).toFixed(1)} L${x(0).toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
     const ticks = [0, 0.5, 1].map((t) => ({ y: y(max * t), v: max * t }));
     const fmt = (v) => (v >= 100000 ? `$${(v / 100000).toFixed(v >= 1000000 ? 0 : 1)}k` : formatPrice(v).replace(/\.00$/, ''));
-    const labels = points.map((p, i) => (i % 5 === 0 || i === points.length - 1 ? `<text x="${x(i).toFixed(1)}" y="${h - 8}" text-anchor="middle" font-size="10" fill="#888">${p.label}</text>` : '')).join('');
-    const dots = points.map((p, i) => (p.value ? `<circle cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3.5" fill="#ffd600" stroke="#0f0f0f" stroke-width="1.5"><title>${p.label}: ${formatPrice(p.value)}</title></circle>` : '')).join('');
+    const labels = points.map((p, i) => (i % 5 === 0 || i === points.length - 1 ? `<text x="${x(i).toFixed(1)}" y="${h - 8}" text-anchor="middle" font-size="10" fill="#888">${esc(p.label)}</text>` : '')).join('');
+    const dots = points.map((p, i) => (p.value ? `<circle cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3.5" fill="#ffd600" stroke="#0f0f0f" stroke-width="1.5"><title>${esc(p.label)}: ${formatPrice(p.value)}</title></circle>` : '')).join('');
     el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" class="admin-chart" role="img">
       <defs><linearGradient id="dGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffd600" stop-opacity="0.45"/><stop offset="1" stop-color="#ffd600" stop-opacity="0"/></linearGradient></defs>
       ${ticks.map((t) => `<line x1="${padL}" x2="${w - padR}" y1="${t.y.toFixed(1)}" y2="${t.y.toFixed(1)}" stroke="#eee"/><text x="${padL - 6}" y="${(t.y + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="#888">${fmt(Math.round(t.v))}</text>`).join('')}
@@ -61,7 +61,7 @@
     if (pendingReviews) items.push({ level: 'info', text: `<b>${pendingReviews}</b> reseña${pendingReviews === 1 ? '' : 's'} por aprobar`, action: 'Moderar', goto: 'resenas', prio: 5 });
     const limit = lowStockLimit();
     const outVariants = [];
-    productsCache.forEach((p) => { if (p.status && p.status !== 'activo') return; p.sizes.forEach((v) => { if (v.stock <= limit) outVariants.push(`${p.name} ${variantLabel(v)}`); }); });
+    productsCache.forEach((p) => { if (p.status && p.status !== 'activo') return; p.sizes.forEach((v) => { if (v.stock <= limit) outVariants.push(`${esc(p.name)} ${esc(variantLabel(v))}`); }); });
     if (outVariants.length) items.push({ level: outVariants.length > 3 ? 'warn' : 'info', text: `<b>${outVariants.length}</b> talla${outVariants.length === 1 ? '' : 's'} con stock bajo o agotado (${esc(outVariants.slice(0, 2).join(', '))}${outVariants.length > 2 ? '…' : ''})`, action: 'Ver stock', goto: 'existencias', prio: 4 });
     items.sort((a, b) => a.prio - b.prio);
     document.getElementById('dTodoCount').textContent = items.length ? `${items.length} pendiente${items.length === 1 ? '' : 's'}` : '';

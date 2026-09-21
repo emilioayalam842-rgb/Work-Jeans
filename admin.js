@@ -380,14 +380,14 @@ function renderProductsTable(products) {
     const tag = p.tag === 'nuevo' ? '<span class="admin-tag admin-tag--nuevo">Nuevo</span>' : p.tag === 'oferta' ? '<span class="admin-tag admin-tag--oferta">Oferta</span>' : '';
     const wholesale = p.wholesale ? `<span class="admin-muted admin-small">Mayoreo ${formatPrice(p.wholesale.priceCents)} desde ${p.wholesale.minQty}</span>` : '';
     return `
-      <tr data-id="${p.id}" class="${hidden ? 'admin-row-hidden' : ''}">
+      <tr data-id="${esc(p.id)}" class="${hidden ? 'admin-row-hidden' : ''}">
         <td class="admin-order-btns">
           ${iconBtn('move-up', 'up', 'Subir', index === 0 ? 'disabled' : '')}
           ${iconBtn('move-down', 'down', 'Bajar', index === products.length - 1 ? 'disabled' : '')}
         </td>
-        <td><img src="${p.image}" alt="${p.name}" class="admin-table-photo"></td>
-        <td>${p.name} ${tag}${p.status === 'descontinuado' ? '<span class="admin-tag admin-tag--off">Descontinuado</span>' : p.status === 'borrador' ? '<span class="admin-tag admin-tag--draft">Borrador</span>' : ''}<br><span class="admin-muted admin-small">${[p.sku, p.fit, p.wash, p.collection].filter(Boolean).join(' · ')}</span>${wholesale ? '<br>' + wholesale : ''}</td>
-        <td>${p.category}</td>
+        <td><img src="${esc(p.image)}" alt="${esc(p.name)}" class="admin-table-photo"></td>
+        <td>${esc(p.name)} ${tag}${p.status === 'descontinuado' ? '<span class="admin-tag admin-tag--off">Descontinuado</span>' : p.status === 'borrador' ? '<span class="admin-tag admin-tag--draft">Borrador</span>' : ''}<br><span class="admin-muted admin-small">${[p.sku, p.fit, p.wash, p.collection].filter(Boolean).join(' · ')}</span>${wholesale ? '<br>' + wholesale : ''}</td>
+        <td>${esc(p.category)}</td>
         <td>${p.comparePriceCents ? `<s class="admin-muted">${formatPrice(p.comparePriceCents)}</s> ` : ''}${formatPrice(p.priceCents)}</td>
         <td class="${p.sizes.some((s) => s.stock <= limit) ? 'admin-stock-low' : ''}">
           <button type="button" class="admin-stock-toggle" data-action="toggle-stock" title="Ver y ajustar por talla">${stock} pzas ▾</button>
@@ -404,12 +404,12 @@ function renderProductsTable(products) {
           ${iconBtn('delete', 'trash', 'Eliminar')}
         </td>
       </tr>
-      <tr class="admin-stock-row" data-id="${p.id}" hidden>
+      <tr class="admin-stock-row" data-id="${esc(p.id)}" hidden>
         <td colspan="8">
           <div class="admin-stock-grid">
             ${p.sizes.map((s) => `
-              <div class="admin-stock-size ${s.stock <= limit ? 'is-low' : ''}" data-size="${variantLabel(s)}">
-                <span class="admin-stock-size-name">${variantLabel(s)}</span>
+              <div class="admin-stock-size ${s.stock <= limit ? 'is-low' : ''}" data-size="${esc(variantLabel(s))}">
+                <span class="admin-stock-size-name">${esc(variantLabel(s))}</span>
                 <div class="admin-stock-controls">
                   <button type="button" class="admin-stock-btn" data-action="adjust" data-delta="-1" aria-label="Quitar una pieza">−</button>
                   <input type="number" class="admin-stock-count admin-stock-input admin-stock-input--sm" value="${s.stock}" min="0" step="1" data-current="${s.stock}" title="Escribe la cantidad y presiona Enter">
@@ -469,10 +469,10 @@ function addSizeRow(v = {}) {
     ? names.map((n) => `<label class="admin-wh-cell"><span>${n}</span><input type="number" class="size-row-wh" data-wh="${n}" min="0" value="${wh[n] ?? (n === names[0] ? (v.stock ?? 0) : 0)}"></label>`).join('')
     : `<input type="number" class="size-row-stock" min="0" value="${v.stock ?? 0}">`;
   row.innerHTML = `
-    <td><input type="text" class="size-row-name" placeholder="32" value="${v.size || ''}"></td>
+    <td><input type="text" class="size-row-name" placeholder="32" value="${esc(v.size || '')}"></td>
     <td><input type="text" class="size-row-length" placeholder="32" value="${v.length || ''}"></td>
     <td><input type="text" class="size-row-color" placeholder="Índigo" value="${v.color || ''}"></td>
-    <td><input type="text" class="size-row-sku" placeholder="auto" value="${v.sku || ''}"></td>
+    <td><input type="text" class="size-row-sku" placeholder="auto" value="${esc(v.sku || '')}"></td>
     <td><input type="text" class="size-row-barcode" placeholder="EAN" value="${v.barcode || ''}"></td>
     <td class="admin-wh-cells">${stockCell}</td>
     <td><input type="number" class="size-row-price" step="0.01" min="0" placeholder="=" value="${v.priceCents ? (v.priceCents / 100).toFixed(2) : ''}"></td>
@@ -515,7 +515,7 @@ document.getElementById('genVariantsBtn').addEventListener('click', () => {
 
 function fillProductFormSelects() {
   const cats = settingsCache.categories || [];
-  document.getElementById('fieldCategory').innerHTML = cats.map((c) => `<option value="${c.name}">${c.name}</option>`).join('') || '<option value="Pantalones">Pantalones</option><option value="Camisas">Camisas</option>';
+  document.getElementById('fieldCategory').innerHTML = cats.map((c) => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('') || '<option value="Pantalones">Pantalones</option><option value="Camisas">Camisas</option>';
   const cols = settingsCache.collections || [];
   document.getElementById('fieldCollection').innerHTML = '<option value="">Sin colección</option>' + cols.map((c) => `<option value="${c}">${c}</option>`).join('');
   document.getElementById('variantStockHead').textContent = warehouseList().length > 1 ? `Existencia (${warehouseList().join(' / ')})` : 'Existencia';
@@ -854,7 +854,7 @@ document.getElementById('printOrdersBtn').addEventListener('click', () => {
     alert('No hay pedidos para imprimir.');
     return;
   }
-  const rows = orders.map((o) => `<tr><td>${new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${o.customerName || '—'}<br><small>${o.customerPhone || ''}</small></td><td>${o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join('<br>')}</td><td style="text-align:right">${formatPrice(o.totalCents)}</td><td>${STATUS_LABELS[o.status] || o.status}</td><td>${o.tracking?.number ? `${o.tracking.carrier || ''} ${o.tracking.number}` : ''}</td></tr>`).join('');
+  const rows = orders.map((o) => `<tr><td>${new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${esc(o.customerName || '—')}<br><small>${esc(o.customerPhone || '')}</small></td><td>${o.items.map((i) => `${esc(i.name)}${i.size ? ` (${esc(i.size)})` : ''} x${i.quantity}`).join('<br>')}</td><td style="text-align:right">${formatPrice(o.totalCents)}</td><td>${STATUS_LABELS[o.status] || o.status}</td><td>${o.tracking?.number ? `${o.tracking.carrier || ''} ${o.tracking.number}` : ''}</td></tr>`).join('');
   const win = window.open('', '_blank');
   win.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Pedidos · Works Jeans</title><style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:1.2rem;margin:0 0 4px}p{margin:0 0 16px;color:#555;font-size:.85rem}table{width:100%;border-collapse:collapse;font-size:.85rem}th,td{padding:8px 6px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#666}small{color:#666}</style></head><body><h1>Pedidos · Works Jeans</h1><p>${new Date().toLocaleString('es-MX')} · ${orders.length} pedidos</p><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Guía</th></tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>window.print()</script></body></html>`);
   win.document.close();
@@ -896,7 +896,7 @@ document.getElementById('exportOrdersBtn').addEventListener('click', () => {
     o.shipping ? [o.shipping.line1, o.shipping.line2, o.shipping.city, o.shipping.state, o.shipping.postalCode].filter(Boolean).join(', ') : '',
     o.tracking?.carrier || '',
     o.tracking?.number || '',
-    o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join('; '),
+    o.items.map((i) => `${esc(i.name)}${i.size ? ` (${esc(i.size)})` : ''} x${i.quantity}`).join('; '),
     orderPieces(o),
     (o.totalCents / 100).toFixed(2),
     (orderCost(o) / 100).toFixed(2),
@@ -924,10 +924,10 @@ function renderOrders(orders) {
 
   ordersTableBody.innerHTML = orders.map((o) => {
     const date = new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-    const itemsSummary = o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join(', ');
+    const itemsSummary = o.items.map((i) => `${esc(i.name)}${i.size ? ` (${esc(i.size)})` : ''} x${i.quantity}`).join(', ');
     const sourceLabel = o.source === 'stripe' ? `<span class="admin-source">${icon('card', 14)} Tarjeta</span>` : o.source === 'openpay' ? `<span class="admin-source">${icon('card', 14)} ${o.payment?.method === 'spei' ? 'SPEI' : o.payment?.method === 'store' ? 'Tienda' : 'Tarjeta'}${o.payment?.status === 'paid' ? '' : ' · <b>pago pendiente</b>'}</span>` : `<span class="admin-source">${icon('chat', 14)} WhatsApp</span>`;
     return `
-      <tr data-id="${o.id}">
+      <tr data-id="${esc(o.id)}">
         <td class="admin-clickable" data-action="view">${date}</td>
         <td class="admin-clickable" data-action="view">${sourceLabel}</td>
         <td class="admin-clickable" data-action="view">${esc(o.customerName) || '—'}${o.customerPhone ? `<br><span class="admin-muted">${esc(o.customerPhone)}</span>` : ''}</td>
@@ -1089,13 +1089,13 @@ function customerMessage(order) {
   const carrier = document.getElementById('orderTrackingCarrier').value.trim();
   const number = document.getElementById('orderTrackingNumber').value.trim();
   const status = document.getElementById('orderDetailStatus').value;
-  const items = order.items.map((i) => `${i.name}${i.size ? ` talla ${i.size}` : ''} x${i.quantity}`).join(', ');
+  const items = order.items.map((i) => `${esc(i.name)}${i.size ? ` talla ${esc(i.size)}` : ''} x${i.quantity}`).join(', ');
   if (status === 'enviado' || number) {
-    return `${name}, te escribimos de Works Jeans. Tu pedido ${order.id} (${items}) ya va en camino${carrier ? ` por ${carrier}` : ''}${number ? `. Número de guía: ${number}` : ''}. Cualquier duda, con gusto te ayudamos.`;
+    return `${name}, te escribimos de Works Jeans. Tu pedido ${esc(order.id)} (${items}) ya va en camino${carrier ? ` por ${carrier}` : ''}${number ? `. Número de guía: ${number}` : ''}. Cualquier duda, con gusto te ayudamos.`;
   }
-  if (status === 'preparacion') return `${name}, te escribimos de Works Jeans. Tu pedido ${order.id} (${items}) ya está en preparación. Te avisamos en cuanto salga.`;
-  if (status === 'entregado') return `${name}, te escribimos de Works Jeans. Confirmamos la entrega de tu pedido ${order.id}. ¡Gracias por tu compra!`;
-  return `${name}, te escribimos de Works Jeans sobre tu pedido ${order.id} (${items}).`;
+  if (status === 'preparacion') return `${name}, te escribimos de Works Jeans. Tu pedido ${esc(order.id)} (${items}) ya está en preparación. Te avisamos en cuanto salga.`;
+  if (status === 'entregado') return `${name}, te escribimos de Works Jeans. Confirmamos la entrega de tu pedido ${esc(order.id)}. ¡Gracias por tu compra!`;
+  return `${name}, te escribimos de Works Jeans sobre tu pedido ${esc(order.id)} (${items}).`;
 }
 
 document.getElementById('orderWhatsappBtn').addEventListener('click', () => {
@@ -1160,9 +1160,9 @@ const KANBAN_COLUMNS = ['pendiente', 'pagado', 'preparacion', 'enviado', 'entreg
 
 function orderCard(o) {
   const date = new Date(o.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-  const items = o.items.map((i) => `${i.name}${i.size ? ` ${i.size}` : ''} ×${i.quantity}`).join(', ');
+  const items = o.items.map((i) => `${esc(i.name)}${i.size ? ` ${esc(i.size)}` : ''} ×${i.quantity}`).join(', ');
   return `
-    <article class="admin-card" draggable="true" data-id="${o.id}">
+    <article class="admin-card" draggable="true" data-id="${esc(o.id)}">
       <header>
         <span class="admin-card-date">${date}</span>
         <span class="admin-card-source">${o.source === 'stripe' || o.source === 'openpay' ? icon('card', 14) : icon('chat', 14)}</span>
@@ -1325,8 +1325,8 @@ document.getElementById('customersTableBody').addEventListener('click', async (e
   if (btn.dataset.action === 'customer-profile' && window.openCustomerProfile) window.openCustomerProfile(c);
   if (btn.dataset.action === 'customer-edit') openCustomerForm(c);
   if (btn.dataset.action === 'customer-delete') {
-    if (!confirm(`¿Eliminar a ${c.name}? Sus pedidos no se borran.`)) return;
-    const res = await fetch(`/api/admin/customers/${c.id}`, { method: 'DELETE' });
+    if (!confirm(`¿Eliminar a ${esc(c.name)}? Sus pedidos no se borran.`)) return;
+    const res = await fetch(`/api/admin/customers/${esc(c.id)}`, { method: 'DELETE' });
     if (!res.ok) { const d = await res.json().catch(() => ({})); notifyForbidden(d.error || 'No se pudo eliminar.'); }
     loadCustomers();
   }
@@ -1363,7 +1363,7 @@ document.getElementById('restoreBtn').addEventListener('click', async () => {
     errorEl.textContent = result.error || 'No se pudo restaurar.';
     return;
   }
-  okEl.textContent = `Restaurado: ${result.products} productos y ${result.orders} pedidos.`;
+  okEl.textContent = `Restaurado: ${esc(result.products)} productos y ${result.orders} pedidos.`;
   loadSettingsCache().then(loadProducts).then(loadOrders);
 });
 
@@ -1384,12 +1384,12 @@ async function loadInventory() {
   body.innerHTML = log.map((m) => `
     <tr>
       <td>${new Date(m.at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td>
-      <td>${m.productName}</td>
-      <td>${m.size}</td>
+      <td>${esc(m.productName)}</td>
+      <td>${esc(m.size)}</td>
       <td class="${m.delta < 0 ? 'admin-delta-neg' : 'admin-delta-pos'}">${m.delta > 0 ? '+' : ''}${m.delta}</td>
       <td>${m.stockAfter}</td>
-      <td>${m.reason}${m.orderId ? ` <span class="admin-muted">· ${m.orderId}</span>` : ''}</td>
-      <td>${m.warehouse || '—'}</td>
+      <td>${esc(m.reason)}${m.orderId ? ` <span class="admin-muted">· ${m.orderId}</span>` : ''}</td>
+      <td>${esc(m.warehouse || '—')}</td>
       <td>${m.costCents ? `${formatPrice(m.costCents)} c/u` : '—'}</td>
     </tr>
   `).join('');
@@ -1403,8 +1403,8 @@ function renderEntrySizes() {
   const product = productsCache.find((p) => p.id === document.getElementById('entryProduct').value);
   const grid = document.getElementById('entrySizes');
   grid.innerHTML = product ? product.sizes.map((s) => `
-    <label class="admin-stock-size admin-entry-size" data-size="${variantLabel(s)}">
-      <span class="admin-stock-size-name">${variantLabel(s)}</span>
+    <label class="admin-stock-size admin-entry-size" data-size="${esc(variantLabel(s))}">
+      <span class="admin-stock-size-name">${esc(variantLabel(s))}</span>
       <input type="number" min="0" step="1" placeholder="0" inputmode="numeric">
       <span class="admin-muted admin-small">hay ${s.stock}</span>
     </label>
@@ -1423,7 +1423,7 @@ document.getElementById('newEntryBtn').addEventListener('click', () => {
   document.getElementById('entryError').textContent = '';
   document.getElementById('entryForm').reset();
   document.getElementById('entryUpdateCost').checked = true;
-  document.getElementById('entryProduct').innerHTML = productsCache.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('entryProduct').innerHTML = productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
   const names = warehouseList();
   document.getElementById('entryWarehouseWrap').hidden = names.length < 2;
   document.getElementById('entryWarehouse').innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
@@ -1504,7 +1504,7 @@ function renderReports() {
       byProduct[key].sales += i.priceCents * i.quantity;
       byProduct[key].cost += itemCost(i) * i.quantity;
       if (i.size) {
-        const sk = `${key}|${i.size}`;
+        const sk = `${key}|${esc(i.size)}`;
         bySize[sk] = bySize[sk] || { name: i.name, id: i.id, size: i.size, pieces: 0 };
         bySize[sk].pieces += i.quantity;
       }
@@ -1515,7 +1515,7 @@ function renderReports() {
     ? products.map((p) => {
       const product = productsCache.find((x) => x.id === p.id);
       const stock = product ? totalStock(product) : '—';
-      return `<tr><td>${p.name}</td><td>${p.pieces}</td><td>${formatPrice(p.sales)}</td><td class="admin-profit">${formatPrice(p.sales - p.cost)}</td><td>${stock}</td></tr>`;
+      return `<tr><td>${esc(p.name)}</td><td>${p.pieces}</td><td>${formatPrice(p.sales)}</td><td class="admin-profit">${formatPrice(p.sales - p.cost)}</td><td>${stock}</td></tr>`;
     }).join('')
     : '<tr><td colspan="5">Sin ventas en el periodo.</td></tr>';
   const sizes = Object.values(bySize).sort((a, b) => b.pieces - a.pieces).slice(0, 15);
@@ -1524,7 +1524,7 @@ function renderReports() {
       const product = productsCache.find((x) => x.id === s.id);
       const left = product?.sizes.find((z) => z.size === s.size)?.stock;
       const low = Number.isFinite(left) && left <= lowStockLimit();
-      return `<tr><td>${s.name}</td><td>${s.size}</td><td>${s.pieces}</td><td class="${low ? 'admin-stock-low' : ''}">${Number.isFinite(left) ? left : '—'}</td></tr>`;
+      return `<tr><td>${esc(s.name)}</td><td>${esc(s.size)}</td><td>${s.pieces}</td><td class="${low ? 'admin-stock-low' : ''}">${Number.isFinite(left) ? left : '—'}</td></tr>`;
     }).join('')
     : '<tr><td colspan="4">Sin ventas en el periodo.</td></tr>';
 }
@@ -1564,7 +1564,7 @@ function renderBell() {
   if (!newOrdersQueue.length && extrasHtml) { menu.innerHTML = extrasHtml; return; }
   menu.innerHTML = (newOrdersQueue.length ? extrasHtml : '') + (newOrdersQueue.length
     ? newOrdersQueue.map((o) => `
-      <button type="button" class="admin-bell-item" data-order="${o.id}">
+      <button type="button" class="admin-bell-item" data-order="${esc(o.id)}">
         <span class="admin-bell-title"><strong>${esc(o.customerName) || 'Sin nombre'}</strong> · ${formatPrice(o.totalCents)}</span>
         <span>${o.source === 'stripe' ? 'Pago con tarjeta' : o.source === 'openpay' ? 'Openpay' : 'WhatsApp'} · ${new Date(o.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
       </button>`).join('') + '<button type="button" class="admin-bell-clear" data-action="clear-bell">Marcar como vistos</button>'
@@ -1631,7 +1631,7 @@ function addOrderItemRow() {
   row.className = 'admin-order-item-row';
   row.innerHTML = `
     <select class="order-item-product">
-      ${productsCache.map((p) => `<option value="${p.id}">${p.name}</option>`).join('')}
+      ${productsCache.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}
     </select>
     <select class="order-item-size"></select>
     <input type="number" class="order-item-qty" value="1" min="1" max="50" aria-label="Cantidad">
@@ -1646,7 +1646,7 @@ function addOrderItemRow() {
   function fillSizes() {
     const product = productsCache.find((p) => p.id === productSelect.value);
     sizeSelect.innerHTML = product
-      ? product.sizes.map((s) => `<option value="${variantLabel(s)}" ${s.stock <= 0 ? 'disabled' : ''}>${variantLabel(s)} (${s.stock} disp.)</option>`).join('')
+      ? product.sizes.map((s) => `<option value="${esc(variantLabel(s))}" ${s.stock <= 0 ? 'disabled' : ''}>${esc(variantLabel(s))} (${s.stock} disp.)</option>`).join('')
       : '';
   }
 
@@ -1786,10 +1786,10 @@ function renderDashboard() {
     .slice(0, 8);
   document.getElementById('activeOrdersBody').innerHTML = active.length
     ? active.map((o) => `
-      <tr class="admin-clickable-row" data-order="${o.id}">
+      <tr class="admin-clickable-row" data-order="${esc(o.id)}">
         <td>${new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td>
         <td>${esc(o.customerName) || '—'}${o.customerPhone ? `<br><span class="admin-muted">${esc(o.customerPhone)}</span>` : ''}</td>
-        <td class="admin-order-items-cell">${esc(o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} x${i.quantity}`).join(', '))}</td>
+        <td class="admin-order-items-cell">${esc(o.items.map((i) => `${esc(i.name)}${i.size ? ` (${esc(i.size)})` : ''} x${i.quantity}`).join(', '))}</td>
         <td>${formatPrice(o.totalCents)}</td>
         <td><span class="admin-badge status-${o.status}">${STATUS_LABELS[o.status]}</span></td>
       </tr>`).join('')
@@ -1822,7 +1822,7 @@ function renderDashboard() {
   const limit = lowStockLimit();
   productsCache.forEach((p) => {
     p.sizes.forEach((s) => {
-      if (s.stock <= limit) lowStockItems.push(`${p.name} — talla ${s.size} <span class="admin-rank-value">${s.stock} pzas</span>`);
+      if (s.stock <= limit) lowStockItems.push(`${esc(p.name)} — talla ${esc(s.size)} <span class="admin-rank-value">${s.stock} pzas</span>`);
     });
   });
   lowStockList.innerHTML = lowStockItems.length

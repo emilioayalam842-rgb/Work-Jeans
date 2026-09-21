@@ -29,7 +29,7 @@
     const v = parseVariant(item.size);
     if (key === 'color') return v.color || p.wash || '—';
     if (key === 'size') return v.size || '—';
-    if (key === 'sizeLength') return v.length ? `${v.size} × ${v.length}` : v.size || '—';
+    if (key === 'sizeLength') return v.length ? `${esc(v.size)} × ${v.length}` : v.size || '—';
     return p[key] || '—';
   }
 
@@ -51,7 +51,7 @@
       const x = padL + i * bw + bw * 0.15;
       const y = 10 + innerH - h;
       const labelEvery = Math.ceil(points.length / 10);
-      return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${p.value ? '#ffd600' : '#ececec'}" stroke="none"><title>${p.label}: ${fmt(p.value)}</title></rect>${i % labelEvery === 0 ? `<text x="${(x + bw * 0.35).toFixed(1)}" y="${height - 8}" text-anchor="middle" font-size="10" fill="#666">${p.label}</text>` : ''}</g>`;
+      return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${p.value ? '#ffd600' : '#ececec'}" stroke="none"><title>${esc(p.label)}: ${fmt(p.value)}</title></rect>${i % labelEvery === 0 ? `<text x="${(x + bw * 0.35).toFixed(1)}" y="${height - 8}" text-anchor="middle" font-size="10" fill="#666">${esc(p.label)}</text>` : ''}</g>`;
     }).join('');
     el.innerHTML = `<svg viewBox="0 0 ${w} ${height}" class="admin-chart" role="img">
       ${ticks.map((t) => `<line x1="${padL}" x2="${w - 8}" y1="${t.y}" y2="${t.y}" stroke="#eee"/><text x="${padL - 6}" y="${t.y + 3}" text-anchor="end" font-size="10" fill="#888">${fmt(Math.round(t.v))}</text>`).join('')}
@@ -88,7 +88,7 @@
     validOrders().forEach((o) => {
       const age = now - new Date(o.createdAt).getTime();
       o.items.forEach((i) => {
-        const k = `${i.id}|${i.size || ''}`;
+        const k = `${esc(i.id)}|${esc(i.size || '')}`;
         if (age <= 30 * DAY) sold30[k] = (sold30[k] || 0) + i.quantity;
         if (age <= 60 * DAY) sold60[k] = (sold60[k] || 0) + i.quantity;
       });
@@ -99,7 +99,7 @@
       if (p.status && p.status !== 'activo') return;
       p.sizes.forEach((v) => {
         const label = variantLabel(v);
-        const k = `${p.id}|${label}`;
+        const k = `${esc(p.id)}|${label}`;
         const rate = (sold30[k] || 0) / 30;
         const days = rate > 0 ? v.stock / rate : null;
         if (rate > 0 && days !== null && days <= 14) risk.push({ product: p.name, label, stock: v.stock, rate, days });
@@ -115,8 +115,8 @@
     if (!el) return;
     const { risk, slow } = inventoryIntelligence();
     const cards = [
-      ...risk.slice(0, limit).map((r) => `<div class="admin-alert ${r.days <= 3 ? 'is-out' : ''}"><strong>Riesgo de agotarse</strong>${r.product} · ${r.label}<span>Stock ${r.stock} · venta promedio ${r.rate.toFixed(1)}/día · inventario estimado: ${Math.max(0, Math.round(r.days))} días.</span></div>`),
-      ...slow.slice(0, limit).map((s) => `<div class="admin-alert is-slow"><strong>Inventario lento</strong>${s.product} · ${s.label}<span>${s.stock} piezas · solo ${s.sold} ventas en 60 días · ${formatPrice(s.cost)} detenidos.</span></div>`),
+      ...risk.slice(0, limit).map((r) => `<div class="admin-alert ${r.days <= 3 ? 'is-out' : ''}"><strong>Riesgo de agotarse</strong>${r.product} · ${esc(r.label)}<span>Stock ${r.stock} · venta promedio ${r.rate.toFixed(1)}/día · inventario estimado: ${Math.max(0, Math.round(r.days))} días.</span></div>`),
+      ...slow.slice(0, limit).map((s) => `<div class="admin-alert is-slow"><strong>Inventario lento</strong>${s.product} · ${esc(s.label)}<span>${s.stock} piezas · solo ${s.sold} ventas en 60 días · ${formatPrice(s.cost)} detenidos.</span></div>`),
     ];
     el.innerHTML = cards.length ? cards.join('') : '<div class="admin-alert is-ok"><strong>Todo en orden</strong>Sin variantes en riesgo ni inventario lento con los datos actuales.</div>';
   }
@@ -170,8 +170,8 @@
     productsCache.forEach((p) => {
       if (p.status && p.status !== 'activo') return;
       p.sizes.forEach((v) => {
-        if (v.stock === 0) out.push(`${p.name} · ${variantLabel(v)}`);
-        else if (v.stock <= limit) low.push(`${p.name} · ${variantLabel(v)} <span class="admin-rank-value">${v.stock}</span>`);
+        if (v.stock === 0) out.push(`${esc(p.name)} · ${esc(variantLabel(v))}`);
+        else if (v.stock <= limit) low.push(`${esc(p.name)} · ${esc(variantLabel(v))} <span class="admin-rank-value">${v.stock}</span>`);
       });
     });
     document.getElementById('dLowStock').innerHTML = low.length ? low.slice(0, 8).map((h) => `<li>${h}</li>`).join('') + (low.length > 8 ? `<li class="admin-muted">y ${low.length - 8} más…</li>` : '') : '<li class="admin-muted">Ninguna variante en stock bajo.</li>';
@@ -306,8 +306,8 @@
     document.getElementById('repDaysStock').textContent = dailyUnits > 0 ? `${Math.round(stockUnits / dailyUnits)} días` : '—';
     document.getElementById('repRotation').textContent = stockUnits > 0 ? `${(pieces / stockUnits).toFixed(2)}×` : '—';
     const { risk, slow } = inventoryIntelligence();
-    document.getElementById('repRiskBody').innerHTML = risk.length ? risk.slice(0, 12).map((r) => `<tr><td>${r.product}</td><td>${r.label}</td><td>${r.stock}</td><td>${r.rate.toFixed(1)}/día</td><td class="admin-stock-low">${Math.max(0, Math.round(r.days))} días</td></tr>`).join('') : '<tr><td colspan="5">Ninguna variante en riesgo con las ventas de los últimos 30 días.</td></tr>';
-    document.getElementById('repSlowBody').innerHTML = slow.length ? slow.slice(0, 12).map((s) => `<tr><td>${s.product}</td><td>${s.label}</td><td>${s.stock}</td><td>${s.sold}</td><td>${formatPrice(s.cost)}</td></tr>`).join('') : '<tr><td colspan="5">Sin inventario lento (20+ piezas con 3 ventas o menos en 60 días).</td></tr>';
+    document.getElementById('repRiskBody').innerHTML = risk.length ? risk.slice(0, 12).map((r) => `<tr><td>${r.product}</td><td>${esc(r.label)}</td><td>${r.stock}</td><td>${r.rate.toFixed(1)}/día</td><td class="admin-stock-low">${Math.max(0, Math.round(r.days))} días</td></tr>`).join('') : '<tr><td colspan="5">Ninguna variante en riesgo con las ventas de los últimos 30 días.</td></tr>';
+    document.getElementById('repSlowBody').innerHTML = slow.length ? slow.slice(0, 12).map((s) => `<tr><td>${s.product}</td><td>${esc(s.label)}</td><td>${s.stock}</td><td>${s.sold}</td><td>${formatPrice(s.cost)}</td></tr>`).join('') : '<tr><td colspan="5">Sin inventario lento (20+ piezas con 3 ventas o menos en 60 días).</td></tr>';
     renderInsights(document.getElementById('repInsights'));
   };
 

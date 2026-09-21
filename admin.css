@@ -1403,3 +1403,15 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 .zone-tier { display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; color: #555; }
 .zone-tier input { width: 62px; margin: 0; padding: 5px 7px; font-size: 0.82rem; }
 .zone-tier [data-action="remove-tier"] { padding: 2px 5px; line-height: 1; }
+
+/* Campo de contraseña con botón para mostrarla */
+.admin-password-field { display: flex; gap: 8px; align-items: stretch; }
+.admin-password-field input { flex: 1; min-width: 0; margin: 0; }
+.admin-password-toggle { flex: none; padding: 0 14px; border: 1px solid var(--line-2, #d9d9d9); border-radius: 8px; background: #f6f6f6; font: inherit; font-size: 0.84rem; font-weight: 600; color: #444; cursor: pointer; }
+.admin-password-toggle:hover { background: #ececec; color: #111; }
+.admin-password-toggle:focus-visible { outline: 2px solid #e6c200; outline-offset: 1px; }
+
+/* Ventana de reautenticación */
+.admin-reauth { max-width: 420px; }
+.admin-reauth h2 { margin-top: 0; }
+.admin-reauth input { width: 100%; }

@@ -23,7 +23,7 @@
       const d = await r.json();
       $('backupEmailToggle').checked = d.emailWeekly;
       $('backupEmailInfo').textContent = d.emailConfigured ? (d.lastEmailAt ? `Último envío: ${fmtDT(d.lastEmailAt)}` : 'Aún no se ha enviado ninguno.') : 'Para enviarlo por correo, guarda arriba un correo para avisos.';
-      list.innerHTML = d.backups.length ? d.backups.map((b) => `<li><span class="admin-backup-date"><b>${esc(b.date)}</b> <small>${kb(b.bytes)} · ${ago(b.at)}</small></span><span class="admin-backup-btns"><a class="btn btn-secondary btn-sm" href="/api/admin/backups/${esc(b.name)}" download>Descargar</a><button type="button" class="btn btn-ghost btn-sm" data-restore="${esc(b.name)}" data-date="${esc(b.date)}">Restaurar</button></span></li>`).join('') : '<li class="admin-muted">Todavía no hay respaldos automáticos. El primero se crea solo unos segundos después de arrancar el servidor.</li>';
+      list.innerHTML = d.backups.length ? d.backups.map((b) => `<li><span class="admin-backup-date"><b>${esc(b.date)}</b> <small>${kb(b.bytes)} · ${ago(b.at)}</small></span><span class="admin-backup-btns"><button type="button" class="btn btn-secondary btn-sm" data-descargar="${esc(b.name)}">Descargar</button><button type="button" class="btn btn-ghost btn-sm" data-restore="${esc(b.name)}" data-date="${esc(b.date)}">Restaurar</button></span></li>`).join('') : '<li class="admin-muted">Todavía no hay respaldos automáticos. El primero se crea solo unos segundos después de arrancar el servidor.</li>';
     } catch (err) {
       $('backupListError').textContent = err.message;
     }
@@ -60,6 +60,18 @@
 
   function load() { loaded = true; loadBackups(); loadStatus(); loadSiteTexts().catch(() => {}); }
 
+  document.getElementById('descargarRespaldo')?.addEventListener('click', async () => {
+    const res = await fetch('/api/admin/backup');
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `respaldo-works-jeans-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
+
   $('backupNowBtn').addEventListener('click', async () => {
     $('backupListSuccess').textContent = ''; $('backupListError').textContent = '';
     const r = await fetch('/api/admin/backups/run', { method: 'POST' });
@@ -83,7 +95,29 @@
     if (typeof loadSettingsCache === 'function') loadSettingsCache();
     loadStatus();
   });
+  // La descarga pide la contraseña otra vez: el archivo lleva pedidos, clientes y direcciones.
+  async function descargar(nombre) {
+    $('backupListError').textContent = '';
+    const res = await fetch(`/api/admin/backups/${encodeURIComponent(nombre)}`);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      if (d.code !== 'reauth_required') $('backupListError').textContent = d.error || 'No se pudo descargar.';
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `respaldo-works-jeans-${nombre.slice(9)}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
   $('backupList').addEventListener('click', async (e) => {
+    const btnDescarga = e.target.closest('[data-descargar]');
+    if (btnDescarga) { descargar(btnDescarga.dataset.descargar); return; }
     const b = e.target.closest('[data-restore]');
     if (!b) return;
     if (!confirm(`Se reemplazarán TODOS los productos, pedidos y ajustes actuales por los del respaldo del ${b.dataset.date}. ¿Continuar?`)) return;
@@ -91,7 +125,7 @@
     const r = await fetch(`/api/admin/backups/${b.dataset.restore}/restore`, { method: 'POST' });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { $('backupListError').textContent = d.error || 'No se pudo restaurar.'; return; }
-    $('backupListSuccess').textContent = `Restaurado: ${d.products} productos y ${d.orders} pedidos.`;
+    $('backupListSuccess').textContent = `Restaurado: ${esc(d.products)} productos y ${d.orders} pedidos.`;
     if (typeof loadSettingsCache === 'function') loadSettingsCache().then(loadProducts).then(loadOrders);
   });
 

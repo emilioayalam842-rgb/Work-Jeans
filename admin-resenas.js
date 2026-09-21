@@ -10,7 +10,7 @@
     const counts = ['pendiente', 'aprobada', 'rechazada'].map((s) => `${s}: ${reviews.filter((r) => r.status === s).length}`).join(' · ');
     document.getElementById('reviewCounts').textContent = counts;
     document.getElementById('reviewsTableBody').innerHTML = rows.length ? rows.map((r) => `
-      <tr data-id="${r.id}" class="${r.status === 'aprobada' ? '' : 'admin-row-hidden'}">
+      <tr data-id="${esc(r.id)}" class="${r.status === 'aprobada' ? '' : 'admin-row-hidden'}">
         <td class="admin-nowrap">${fmtDate(r.createdAt)}</td>
         <td><strong>${esc(r.productName)}</strong><br><span class="admin-muted admin-small">Pedido ${esc(r.orderId)}</span></td>
         <td>${stars(r.rating)}<br><span class="admin-small">${esc(r.comment)}</span></td>

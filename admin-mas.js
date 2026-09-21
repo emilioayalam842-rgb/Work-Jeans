@@ -14,7 +14,7 @@
       const since = o.status === 'enviado' && o.shippedAt ? o.shippedAt : o.status === 'pagado' && o.payment?.paidAt ? o.payment.paidAt : o.createdAt;
       const foot = document.createElement('div');
       foot.className = 'admin-card-meta';
-      foot.innerHTML = `${n.map((x) => `<span class="admin-need is-${x.level}">${x.label}</span>`).join('')}<span class="admin-muted admin-small">${STATUS_LABELS[o.status] || o.status} ${ago(since)}</span>`;
+      foot.innerHTML = `${n.map((x) => `<span class="admin-need is-${x.level}">${esc(x.label)}</span>`).join('')}<span class="admin-muted admin-small">${STATUS_LABELS[o.status] || o.status} ${ago(since)}</span>`;
       card.appendChild(foot);
       if (n.some((x) => x.level === 'warn')) card.classList.add('is-urgent');
     });
@@ -140,7 +140,7 @@
         </div>
         ${c.notes ? `<div class="admin-lead-note"><span class="admin-kicker">Notas</span><p>${esc(c.notes)}</p></div>` : ''}
         <h3 class="admin-profile-h">Historial de pedidos</h3>
-        ${orders.length ? `<table class="admin-table admin-detail-table"><thead><tr><th>Fecha</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead><tbody>${orders.map((o) => `<tr class="admin-clickable" data-open-order="${o.id}"><td class="admin-nowrap">${new Date(o.createdAt).toLocaleDateString('es-MX', { dateStyle: 'medium' })}</td><td>${esc(o.items.map((i) => `${i.name}${i.size ? ` (${i.size})` : ''} ×${i.quantity}`).join(', '))}</td><td class="admin-nowrap">${formatPrice(o.totalCents)}</td><td><span class="admin-badge status-${o.status}">${STATUS_LABELS[o.status] || o.status}</span></td></tr>`).join('')}</tbody></table>` : '<p class="admin-muted">Todavía no tiene pedidos.</p>'}
+        ${orders.length ? `<table class="admin-table admin-detail-table"><thead><tr><th>Fecha</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead><tbody>${orders.map((o) => `<tr class="admin-clickable" data-open-order="${esc(o.id)}"><td class="admin-nowrap">${new Date(o.createdAt).toLocaleDateString('es-MX', { dateStyle: 'medium' })}</td><td>${esc(o.items.map((i) => `${esc(i.name)}${i.size ? ` (${esc(i.size)})` : ''} ×${i.quantity}`).join(', '))}</td><td class="admin-nowrap">${formatPrice(o.totalCents)}</td><td><span class="admin-badge status-${o.status}">${STATUS_LABELS[o.status] || o.status}</span></td></tr>`).join('')}</tbody></table>` : '<p class="admin-muted">Todavía no tiene pedidos.</p>'}
         <div class="admin-form-actions admin-form-actions--wrap">
           ${wa ? `<a class="btn btn-secondary admin-btn-icon" href="https://wa.me/${wa}" target="_blank" rel="noopener">${icon('whatsapp')} WhatsApp</a>` : ''}
           <button type="button" class="btn btn-secondary" data-profile-edit>${c.manual ? 'Editar datos' : 'Completar datos'}</button>

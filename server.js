@@ -385,7 +385,31 @@ function parseMoney(value) {
 }
 
 // Campos opcionales del producto que vienen del formulario del panel (multipart, todo es texto).
+// Ningún texto del panel debe guardar etiquetas HTML. Es la defensa de raíz contra el XSS
+// almacenado: si el dato nunca entra con "<", ninguna pantalla puede ejecutarlo después.
+const CAMPOS_TEXTO_PRODUCTO = {
+  name: 140, description: 600, category: 60, sku: 60, gender: 40, fit: 60, rise: 60, wash: 60,
+  composition: 120, stretch: 60, season: 60, collection: 80, tag: 20, status: 20,
+  longDescription: 3000, care: 800, customization: 600, seoTitle: 70, seoDescription: 170,
+};
+function limpiarTextos(obj, campos) {
+  if (!obj || typeof obj !== 'object') return obj;
+  for (const [campo, max] of Object.entries(campos)) {
+    if (typeof obj[campo] === 'string') obj[campo] = cleanText(obj[campo], max);
+  }
+  return obj;
+}
+// Las rutas de imagen solo pueden ser internas o https: así no se cuela javascript: ni data:.
+function rutaImagenSegura(valor) {
+  const v = String(valor || '').trim();
+  if (!v) return '';
+  if (/^https:\/\/[\w.-]+\/[\w./%-]*$/.test(v)) return v.slice(0, 300);
+  if (/^(assets\/[\w./-]+|\/img\/\d+\/[\w./-]+)$/.test(v) && !v.includes('..')) return v.slice(0, 300);
+  return '';
+}
+
 function applyProductExtras(product, body) {
+  limpiarTextos(body, CAMPOS_TEXTO_PRODUCTO);
   if (body.active !== undefined && body.status === undefined) {
     product.active = body.active === 'true' || body.active === '1' || body.active === 'on';
     product.status = product.active ? 'activo' : (product.status === 'descontinuado' ? 'descontinuado' : 'borrador');
@@ -896,7 +920,17 @@ app.use((req, res, next) => {
   res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
 });
 
+app.disable('x-powered-by');
 app.use(compression());
+
+// El panel y sus datos no deben quedar guardados en el navegador ni en ningún intermediario.
+app.use((req, res, next) => {
+  if (req.path === '/workmapadmin.html' || req.path.startsWith('/api/admin/')) {
+    res.set('Cache-Control', 'private, no-store');
+    res.set('Pragma', 'no-cache');
+  }
+  next();
+});
 
 // Política de contenido: el navegador solo ejecuta scripts del propio sitio (y el de Google Analytics
 // cuando el visitante acepta cookies). Bloquea la inyección de scripts externos y el uso del sitio
@@ -955,6 +989,23 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 });
 
 app.use(express.json({ limit: '1mb' }));
+// Protección contra peticiones falsificadas desde otro sitio: cualquier operación que cambie datos
+// debe venir del propio dominio. La cookie ya es SameSite=Lax, esto lo refuerza para navegadores
+// viejos y para peticiones sin cookie de navegación.
+const CAMBIAN_DATOS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const SIN_ORIGEN = new Set(['/api/stripe/webhook', '/api/openpay/webhook']);
+app.use((req, res, next) => {
+  if (!CAMBIAN_DATOS.has(req.method) || SIN_ORIGEN.has(req.path)) return next();
+  const origen = req.headers.origin || req.headers.referer || '';
+  if (!origen) return next(); // peticiones de servidor a servidor (webhooks, integraciones) no mandan origen
+  let host;
+  try { host = new URL(origen).host; } catch { host = ''; }
+  const propios = new Set([req.headers.host, CANONICAL_HOST, 'www.workjeans.mx', 'workjeans.mx'].filter(Boolean));
+  if (propios.has(host)) return next();
+  logError('csrf', `origen ajeno ${host}`, `${req.method} ${req.path}`);
+  res.status(403).json({ error: 'Petición rechazada: viene de otro sitio.' });
+});
+
 app.use(session({
   name: 'wj.sid',
   secret: security.sessionSecret(),
@@ -1315,7 +1366,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260921i';
+const ASSET_V = '20260921k';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -2060,6 +2111,8 @@ app.use(express.static(__dirname, {
   extensions: ['html'],
   // HTML, CSS y JS cambian con cada deploy: el navegador y Cloudflare deben revalidar (ETag) en vez de guardar copias por horas.
   setHeaders: (res, filePath) => {
+    // El panel y sus datos nunca se guardan en caché.
+    if (/workmapadmin\.html$|^.*\/(nota|etiqueta)\.html$/i.test(filePath)) { res.set('Cache-Control', 'private, no-store'); res.set('Pragma', 'no-cache'); return; }
     // CSS y JS llevan ?v=versión en el HTML: cada cambio genera una URL nueva, así que pueden guardarse un año.
     if (/\.(css|js)$/i.test(filePath) && res.req && res.req.query && res.req.query.v) res.set('Cache-Control', 'public, max-age=31536000, immutable');
     else if (/\.(html|css|js|xml|txt)$/i.test(filePath)) res.set('Cache-Control', 'public, max-age=0, must-revalidate');
@@ -2098,7 +2151,8 @@ function loadSessionUser(req) {
 }
 
 function mfaEnforced(user) {
-  return Boolean(getSettings().security?.requireMfaAdmins) && Boolean(SEC.ROLES[user.role]?.mfa) && !user.mfa?.enabled;
+  // Obligatorio por omisión: solo se desactiva marcándolo explícitamente en Configuración.
+  return getSettings().security?.requireMfaAdmins !== false && Boolean(SEC.ROLES[user.role]?.mfa) && !user.mfa?.enabled;
 }
 
 function requireAdmin(req, res, next) {
@@ -2120,6 +2174,44 @@ function requireAdmin(req, res, next) {
   }
   next();
 }
+
+// Algunas operaciones no bastan con tener la sesión abierta: si alguien se levanta de su lugar con
+// el panel abierto, no debería poder descargar los datos de todos los clientes ni cambiar contraseñas.
+// Para esas se vuelve a pedir la contraseña, y vale por 10 minutos.
+const REAUTH_VENTANA = 10 * 60 * 1000;
+function requireReauth(req, res, next) {
+  const at = req.session?.reauthAt || 0;
+  if (Date.now() - at < REAUTH_VENTANA) return next();
+  res.status(403).json({ error: 'Vuelve a escribir tu contraseña para continuar.', code: 'reauth_required' });
+}
+
+app.post('/api/admin/reauth', requireAdmin, (req, res) => {
+  const user = security.findUser(req.adminUser.id);
+  const ip = clientIp(req);
+  if (security.attempts.blocked(`reauth:${ip}`)) {
+    res.status(429).json({ error: 'Demasiados intentos. Espera unos minutos.' });
+    return;
+  }
+  if (!user || user.active === false || !SEC.verifyHash(String(req.body.password || ''), user.salt, user.hash)) {
+    security.attempts.fail(`reauth:${ip}`);
+    security.audit({ action: 'reauth.fallido', userId: req.adminUser.id, user: req.adminUser.username, ip });
+    res.status(401).json({ error: 'Contraseña incorrecta.' });
+    return;
+  }
+  if (user.mfa?.enabled) {
+    const step = SEC.totpMatchStep(user.mfa.secret, req.body.code, user.mfa.lastStep || 0);
+    if (step === null) {
+      security.attempts.fail(`reauth:${ip}`);
+      res.status(401).json({ error: 'Código de verificación incorrecto.', code: 'mfa_needed' });
+      return;
+    }
+    security.updateUser(user.id, (u) => { u.mfa.lastStep = step; });
+  }
+  security.attempts.clear(`reauth:${ip}`);
+  req.session.reauthAt = Date.now();
+  auditLog(req, 'reauth', {});
+  res.json({ ok: true, mfa: Boolean(user.mfa?.enabled), validoHasta: new Date(Date.now() + REAUTH_VENTANA).toISOString() });
+});
 
 // Permiso específico, siempre validado en el servidor.
 function perm(...needed) {
@@ -2225,7 +2317,11 @@ app.post('/api/admin/login/mfa', (req, res) => {
     return;
   }
   security.updateUser(user.id, (u) => { u.mfa.lastStep = step; });
-  finishLogin(req, res, user);
+  // Identificador nuevo también al pasar el segundo factor, no solo al validar la contraseña.
+  req.session.regenerate((err) => {
+    if (err) { res.status(500).json({ error: 'No se pudo iniciar la sesión.' }); return; }
+    finishLogin(req, res, user);
+  });
 });
 
 app.post('/api/admin/logout', (req, res) => {
@@ -2365,7 +2461,7 @@ app.post('/api/admin/users', requireAdmin, perm('usuarios'), (req, res) => {
   res.status(201).json(security.publicUser(user));
 });
 
-app.put('/api/admin/users/:id', requireAdmin, perm('usuarios'), (req, res) => {
+app.put('/api/admin/users/:id', requireAdmin, perm('usuarios'), requireReauth, (req, res) => {
   const users = security.getUsers();
   const user = users.find((u) => u.id === req.params.id);
   if (!user) {
@@ -2404,7 +2500,7 @@ app.put('/api/admin/users/:id', requireAdmin, perm('usuarios'), (req, res) => {
   res.json(security.publicUser(updated));
 });
 
-app.post('/api/admin/users/:id/reset-password', requireAdmin, perm('usuarios'), (req, res) => {
+app.post('/api/admin/users/:id/reset-password', requireAdmin, perm('usuarios'), requireReauth, (req, res) => {
   const user = security.findUser(req.params.id);
   if (!user) {
     res.status(404).json({ error: 'Usuario no encontrado.' });
@@ -2433,7 +2529,7 @@ app.post('/api/admin/users/:id/logout-all', requireAdmin, perm('usuarios'), (req
   res.json({ ok: true });
 });
 
-app.post('/api/admin/users/:id/mfa-reset', requireAdmin, perm('usuarios'), (req, res) => {
+app.post('/api/admin/users/:id/mfa-reset', requireAdmin, perm('usuarios'), requireReauth, (req, res) => {
   const user = security.updateUser(req.params.id, (u) => { u.mfa = { enabled: false, secret: null, lastStep: 0 }; u.sessionVersion += 1; });
   if (!user) {
     res.status(404).json({ error: 'Usuario no encontrado.' });
@@ -2444,7 +2540,7 @@ app.post('/api/admin/users/:id/mfa-reset', requireAdmin, perm('usuarios'), (req,
   res.json({ ok: true });
 });
 
-app.delete('/api/admin/users/:id', requireAdmin, perm('usuarios'), (req, res) => {
+app.delete('/api/admin/users/:id', requireAdmin, perm('usuarios'), requireReauth, (req, res) => {
   const users = security.getUsers();
   const user = users.find((u) => u.id === req.params.id);
   if (!user) {
@@ -2469,9 +2565,9 @@ app.get('/api/admin/audit', requireAdmin, perm('auditoria'), (req, res) => {
   res.json(security.getAudit().slice(-limit).reverse());
 });
 
-app.put('/api/admin/security', requireAdmin, perm('usuarios'), (req, res) => {
+app.put('/api/admin/security', requireAdmin, perm('usuarios'), requireReauth, (req, res) => {
   const settings = getSettings();
-  settings.security = { ...(settings.security || {}), requireMfaAdmins: Boolean(req.body.requireMfaAdmins) };
+  settings.security = { ...(settings.security || {}), requireMfaAdmins: req.body.requireMfaAdmins !== false };
   saveSettings(settings);
   auditLog(req, 'seguridad.configurar', { details: settings.security });
   res.json(settings.security);
@@ -2580,10 +2676,12 @@ function applySiteTexts(html) {
   return out;
 }
 app.get('/health', (req, res) => {
+  // Solo dice si el sitio responde. Los detalles (tiempo encendido, versiones, datos) viven en el
+  // panel, detrás de autenticación: un monitor externo no necesita conocer la infraestructura.
   let ok = true;
   try { getSettings(); getProducts(); } catch { ok = false; }
   res.set('Cache-Control', 'no-store');
-  res.status(ok ? 200 : 500).json({ ok, uptime: Math.round(process.uptime()), at: new Date().toISOString() });
+  res.status(ok ? 200 : 500).json({ ok });
 });
 
 app.get('/api/settings', (req, res) => {
@@ -2591,6 +2689,22 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.put('/api/admin/settings', requireAdmin, perm('configuracion.editar'), (req, res) => {
+  // Nada de lo que guarda el panel debe llevar etiquetas HTML.
+  if (req.body && typeof req.body === 'object') {
+    limpiarTextos(req.body, { storeName: 80, phoneDisplay: 40, address: 200, hours: 120, googleRating: 10, googleReviewCount: 10, mapsQuery: 200, notifyEmail: 160, ga4Id: 30 });
+    for (const lista of ['categories', 'collections', 'warehouses']) {
+      if (Array.isArray(req.body[lista])) {
+        req.body[lista] = req.body[lista].map((x) => (typeof x === 'string' ? cleanText(x, 80) : limpiarTextos(x, { name: 80, id: 40, address: 200 }))).filter(Boolean).slice(0, 60);
+      }
+    }
+    if (req.body.shipping && Array.isArray(req.body.shipping.zones)) {
+      req.body.shipping.zones = req.body.shipping.zones.map((z) => limpiarTextos(z, { name: 60, days: 60 }));
+    }
+    if (typeof req.body.googleMapsUrl === 'string') {
+      const u = req.body.googleMapsUrl.trim();
+      req.body.googleMapsUrl = /^https:\/\/[\w.-]+\//.test(u) ? u.slice(0, 300) : '';
+    }
+  }
   // Los escalones de envío se limpian aquí: solo números y como máximo seis por zona.
   if (req.body && req.body.shipping && Array.isArray(req.body.shipping.zones)) {
     req.body.shipping.zones = req.body.shipping.zones.map((z) => ({
@@ -2672,6 +2786,7 @@ function uploadedImages(req) {
 
 app.post('/api/admin/products', requireAdmin, perm('productos.editar'), productUpload, (req, res) => {
   try {
+    limpiarTextos(req.body, CAMPOS_TEXTO_PRODUCTO);
     const { name, category, priceMxn, description, sizes } = req.body;
     if (!name || !category || !priceMxn || !description || !sizes) {
       res.status(400).json({ error: 'Faltan campos requeridos.' });
@@ -2720,6 +2835,7 @@ app.put('/api/admin/products/:id', requireAdmin, perm('productos.editar'), produ
       return;
     }
 
+    limpiarTextos(req.body, CAMPOS_TEXTO_PRODUCTO);
     const { name, category, priceMxn, description, sizes } = req.body;
     if (name) product.name = name;
     if (category) product.category = category;
@@ -3684,7 +3800,7 @@ app.post('/api/cart/quote', (req, res) => {
 
 function normalizePromo(body, existing = {}) {
   const promo = { ...existing };
-  if (body.name !== undefined) promo.name = String(body.name || '').trim().slice(0, 80);
+  if (body.name !== undefined) promo.name = cleanText(body.name, 80);
   if (body.code !== undefined) promo.code = String(body.code || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 30) || null;
   if (body.type !== undefined) promo.type = PROMO_TYPES.includes(body.type) ? body.type : 'percent';
   if (body.value !== undefined) {
@@ -4616,11 +4732,41 @@ function buildBackup() {
     reviews: readJsonList(REVIEWS_PATH),
     articles: readJsonList(ARTICLES_PATH),
     stockAlerts: readJsonList(STOCK_ALERTS_PATH),
+    // Las fotos no caben en el archivo, pero sí la lista: así se sabe qué faltaría reponer.
+    imagenes: inventarioDeImagenes(),
   };
 }
 
+function inventarioDeImagenes() {
+  try {
+    return fs.readdirSync(PRODUCTS_IMG_DIR)
+      .filter((n) => /\.(jpe?g|png|webp|avif)$/i.test(n))
+      .slice(0, 2000)
+      .map((n) => { const st = fs.statSync(path.join(PRODUCTS_IMG_DIR, n)); return { nombre: n, bytes: st.size, at: st.mtime.toISOString().slice(0, 10) }; });
+  } catch { return []; }
+}
+
+const VERSIONES_RESPALDO = new Set([1, 2]);
+const MAX_RESPALDO_BYTES = 40 * 1024 * 1024;
+// Devuelve null si el respaldo sirve, o el motivo por el que no.
+function problemaDelRespaldo(b) {
+  if (!b || typeof b !== 'object') return 'El archivo no es un respaldo.';
+  if (b.app !== 'works-jeans') return 'El archivo no es un respaldo de Works Jeans.';
+  if (b.version !== undefined && !VERSIONES_RESPALDO.has(Number(b.version))) return `El respaldo es de una versión que este sistema no entiende (${b.version}).`;
+  if (!Array.isArray(b.products) || !Array.isArray(b.orders)) return 'Al respaldo le faltan los productos o los pedidos.';
+  if (!b.settings || typeof b.settings !== 'object' || Array.isArray(b.settings)) return 'Al respaldo le falta la configuración.';
+  for (const [campo, lista] of [['productos', b.products], ['pedidos', b.orders]]) {
+    if (lista.some((x) => !x || typeof x !== 'object' || Array.isArray(x))) return `Hay ${campo} con formato inválido.`;
+  }
+  if (b.products.length && !b.products.every((p) => typeof p.id === 'string')) return 'Hay productos sin identificador.';
+  if (b.orders.length && !b.orders.every((o) => typeof o.id === 'string')) return 'Hay pedidos sin identificador.';
+  let bytes = 0;
+  try { bytes = Buffer.byteLength(JSON.stringify(b)); } catch { return 'El respaldo no se pudo leer completo.'; }
+  if (bytes > MAX_RESPALDO_BYTES) return `El respaldo pesa ${Math.round(bytes / 1048576)} MB y el máximo es ${MAX_RESPALDO_BYTES / 1048576} MB.`;
+  return null;
+}
 function validBackup(b) {
-  return b && b.app === 'works-jeans' && Array.isArray(b.products) && Array.isArray(b.orders) && b.settings && typeof b.settings === 'object';
+  return problemaDelRespaldo(b) === null;
 }
 
 function restoreBackup(b) {
@@ -4646,15 +4792,16 @@ function restoreBackup(b) {
   return { ok: true, products: b.products.length, orders: b.orders.length };
 }
 
-app.get('/api/admin/backup', requireAdmin, perm('respaldo'), (req, res) => {
+app.get('/api/admin/backup', requireAdmin, perm('respaldo'), requireReauth, (req, res) => {
   const backup = buildBackup();
   res.set('Content-Disposition', `attachment; filename="respaldo-works-jeans-${backup.exportedAt.slice(0, 10)}.json"`);
   res.json(backup);
 });
 
-app.post('/api/admin/restore', requireAdmin, perm('respaldo'), express.json({ limit: '25mb' }), (req, res) => {
-  if (!validBackup(req.body)) {
-    res.status(400).json({ error: 'El archivo no es un respaldo válido de Works Jeans.' });
+app.post('/api/admin/restore', requireAdmin, perm('respaldo'), requireReauth, express.json({ limit: '25mb' }), (req, res) => {
+  const problema = problemaDelRespaldo(req.body);
+  if (problema) {
+    res.status(400).json({ error: problema });
     return;
   }
   auditLog(req, 'respaldo.restaurar', { details: 'archivo subido' });
@@ -4693,12 +4840,12 @@ async function emailWeeklyBackup(force = false) {
   if (!force && last && Date.now() - new Date(last).getTime() < 6.5 * 24 * 3600000) return { ok: false, reason: 'reciente' };
   const b = listBackups()[0];
   if (!b) return { ok: false, reason: 'sin respaldo' };
-  const content = fs.readFileSync(path.join(BACKUPS_DIR, b.name)).toString('base64');
+  // El respaldo contiene pedidos, clientes y direcciones: no viaja por correo. El aviso solo confirma
+  // que existe y manda al panel, donde hay que iniciar sesión para descargarlo.
   const orders = getOrders().length;
   const ok = await sendEmail({
-    subject: `Respaldo semanal de Works Jeans · ${b.date}`,
-    html: emailLayout('Respaldo semanal', `<p>Adjunto va el respaldo automático de la tienda del <b>${b.date}</b> (${orders} pedidos, ${Math.round(b.bytes / 1024)} KB).</p><p>Guárdalo en tu computadora o en tu nube. Si algún día hiciera falta, se restaura desde el panel en Configuración → Respaldo.</p><p style="color:#777">Se envía una vez a la semana; puedes desactivarlo en el panel.</p>`),
-    attachments: [{ filename: b.name, content }],
+    subject: `Respaldo semanal listo · ${b.date}`,
+    html: emailLayout('Respaldo semanal', `<p>El respaldo automático del <b>${b.date}</b> quedó guardado en el servidor: ${orders} pedidos, ${Math.round(b.bytes / 1024)} KB.</p><p>Por seguridad no lo mandamos adjunto, porque contiene datos de clientes y direcciones. Descárgalo desde el panel cuando quieras guardarlo en tu computadora o en tu nube.</p><p style="margin-top:22px"><a href="https://www.workjeans.mx/workmapadmin.html" style="display:inline-block;padding:12px 18px;background:#ffd600;color:#0f0f0f;text-decoration:none;font-weight:700;border:1.5px solid #0f0f0f">Abrir el panel</a></p><p style="color:#777">Se conservan los últimos 14 respaldos y los anteriores se borran solos. Puedes desactivar este aviso en Configuración.</p>`),
   });
   if (ok) { fs.mkdirSync(BACKUPS_DIR, { recursive: true }); writeFileSafe(BACKUP_MAIL_MARK, new Date().toISOString()); }
   return { ok, reason: ok ? null : 'no se pudo enviar' };
@@ -4780,17 +4927,18 @@ app.post('/api/admin/backups/email', requireAdmin, perm('respaldo'), async (req,
   if (!r.ok) { res.status(400).json({ error: r.reason === 'sin correo de avisos o sin RESEND_API_KEY' ? 'Guarda primero un correo para avisos y la llave de Resend.' : 'No se pudo enviar el respaldo por correo.' }); return; }
   res.json({ ok: true, lastEmailAt: lastBackupEmailAt() });
 });
-app.get('/api/admin/backups/:name', requireAdmin, perm('respaldo'), (req, res) => {
+app.get('/api/admin/backups/:name', requireAdmin, perm('respaldo'), requireReauth, (req, res) => {
   const name = String(req.params.name || '');
   if (!BACKUP_NAME.test(name) || !fs.existsSync(path.join(BACKUPS_DIR, name))) { res.status(404).json({ error: 'Respaldo no encontrado.' }); return; }
   res.download(path.join(BACKUPS_DIR, name), `respaldo-works-jeans-${name.slice(9)}`);
 });
-app.post('/api/admin/backups/:name/restore', requireAdmin, perm('respaldo'), (req, res) => {
+app.post('/api/admin/backups/:name/restore', requireAdmin, perm('respaldo'), requireReauth, (req, res) => {
   const name = String(req.params.name || '');
   if (!BACKUP_NAME.test(name) || !fs.existsSync(path.join(BACKUPS_DIR, name))) { res.status(404).json({ error: 'Respaldo no encontrado.' }); return; }
   let b;
   try { b = JSON.parse(fs.readFileSync(path.join(BACKUPS_DIR, name), 'utf-8')); } catch { res.status(400).json({ error: 'El respaldo está dañado.' }); return; }
-  if (!validBackup(b)) { res.status(400).json({ error: 'El respaldo no es válido.' }); return; }
+  const problema = problemaDelRespaldo(b);
+  if (problema) { res.status(400).json({ error: problema }); return; }
   auditLog(req, 'respaldo.restaurar', { details: name });
   res.json(restoreBackup(b));
 });

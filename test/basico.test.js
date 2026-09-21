@@ -23,6 +23,12 @@ const api = async (route, opts = {}) => {
 };
 
 before(async () => {
+  // El panel exige verificación en dos pasos por omisión. Estas pruebas trabajan con contraseña,
+  // así que se deja la configuración lista antes de arrancar el servidor.
+  const ajustes = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'settings.json'), 'utf-8'));
+  ajustes.security = { ...(ajustes.security || {}), requireMfaAdmins: false };
+  fs.writeFileSync(path.join(DATA_DIR, 'settings.json'), JSON.stringify(ajustes, null, 2));
+
   server = spawn(process.execPath, ['server.js'], {
     cwd: path.join(__dirname, '..'),
     env: { ...process.env, PORT: String(PORT), DATA_DIR, ADMIN_PASSWORD: 'prueba-1234', RESEND_API_KEY: '', STRIPE_SECRET_KEY: '', OPENPAY_MERCHANT_ID: '', OPENPAY_PRIVATE_KEY: '', NODE_ENV: 'test' },
@@ -279,6 +285,11 @@ test('panel: respaldo automático, lista y descarga', async () => {
   assert.equal(run.status, 200, run.text);
   assert.ok(run.json.backups.length >= 1);
   const name = run.json.backups[0].name;
+  // Descargar un respaldo pide confirmar la contraseña otra vez.
+  const sinConfirmar = await api(`/api/admin/backups/${name}`);
+  assert.equal(sinConfirmar.status, 403);
+  assert.equal(sinConfirmar.json.code, 'reauth_required');
+  assert.equal((await api('/api/admin/reauth', { method: 'POST', body: { password: 'prueba-1234' } })).status, 200);
   const file = await api(`/api/admin/backups/${name}`);
   assert.equal(file.status, 200);
   assert.equal(file.json.app, 'works-jeans');

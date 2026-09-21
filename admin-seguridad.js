@@ -60,7 +60,7 @@
   // ---------- Mi cuenta ----------
   function openAccount() {
     if (!currentUser) return;
-    document.getElementById('accountSummary').textContent = `${currentUser.name} · usuario "${currentUser.username}" · ${currentUser.roleLabel}`;
+    document.getElementById('accountSummary').textContent = `${esc(currentUser.name)} · usuario "${currentUser.username}" · ${currentUser.roleLabel}`;
     const notice = document.getElementById('accountNotice');
     notice.hidden = !forced;
     notice.textContent = forced === 'password_change_required'
@@ -172,10 +172,10 @@
     if (res.status === 401) { showLogin(); return; }
     if (!res.ok) return;
     users = await res.json();
-    const requireMfa = Boolean(settingsCache.security?.requireMfaAdmins);
+    const requireMfa = settingsCache.security?.requireMfaAdmins !== false;
     document.getElementById('requireMfaAdmins').checked = requireMfa;
     document.getElementById('usersTableBody').innerHTML = users.map((u) => `
-      <tr data-id="${u.id}" class="${u.active ? '' : 'admin-row-hidden'}">
+      <tr data-id="${esc(u.id)}" class="${u.active ? '' : 'admin-row-hidden'}">
         <td><strong>${esc(u.name)}</strong><br><span class="admin-muted admin-small">${esc(u.username)}${u.id === currentUser.id ? ' · tú' : ''}</span></td>
         <td>${esc(u.roleLabel)}</td>
         <td>${u.mfaEnabled ? '<span class="admin-badge status-pagado">Activa</span>' : '<span class="admin-muted">No</span>'}</td>
@@ -218,6 +218,9 @@
     document.getElementById('userRole').value = u?.role || 'ventas';
     document.getElementById('userRole').disabled = Boolean(u) && u.id === currentUser.id;
     document.getElementById('userPasswordWrap').hidden = Boolean(u);
+    const campo = document.getElementById('userPassword');
+    campo.type = 'password';
+    document.querySelector('[data-toggle-password="userPassword"]')?.setAttribute('aria-pressed', 'false');
     document.getElementById('userPassword').required = !u;
     updateRoleHelp();
     userOverlay.hidden = false;
@@ -254,20 +257,20 @@
     let res;
     if (action === 'edit-user') { openUserForm(u); return; }
     if (action === 'reset-user') {
-      const password = prompt(`Nueva contraseña temporal para ${u.name} (mínimo 8 caracteres). Tendrá que cambiarla al entrar.`);
+      const password = prompt(`Nueva contraseña temporal para ${esc(u.name)} (mínimo 8 caracteres). Tendrá que cambiarla al entrar.`);
       if (!password) return;
       res = await fetch(`/api/admin/users/${id}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
     }
     if (action === 'logout-user') {
-      if (!confirm(`¿Cerrar todas las sesiones de ${u.name}?`)) return;
+      if (!confirm(`¿Cerrar todas las sesiones de ${esc(u.name)}?`)) return;
       res = await fetch(`/api/admin/users/${id}/logout-all`, { method: 'POST' });
     }
     if (action === 'mfa-reset-user') {
-      if (!confirm(`¿Quitar la verificación en dos pasos de ${u.name}? Podrá entrar solo con contraseña hasta que la vuelva a activar.`)) return;
+      if (!confirm(`¿Quitar la verificación en dos pasos de ${esc(u.name)}? Podrá entrar solo con contraseña hasta que la vuelva a activar.`)) return;
       res = await fetch(`/api/admin/users/${id}/mfa-reset`, { method: 'POST' });
     }
     if (action === 'delete-user') {
-      if (!confirm(`¿Eliminar el usuario de ${u.name}? Esta acción no se puede deshacer.`)) return;
+      if (!confirm(`¿Eliminar el usuario de ${esc(u.name)}? Esta acción no se puede deshacer.`)) return;
       res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
     }
     if (!res) return;
@@ -358,3 +361,17 @@
   };
   document.getElementById('auditSearch').addEventListener('input', renderAudit);
 })();
+
+// Mostrar u ocultar la contraseña temporal sin sacar el foco del formulario.
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-toggle-password]');
+  if (!btn) return;
+  const campo = document.getElementById(btn.dataset.togglePassword);
+  if (!campo) return;
+  const verla = campo.type === 'password';
+  campo.type = verla ? 'text' : 'password';
+  btn.textContent = verla ? 'Ocultar' : 'Mostrar';
+  btn.setAttribute('aria-label', verla ? 'Ocultar la contraseña' : 'Mostrar la contraseña');
+  btn.setAttribute('aria-pressed', String(verla));
+  campo.focus();
+});

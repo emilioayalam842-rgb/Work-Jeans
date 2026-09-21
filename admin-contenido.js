@@ -82,7 +82,7 @@
     const a = articles.find((x) => x.slug === slug);
     if (btn.dataset.action === 'edit-article') openForm(a);
     if (btn.dataset.action === 'delete-article') {
-      if (!confirm(`¿Eliminar "${a.h1}"? La URL dejará de existir.`)) return;
+      if (!confirm(`¿Eliminar "${esc(a.h1)}"? La URL dejará de existir.`)) return;
       const res = await fetch(`/api/admin/articles/${encodeURIComponent(slug)}`, { method: 'DELETE' });
       if (!res.ok) { const d = await res.json().catch(() => ({})); notifyForbidden(d.error || 'No se pudo eliminar.'); }
       loadArticles();

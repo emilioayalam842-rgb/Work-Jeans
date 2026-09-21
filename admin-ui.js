@@ -125,10 +125,10 @@
     const original = td.textContent.trim();
     const text = cfg.text || (original && !/^(No hay|Sin |Todavía no)/.test(original) ? original : '') || original;
     let action = '';
-    if (cfg.btn && document.getElementById(cfg.btn) && !document.getElementById(cfg.btn).hidden) action = `<button type="button" class="btn btn-primary btn-sm" data-empty-click="${cfg.btn}">${cfg.label}</button>`;
-    else if (cfg.link) action = `<button type="button" class="btn btn-secondary btn-sm" data-empty-copy="${cfg.link}">${cfg.label}</button>`;
-    else if (cfg.goto) action = `<button type="button" class="btn btn-secondary btn-sm" data-goto="${cfg.goto}">${cfg.label}</button>`;
-    td.innerHTML = `<div class="admin-empty"><span class="admin-empty-icon" aria-hidden="true">${icon('alert', 22)}</span><strong>${cfg.title}</strong>${text ? `<p>${text}</p>` : ''}${action}</div>`;
+    if (cfg.btn && document.getElementById(cfg.btn) && !document.getElementById(cfg.btn).hidden) action = `<button type="button" class="btn btn-primary btn-sm" data-empty-click="${cfg.btn}">${esc(cfg.label)}</button>`;
+    else if (cfg.link) action = `<button type="button" class="btn btn-secondary btn-sm" data-empty-copy="${cfg.link}">${esc(cfg.label)}</button>`;
+    else if (cfg.goto) action = `<button type="button" class="btn btn-secondary btn-sm" data-goto="${cfg.goto}">${esc(cfg.label)}</button>`;
+    td.innerHTML = `<div class="admin-empty"><span class="admin-empty-icon" aria-hidden="true">${icon('alert', 22)}</span><strong>${esc(cfg.title)}</strong>${text ? `<p>${text}</p>` : ''}${action}</div>`;
   }
   document.addEventListener('click', async (e) => {
     const c = e.target.closest('[data-empty-click]'); if (c) { document.getElementById(c.dataset.emptyClick)?.click(); return; }
@@ -173,11 +173,11 @@
     const res = [];
     (typeof ordersCache !== 'undefined' ? ordersCache : []).forEach((o) => {
       const hay = norm([o.id, o.customerName, o.customerPhone, o.customerEmail, o.tracking?.number, ...(o.items || []).map((i) => i.name)].join(' '));
-      if (hay.includes(n)) res.push({ kind: 'Pedido', title: `${o.customerName || 'Sin nombre'} · ${formatPrice(o.totalCents)}`, sub: `${STATUS_LABELS[o.status] || o.status} · ${new Date(o.createdAt).toLocaleDateString('es-MX')} · ${o.id}`, run: () => { showTab('pedidos'); setTimeout(() => openOrderDetail(o.id), 150); } });
+      if (hay.includes(n)) res.push({ kind: 'Pedido', title: `${esc(o.customerName || 'Sin nombre')} · ${formatPrice(o.totalCents)}`, sub: `${STATUS_LABELS[o.status] || o.status} · ${new Date(o.createdAt).toLocaleDateString('es-MX')} · ${esc(o.id)}`, run: () => { showTab('pedidos'); setTimeout(() => openOrderDetail(o.id), 150); } });
     });
     (typeof productsCache !== 'undefined' ? productsCache : []).forEach((p) => {
       const hay = norm([p.id, p.name, p.category, ...(p.sizes || []).map((v) => v.sku)].join(' '));
-      if (hay.includes(n)) res.push({ kind: 'Producto', title: p.name, sub: `${p.category} · ${formatPrice(p.priceCents)} · ${p.sizes.reduce((s, v) => s + (v.stock || 0), 0)} pzas`, run: () => { showTab('productos'); setTimeout(() => openForm(p), 150); } });
+      if (hay.includes(n)) res.push({ kind: 'Producto', title: p.name, sub: `${esc(p.category)} · ${formatPrice(p.priceCents)} · ${p.sizes.reduce((s, v) => s + (v.stock || 0), 0)} pzas`, run: () => { showTab('productos'); setTimeout(() => openForm(p), 150); } });
     });
     (await loadLeads()).forEach((l) => {
       const hay = norm([l.company, l.name, l.email, l.phone, l.city].join(' '));

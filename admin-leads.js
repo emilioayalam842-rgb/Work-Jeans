@@ -11,11 +11,11 @@
     const counts = Object.keys(STATUS).reduce((acc, k) => ({ ...acc, [k]: leads.filter((l) => l.status === k).length }), {});
     document.getElementById('leadCounts').innerHTML = Object.entries(STATUS).map(([k, v]) => `<span class="admin-badge lead-${k}">${v}: ${counts[k]}</span>`).join(' ');
     document.getElementById('leadsTableBody').innerHTML = rows.length ? rows.map((l) => `
-      <tr data-id="${l.id}">
+      <tr data-id="${esc(l.id)}">
         <td class="admin-nowrap">${fmtDate(l.createdAt)}</td>
         <td><strong>${esc(l.company) || '—'}</strong><br><span class="admin-muted admin-small">${esc(l.name)}${l.city || l.state ? ` · ${esc([l.city, l.state].filter(Boolean).join(', '))}` : ''}</span>${l.repeatOf ? '<br><span class="admin-badge lead-ganado">Repite pedido anterior</span>' : ''}</td>
         <td>${l.email ? `<a href="mailto:${esc(l.email)}">${esc(l.email)}</a><br>` : ''}${l.phone ? `<a href="https://wa.me/${whatsappDigits(l.phone)}" target="_blank" rel="noopener">${esc(l.phone)}</a>` : ''}</td>
-        <td>${l.totalPieces || (l.headcount ? `~${l.headcount} personas` : '—')}${l.lines?.length ? `<br><span class="admin-muted admin-small">${esc(l.lines.map((x) => `${x.name} (${x.total})`).join(', ')).slice(0, 120)}</span>` : ''}${l.customization ? `<br><span class="admin-muted admin-small">${esc(l.customization)}</span>` : ''}</td>
+        <td>${l.totalPieces || (l.headcount ? `~${l.headcount} personas` : '—')}${l.lines?.length ? `<br><span class="admin-muted admin-small">${esc(l.lines.map((x) => `${esc(x.name)} (${x.total})`).join(', ')).slice(0, 120)}</span>` : ''}${l.customization ? `<br><span class="admin-muted admin-small">${esc(l.customization)}</span>` : ''}</td>
         <td><select class="admin-status-select lead-${l.status}" data-action="lead-status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${k === l.status ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
         <td>${l.internalNotes ? `<span class="admin-small" title="${esc(l.internalNotes)}">${esc(l.internalNotes).slice(0, 70)}${l.internalNotes.length > 70 ? '…' : ''}</span>` : '<span class="admin-muted admin-small">Sin notas</span>'}<br><button type="button" class="admin-inline-btn admin-small" data-action="lead-open">Abrir ficha</button></td>
         <td class="admin-table-actions">${l.notes ? `<button type="button" class="admin-icon-btn" data-action="lead-view" title="Ver comentarios del cliente">${icon('eye')}</button>` : ''}${l.repeatToken ? `<button type="button" class="admin-icon-btn" data-action="lead-repeat" title="Copiar enlace para que repita este pedido">${icon('copy')}</button>` : ''}${iconBtn('lead-delete', 'trash', 'Eliminar')}</td>
