@@ -2507,7 +2507,7 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
    de un vistazo. La talla y la cantidad se eligen en la ficha, donde los botones son grandes
    y hay barra fija de compra.
    ============================================================ */
-.product-open { display: none; }
+.card-ficha { display: none; }
 
 @media (max-width: 700px) {
   .products-grid,
@@ -2543,7 +2543,7 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
   .product-card .price { font-size: 1.05rem; padding: 2px 12px 0; }
   .product-card .price small { font-size: 0.6875rem; }
 
-  .product-card .product-open {
+  .product-card .card-ficha {
     display: block;
     width: calc(100% - 24px);
     margin: 10px 12px 12px;
@@ -2559,7 +2559,7 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 @media (max-width: 390px) {
   .product-card h2,
   .product-card h3 { font-size: 0.9rem; }
-  .product-card .product-open { font-size: 0.74rem; letter-spacing: 0.04em; }
+  .product-card .card-ficha { font-size: 0.74rem; letter-spacing: 0.04em; }
 }
 
 /* ============================================================
