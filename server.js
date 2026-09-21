@@ -1446,7 +1446,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260922g';
+const ASSET_V = '20260922i';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1740,7 +1740,7 @@ function productCardStatic(p, origin) {
   return `
     <a class="product-card product-card--static" href="/producto/${p.id}" data-id="${p.id}" data-sizes="${escapeHtml(p.sizes.filter((v) => v.stock > 0).map((v) => v.size).join('|'))}" data-tags="${/reflejante/.test(p.id) ? 'reflejante' : 'normal'}" data-stock="${p.sizes.reduce((a, v) => a + (v.stock || 0), 0) > 0 ? '1' : '0'}" data-name="${escapeHtml(p.name.toLowerCase())}">
       <span class="product-category">${escapeHtml(p.category)}</span>
-      ${pictureTag(p.image, { anchos: [320, 480, 800], sizes: '(max-width: 700px) 90vw, 360px', alt: `${p.name} · ropa de trabajo de mezclilla Works Jeans`, clase: 'product-photo' })}
+      <span class="product-media">${pictureTag(p.image, { anchos: [320, 480, 800], sizes: '(max-width: 700px) 90vw, 360px', alt: `${p.name} · ropa de trabajo de mezclilla Works Jeans`, clase: 'product-photo' })}</span>
       <h2>${escapeHtml(p.name)}</h2>
       <p class="product-sizes">Tallas <b>${escapeHtml(first)}</b>${last && last !== first ? ` / <b>${escapeHtml(last)}</b>` : ''}</p>
       <p class="price">${price}<small>MXN</small></p>

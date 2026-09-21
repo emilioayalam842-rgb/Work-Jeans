@@ -553,7 +553,9 @@ function renderProductCard(product) {
       <span class="product-category">${product.category}</span>
       ${tagHtml(product)}
       ${totalStock <= 0 ? '<span class="product-soldout">Agotado</span>' : ''}
-      <img src="${imgSrc(product.image, 640)}" srcset="${imgSrcset(product.image)}" sizes="${CARD_SIZES}" alt="${product.name} · ropa de trabajo de mezclilla Works Jeans" class="product-photo" data-main-photo loading="lazy" decoding="async" width="800" height="1000">
+      <span class="product-media">
+        <img src="${imgSrc(product.image, 640)}" srcset="${imgSrcset(product.image)}" sizes="${CARD_SIZES}" alt="${product.name} · ropa de trabajo de mezclilla Works Jeans" class="product-photo" data-main-photo loading="lazy" decoding="async" width="800" height="1000">
+      </span>
       ${gallery}
       <h3><a href="/producto/${product.id}">${product.name}</a></h3>
       <p class="product-sizes">Tallas ${sizeRange}</p>

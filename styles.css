@@ -56,6 +56,7 @@
   --denim-light: #3a3a3a;
   --accent: var(--yellow);
   --bg: var(--paper);
+  --band: #f5f5f4;            /* franja clara para separar secciones */
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2502,13 +2503,75 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 .hazard--offset { margin: -72px -24px 56px; }
 
 /* ============================================================
-   Catálogo en celular: dos columnas y tarjeta compacta.
-   Con la tarjeta larga se recorría una pantalla completa por producto; así se ven cuatro
-   de un vistazo. La talla y la cantidad se eligen en la ficha, donde los botones son grandes
-   y hay barra fija de compra.
+   Tarjeta de producto: la foto manda y hay una sola acción.
+   Antes la tarjeta cargaba foto, descripción, talla, cantidad y botón: en la rejilla el
+   cliente compara, en la ficha decide. Ahora la tarjeta muestra foto, nombre, tallas y
+   precio, y lleva a la ficha, donde las tallas son botones grandes y hay barra fija.
    ============================================================ */
-.card-ficha { display: none; }
+.product-card {
+  border-color: var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
 
+.product-media {
+  position: relative;
+  display: block;
+  background: var(--paper);
+  border-bottom: 1px solid var(--gray-2);
+}
+/* La prenda ocupa más de la tarjeta: antes eran 34 px de aire arriba y 26 a los lados */
+.product-card .product-photo {
+  width: 100%;
+  padding: 12px 12px 8px;
+  background: transparent;
+  border-bottom: 0;
+}
+
+/* La categoría deja de ser texto suelto sobre la foto y pasa a ser una etiqueta */
+.product-card .product-category {
+  top: 12px;
+  left: 12px;
+  right: auto;
+  padding: 5px 10px;
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+}
+.product-card .product-soldout { top: 12px; right: 12px; }
+
+/* Lo que se decide en la ficha no vive en la rejilla */
+.product-card .product-desc,
+.product-card .product-thumbs,
+.product-card .card-row,
+.product-card .stock-note { display: none; }
+.product-card .add-to-cart,
+.product-card button.add-to-cart { display: none !important; }
+
+.product-card h2,
+.product-card h3 { padding: 16px 18px 0; font-size: 1.02rem; line-height: 1.22; }
+.product-card .product-sizes { padding: 8px 18px 0; font-size: 0.74rem; }
+.product-card .price { padding: 10px 18px 0; font-size: 1.6rem; margin-bottom: auto; }
+.product-card .product-wholesale { padding: 6px 18px 0; font-size: 0.82rem; color: var(--muted); }
+
+.product-card .card-ficha {
+  display: block;
+  width: calc(100% - 36px);
+  margin: 14px 18px 18px;
+  min-height: 44px;
+  padding: 12px 10px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* ============================================================
+   Catálogo en celular: dos columnas.
+   Con la tarjeta larga se recorría una pantalla completa por producto; así se ven cuatro
+   de un vistazo.
+   ============================================================ */
 @media (max-width: 700px) {
   .products-grid,
   #productsGrid,
@@ -2518,42 +2581,21 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
     gap: 12px;
   }
 
-  .product-card {
-    border-radius: var(--radius-card);
-    overflow: hidden;
-  }
-
-  /* Lo que se decide en la ficha, no en la rejilla */
-  .product-card .product-desc,
-  .product-card .product-thumbs,
-  .product-card .product-wholesale,
-  .product-card .card-row,
-  .product-card .stock-note { display: none; }
-  .product-card .add-to-cart,
-  .product-card button.add-to-cart { display: none !important; }
-
-  .product-card .product-photo,
-  .product-card picture { display: block; width: 100%; }
-  .product-card picture img { width: 100%; height: auto; }
-
-  .product-card .product-category { font-size: 0.68rem; padding: 10px 12px 0; }
+  .product-card .product-photo { padding: 10px 10px 8px; }
+  .product-card .product-category { font-size: 0.6rem; padding: 4px 8px; }
   .product-card h2,
-  .product-card h3 { font-size: 0.95rem; line-height: 1.25; padding: 6px 12px 0; }
+  .product-card h3 { font-size: 0.95rem; padding: 12px 12px 0; }
   .product-card .product-sizes { font-size: 0.8125rem; padding: 4px 12px 0; }
   .product-card .price { font-size: 1.05rem; padding: 2px 12px 0; }
   .product-card .price small { font-size: 0.6875rem; }
+  .product-card .product-wholesale { padding: 4px 12px 0; font-size: 0.75rem; }
 
   .product-card .card-ficha {
-    display: block;
     width: calc(100% - 24px);
     margin: 10px 12px 12px;
-    min-height: 44px;
     padding: 11px 10px;
     font-size: 0.78rem;
-    text-align: center;
   }
-  /* El precio empuja el botón al fondo para que las dos columnas queden parejas */
-  .product-card .price { margin-bottom: auto; }
 }
 
 @media (max-width: 390px) {
@@ -2681,4 +2723,81 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
   /* El nombre del producto en la rejilla es el enlace principal de la tarjeta: se toca entero */
   .product-card h2 a,
   .product-card h3 a { display: block; min-height: 44px; }
+}
+
+/* ============================================================
+   Ritmo de la página: menos aire muerto y franjas que separan.
+   El inicio era blanco de arriba a abajo con el mismo bloque repetido en cada sección:
+   antetítulo, titular enorme y una caja con franja amarilla. La caja se vuelve un texto
+   de entrada y dos secciones cambian de fondo para que el ojo sepa dónde va.
+   ============================================================ */
+
+/* El texto junto al titular deja de ser tarjeta */
+.section-head > p,
+.section-aside {
+  padding: 2px 0 2px 18px;
+  background: none;
+  border: 0;
+  border-left: 3px solid var(--yellow);
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #444;
+  max-width: 480px;
+}
+.section-head > p::before,
+.section-aside::before { display: none; }
+
+/* Menos altura muerta entre secciones */
+.section { padding: 72px 0; }
+.section--tight { padding: 52px 0; }
+.section-head { margin-bottom: 28px; }
+
+/* Franja clara y franja negra para cortar el blanco */
+.section--band { background: var(--band); }
+.section--band .features,
+.section--band .steps { background: var(--paper); }
+
+.section--dark { background: var(--black); color: #efefef; }
+.section--dark .kicker { color: var(--yellow); }
+.section--dark h2,
+.section--dark h3 { color: var(--white); }
+.section--dark .section-head > p,
+.section--dark .section-aside { color: #cfcfcf; border-left-color: var(--yellow); }
+.section--dark .steps,
+.section--dark .features { border-color: rgba(255, 255, 255, 0.18); }
+.section--dark .step,
+.section--dark .feature {
+  background: transparent;
+  border-right-color: rgba(255, 255, 255, 0.18);
+  border-bottom-color: rgba(255, 255, 255, 0.18);
+}
+.section--dark .step p,
+.section--dark .feature p { color: #bdbdbd; }
+.section--dark .step p a { color: var(--yellow); }
+.section--dark .num { -webkit-text-stroke-color: var(--yellow); color: transparent; }
+
+@media (max-width: 860px) {
+  .section { padding: 48px 0; }
+  .section--tight { padding: 40px 0; }
+  .section-head > p,
+  .section-aside { max-width: none; }
+}
+
+/* Tarjetas de las páginas de categoría (las arma el servidor) con el mismo traje */
+.product-media picture { display: block; }
+.product-media picture img { display: block; width: 100%; }
+.product-card--static h2 { font-size: 1.02rem; line-height: 1.22; padding: 16px 18px 0; }
+.product-card--static .btn {
+  margin: 14px 18px 18px;
+  width: calc(100% - 36px);
+  min-height: 44px;
+  padding: 12px 10px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+@media (max-width: 700px) {
+  .product-card--static h2 { font-size: 0.95rem; padding: 12px 12px 0; }
+  .product-card--static .btn { margin: 10px 12px 12px; width: calc(100% - 24px); padding: 11px 10px; font-size: 0.78rem; }
 }
