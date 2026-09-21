@@ -1005,6 +1005,21 @@ app.use((req, res, next) => {
 
 // --- Imágenes redimensionadas: /img/<ancho>/<ruta> → jpg o webp según el navegador, con caché en disco ---
 const IMG_WIDTHS = new Set([320, 480, 640, 800, 1000]);
+
+// Escribe una imagen con sus tres formatos. El navegador elige el primero que entiende y, como cada
+// formato tiene su propia dirección, el CDN puede guardarlos sin mezclarlos.
+function setDeImagen(ruta, formato, anchos = [480, 800, 1000]) {
+  return anchos.map((w) => `/img/${w}/${ruta}?f=${formato} ${w}w`).join(', ');
+}
+function pictureTag(ruta, { anchos = [480, 800, 1000], sizes = '100vw', alt = '', clase = '', ancho = 800, alto = 1000, prioritaria = false } = {}) {
+  const set = (f) => anchos.map((w) => `/img/${w}/${ruta}${f ? `?f=${f}` : ''} ${w}w`).join(', ');
+  const carga = prioritaria ? 'fetchpriority="high" loading="eager" decoding="sync"' : 'loading="lazy" decoding="async"';
+  return `<picture>`
+    + `<source type="image/avif" srcset="${set('avif')}" sizes="${sizes}">`
+    + `<source type="image/webp" srcset="${set('webp')}" sizes="${sizes}">`
+    + `<img src="/img/${anchos[anchos.length - 1]}/${ruta}?f=jpg" srcset="${set('jpg')}" sizes="${sizes}" alt="${escapeHtml(alt)}"${clase ? ` class="${clase}"` : ''} width="${ancho}" height="${alto}" ${carga}>`
+    + `</picture>`;
+}
 const IMG_CACHE_DIR = path.join(DATA_DIR, 'img-cache');
 fs.mkdirSync(IMG_CACHE_DIR, { recursive: true });
 
@@ -1027,8 +1042,14 @@ app.get('/img/:width(\\d+)/*', async (req, res) => {
     return;
   }
   // AVIF pesa menos que WebP y lo aceptan los navegadores recientes; si no, WebP; si no, JPG.
+  // Con ?f=avif o ?f=webp se pide un formato concreto: cada uno queda en su propia dirección y el
+  // CDN puede guardarlos por separado. Cloudflare no respeta la cabecera Vary, así que sin esto
+  // todos los visitantes reciben la misma versión, normalmente la pesada.
   const accept = req.headers.accept || '';
-  const formato = accept.includes('image/avif') ? 'avif' : accept.includes('image/webp') ? 'webp' : 'jpg';
+  const pedido = String(req.query.f || '').toLowerCase();
+  const formato = ['avif', 'webp', 'jpg'].includes(pedido)
+    ? pedido
+    : accept.includes('image/avif') ? 'avif' : accept.includes('image/webp') ? 'webp' : 'jpg';
   const key = `${crypto.createHash('md5').update(`${source}:${fs.statSync(source).mtimeMs}`).digest('hex')}-${width}.${formato}`;
   const cached = path.join(IMG_CACHE_DIR, key);
   res.set('Cache-Control', 'public, max-age=2592000');
@@ -1294,7 +1315,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260921e';
+const ASSET_V = '20260921h';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1354,7 +1375,7 @@ function renderProductPage(product, req) {
 
   const soldOut = product.sizes.filter((v) => !(v.stock > 0)).map((v) => variantLabel(v));
   const stockAlert = soldOut.length ? `<div class="stock-alert" id="stockAlert" data-product="${escapeHtml(product.id)}"><button type="button" class="stock-alert-toggle" id="stockAlertToggle">¿Tu talla está agotada? Avísame cuando haya</button><form class="stock-alert-form" id="stockAlertForm" hidden><label>Talla <select id="stockAlertSize">${soldOut.map((l) => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('')}</select></label><label>Correo <input type="email" id="stockAlertEmail" required maxlength="120" placeholder="tucorreo@ejemplo.com"></label><button type="submit" class="btn btn-dark btn-sm">Avisarme</button><p class="form-status" id="stockAlertStatus" aria-live="polite"></p></form></div>` : '';
-  const thumbs = images.length > 1 ? images.map((img, i) => `<button type="button" class="pdp-thumb ${i === 0 ? 'is-active' : ''}" data-large="/img/800/${img}" data-srcset="/img/480/${img} 480w, /img/800/${img} 800w, /img/1000/${img} 1000w" data-alt="${escapeHtml(product.name)} · foto ${i + 1}" aria-current="${i === 0}"><img src="/img/320/${img}" alt="${escapeHtml(product.name)} · miniatura ${i + 1}" width="64" height="80" loading="lazy"></button>`).join('') : '';
+  const thumbs = images.length > 1 ? images.map((img, i) => `<button type="button" class="pdp-thumb ${i === 0 ? 'is-active' : ''}" data-large="/img/800/${img}?f=jpg" data-srcset="${setDeImagen(img, 'jpg')}" data-avif="${setDeImagen(img, 'avif')}" data-webp="${setDeImagen(img, 'webp')}" data-alt="${escapeHtml(product.name)} · foto ${i + 1}" aria-current="${i === 0}"><img src="/img/320/${img}?f=webp" alt="${escapeHtml(product.name)} · miniatura ${i + 1}" width="64" height="80" loading="lazy"></button>`).join('') : '';
 
   let video = '';
   if (product.videoUrl) {
@@ -1420,8 +1441,10 @@ function renderProductPage(product, req) {
     NAME_URL: encodeURIComponent(product.name),
     ID: product.id,
     TAG: product.tag === 'nuevo' ? '<span class="product-tag product-tag--nuevo">Nuevo</span>' : product.tag === 'oferta' ? '<span class="product-tag product-tag--oferta">Oferta</span>' : '',
-    MAIN_SRC: `/img/800/${images[0]}`,
-    MAIN_SRCSET: `/img/480/${images[0]} 480w, /img/800/${images[0]} 800w, /img/1000/${images[0]} 1000w`,
+    MAIN_SRC: `/img/800/${images[0]}?f=jpg`,
+    MAIN_SRCSET: setDeImagen(images[0], 'jpg'),
+    MAIN_SRCSET_AVIF: setDeImagen(images[0], 'avif'),
+    MAIN_SRCSET_WEBP: setDeImagen(images[0], 'webp'),
     THUMBS: thumbs,
     VIDEO: video,
     SKU_KICKER: product.sku ? ` · ${escapeHtml(product.sku)}` : '',
@@ -1502,7 +1525,7 @@ const CATEGORY_PAGES = {
     description: 'Pantalones de trabajo de mezclilla 100% algodón, corte recto y costuras reforzadas. Tallas 28 a 50, con opción reflejante. Mayoreo con stock en Monterrey.',
     intro: 'Pantalones de trabajo de mezclilla 100% algodón, hechos en Monterrey para aguantar la obra, la planta y el taller. Cinco bolsas, costuras reforzadas y corte recto que deja moverse. Tallas del 28 al 50: compra desde una pieza o pide la corrida completa para tu cuadrilla.',
     faq: [
-      ['¿Qué talla de pantalón de trabajo debo pedir?', 'La misma que usas en un jean normal. Si dudas entre dos, elige la mayor: la mezclilla no encoge y en el trabajo se agradece el espacio. Consulta la guía de tallas para medir un pantalón que te quede bien.'],
+      ['¿Qué talla de pantalón de trabajo debo pedir?', 'La misma que usas en un jean normal. Si dudas entre dos, elige la mayor: la mezclilla prácticamente no cambia de talla y en el trabajo se agradece el espacio. Consulta la guía de tallas para medir un pantalón que te quede bien.'],
       ['¿Aguanta el lavado diario?', 'Sí. Es mezclilla 100% algodón preencogida con costuras dobles. Lava al revés, con agua fría y sin cloro, para que conserve color y costuras por más tiempo.'],
       ['¿Hacen pantalones de trabajo con logotipo?', 'Sí, bordado o estampado DTF para pedidos de mayoreo. Cotízalo desde el cotizador o por WhatsApp.'],
       ['¿Envían a todo México?', 'Sí, por paquetería con número de guía. En Monterrey también puedes recoger en tienda.'],
@@ -1571,7 +1594,7 @@ const CATEGORY_PAGES = {
     `,
     faq: [
       ['¿Qué talla de camisa de trabajo debo pedir?', 'Mide una camisa que ya te quede bien: extendida sobre la mesa, de costura a costura en el pecho, y multiplica por dos. Compara ese número con la guía de tallas. Si quedas entre dos, pide la mayor.'],
-      ['¿La camisa encoge al lavarla?', 'La mezclilla viene preencogida, así que no encoge después de la primera lavada. Lávala del revés, con agua fría y sin cloro para que conserve el color.'],
+      ['¿La camisa encoge al lavarla?', 'La mezclilla viene preencogida, así que el cambio de talla tras el lavado es mínimo después de la primera lavada. Lávala del revés, con agua fría y sin cloro para que conserve el color.'],
       ['¿Hasta qué talla manejan?', 'De la XCH a la 5XG, con el mismo patrón y el mismo acabado en todas. Las tallas grandes tienen existencia igual que las chicas.'],
       ['¿Puedo pedir las camisas con el logotipo de mi empresa?', 'Sí. Bordamos o estampamos en DTF en pedidos de mayoreo. El logotipo suele ir en el pecho izquierdo o en la manga; lo revisamos contigo antes de producir.'],
       ['¿Venden por pieza o solo por mayoreo?', 'Las dos cosas. Puedes comprar una camisa para probar tela y talla, y después pedir la corrida completa para tu equipo.'],
@@ -1586,7 +1609,7 @@ function productCardStatic(p, origin) {
   return `
     <a class="product-card product-card--static" href="/producto/${p.id}" data-id="${p.id}" data-sizes="${escapeHtml(p.sizes.filter((v) => v.stock > 0).map((v) => v.size).join('|'))}" data-tags="${/reflejante/.test(p.id) ? 'reflejante' : 'normal'}" data-stock="${p.sizes.reduce((a, v) => a + (v.stock || 0), 0) > 0 ? '1' : '0'}" data-name="${escapeHtml(p.name.toLowerCase())}">
       <span class="product-category">${escapeHtml(p.category)}</span>
-      <img src="${p.image}" alt="${escapeHtml(p.name)} · ropa de trabajo de mezclilla Works Jeans" class="product-photo" loading="lazy" decoding="async" width="800" height="1000">
+      ${pictureTag(p.image, { anchos: [320, 480, 800], sizes: '(max-width: 700px) 90vw, 360px', alt: `${p.name} · ropa de trabajo de mezclilla Works Jeans`, clase: 'product-photo' })}
       <h2>${escapeHtml(p.name)}</h2>
       <p class="product-sizes">Tallas <b>${escapeHtml(first)}</b>${last && last !== first ? ` / <b>${escapeHtml(last)}</b>` : ''}</p>
       <p class="price">${price}<small>MXN</small></p>

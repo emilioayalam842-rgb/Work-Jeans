@@ -68,6 +68,11 @@
     if (!thumb) return;
     photo.src = thumb.dataset.large;
     photo.srcset = thumb.dataset.srcset;
+    // También las versiones ligeras: si no, al cambiar de foto el navegador cae al formato pesado.
+    const avif = document.getElementById('pdpPhotoAvif');
+    const webp = document.getElementById('pdpPhotoWebp');
+    if (avif && thumb.dataset.avif) avif.srcset = thumb.dataset.avif;
+    if (webp && thumb.dataset.webp) webp.srcset = thumb.dataset.webp;
     photo.alt = thumb.dataset.alt || photo.alt;
     document.querySelectorAll('.pdp-thumb').forEach((t) => { t.classList.remove('is-active'); t.setAttribute('aria-current', 'false'); });
     thumb.classList.add('is-active');

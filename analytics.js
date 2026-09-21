@@ -40,12 +40,22 @@
     if (window.gtag) window.gtag('event', NOMBRE_GA[event] || event, paraGa(event, props));
   }
   window.wjTrack = send;
+  // Algunos pasos del embudo pueden alcanzarse por dos caminos (por ejemplo entrar al pago desde el
+  // carrito o directo por la dirección). Este ayudante evita contarlos dos veces en la misma visita.
+  window.wjTrackOnce = function (event, clave, props) {
+    const k = `wj-once-${event}-${clave || ''}`;
+    try {
+      if (sessionStorage.getItem(k)) return;
+      sessionStorage.setItem(k, '1');
+    } catch { /* sin almacenamiento: se manda igual */ }
+    send(event, props);
+  };
 
   send('page_view');
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a[href*="wa.me"], a[href*="whatsapp"], a[href^="tel:"]');
     if (!a) return;
-    const donde = a.id || String(a.className || '').split(' ')[0] || 'link';
+    const donde = a.dataset.where || a.id || String(a.className || '').split(' ')[0] || 'link';
     send(a.getAttribute('href').startsWith('tel:') ? 'phone_click' : 'whatsapp_click', { where: donde });
   });
 

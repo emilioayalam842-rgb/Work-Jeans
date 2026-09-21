@@ -116,7 +116,7 @@ const INDUSTRIAS = {
 
 // --- Páginas por ciudad (zona metropolitana de Monterrey) -----------------
 
-function ciudad(slug, nombre, contexto, faqLocal) {
+function ciudad(slug, nombre, contexto, faqLocal, propio = {}) {
   // El título y la descripción se cortan en los resultados de Google: nombre corto para que quepan.
   const corto = { 'San Nicolás de los Garza': 'San Nicolás', 'General Escobedo': 'Escobedo' }[nombre] || nombre;
   return {
@@ -136,9 +136,11 @@ function ciudad(slug, nombre, contexto, faqLocal) {
       <p>Compra en línea desde una pieza y recibe por paquetería con número de guía, o pasa a nuestra tienda en Calle Emiliano Zapata 3737, colonia Venustiano Carranza, Monterrey, de lunes a viernes de 9:00 a. m. a 6:00 p. m., a probarte la talla y llevarte el pedido el mismo día. Para pedidos de empresa, arma tu corrida de tallas en el <a href="/empresas">cotizador</a> y te respondemos con precio de distribuidor o de socio según el volumen.</p>
       <h2>Logotipo de tu empresa</h2>
       <p>Bordamos o estampamos en DTF el logotipo en camisas y pantalones para pedidos de mayoreo, y facturamos con CFDI.</p>
+      ${propio.secciones || ''}
     `,
     faq: [
       faqLocal,
+      ...(propio.faq || []),
       ['¿Entregan en ' + nombre + '?', 'Sí, por paquetería con número de guía a cualquier domicilio de ' + nombre + '. También puedes recoger sin costo en nuestra tienda de Monterrey.'],
       ...faqComunes().slice(0, 2),
     ],
@@ -148,22 +150,88 @@ function ciudad(slug, nombre, contexto, faqLocal) {
 const CIUDADES = {
   'ropa-de-trabajo-apodaca': ciudad('ropa-de-trabajo-apodaca', 'Apodaca',
     'Apodaca concentra parques industriales, empresas de manufactura y operaciones de logística alrededor del aeropuerto. Uniformamos cuadrillas de planta, almacén y mantenimiento con mezclilla que aguanta el turno completo, con o sin reflejante para las áreas de montacargas.',
-    ['¿Tienen tienda en Apodaca?', 'No, nuestra tienda está en Monterrey, en la colonia Venustiano Carranza. Enviamos a Apodaca por paquetería o puedes recoger en tienda.']),
+    ['¿Tienen tienda en Apodaca?', 'No, nuestra tienda está en Monterrey, en la colonia Venustiano Carranza. Enviamos a Apodaca por paquetería o puedes recoger en tienda.'],
+    { secciones: `
+      <h2>Qué se trabaja en Apodaca</h2>
+      <p>Apodaca es de los municipios con más superficie industrial del área metropolitana y buena parte de esa actividad gira alrededor del aeropuerto: manufactura, almacenes, empresas de transporte y operaciones de carga. Eso cambia la prenda que conviene. En una planta el problema es el roce y el corte sin partes sueltas; en un almacén con montacargas circulando, el problema es que te vean.</p>
+      <h2>Prenda recomendada según el área</h2>
+      <p>Para piso de producción, <a href="/pantalones-industriales">pantalón industrial</a> y camisa de manga larga, corte recto y sin nada que cuelgue. Para almacén, patio de carga y maniobras, la versión con <a href="/pantalon-de-mezclilla-con-reflejante">cinta reflejante</a> en piernas y pecho. Para mantenimiento, la mezclilla aguanta grasa y lavado frecuente mejor que una tela ligera.</p>
+      <h2>Cómo llega tu pedido a Apodaca</h2>
+      <p>Salimos desde la colonia Venustiano Carranza, en Monterrey. Para una empresa de Apodaca hay dos caminos: recoger en tienda el mismo día si la talla está en existencia, que suele convenir cuando urge reponer unas piezas sueltas; o envío por paquetería con número de guía para la corrida completa, ya separada y etiquetada por talla.</p>`,
+      faq: [
+      ['Trabajamos cerca del aeropuerto, ¿pueden entregar ahí?', 'Enviamos por paquetería a cualquier domicilio de Apodaca, incluidas las zonas industriales cercanas al aeropuerto. Si prefieres recoger, la tienda está en Monterrey.'],
+      ['¿Qué conviene para almacén con montacargas?', 'La versión con cinta reflejante en pecho, espalda y piernas. Es prenda con cinta reflejante cosida, no certificada de alta visibilidad; si tu reglamento exige certificación, dínoslo antes de cotizar.'],
+      ] }),
   'ropa-de-trabajo-guadalupe': ciudad('ropa-de-trabajo-guadalupe', 'Guadalupe',
     'Guadalupe es vecino inmediato de nuestra tienda: talleres, comercios, empresas de servicios y plantas de manufactura que necesitan uniformes resistentes sin comprar por contenedor. Aquí puedes pedir desde una pieza o la corrida completa para tu cuadrilla.',
-    ['¿Qué tan lejos está la tienda de Guadalupe?', 'Estamos en Calle Emiliano Zapata 3737, colonia Venustiano Carranza, Monterrey, a unos minutos de Guadalupe. Abrimos de lunes a viernes de 9:00 a. m. a 6:00 p. m.']),
+    ['¿Qué tan lejos está la tienda de Guadalupe?', 'Estamos en Calle Emiliano Zapata 3737, colonia Venustiano Carranza, Monterrey, a unos minutos de Guadalupe. Abrimos de lunes a viernes de 9:00 a. m. a 6:00 p. m.'],
+    { secciones: `
+      <h2>Qué se trabaja en Guadalupe</h2>
+      <p>Guadalupe mezcla zona habitacional con comercio, servicios y talleres, además de plantas de manufactura. Esa mezcla se nota en los pedidos: aquí compra tanto la empresa que uniforma a treinta personas como el mecánico o el instalador que necesita dos pantalones que le duren el año.</p>
+      <h2>Prenda recomendada según el oficio</h2>
+      <p>Para taller y servicio a domicilio, <a href="/pantalones-de-trabajo">pantalón de trabajo</a> con cinco bolsas y <a href="/camisas-de-trabajo">camisa de mezclilla</a>: la tela aguanta grasa y lavado casi diario. Si el trabajo incluye maniobras en vialidad o patio, conviene la versión con <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a>.</p>
+      <h2>La ventaja de estar al lado</h2>
+      <p>Nuestra tienda está en Monterrey, en la colonia Venustiano Carranza, pegada al límite con Guadalupe. Para la mayoría de quienes trabajan aquí es un trayecto corto, y eso cambia la compra: puedes venir a tocar la tela, probarte la talla y llevarte el pedido el mismo día en vez de pedir a ciegas y esperar.</p>`,
+      faq: [
+      ['¿Qué tan lejos está su tienda de Guadalupe?', 'Estamos en la colonia Venustiano Carranza, en Monterrey, muy cerca del límite con Guadalupe. Para la mayoría de la zona es un trayecto corto en coche.'],
+      ['¿Venden a particulares o solo a empresas?', 'A los dos. Puedes comprar una sola pieza sin mínimo, y también armamos corridas completas para cuadrillas.'],
+      ] }),
   'ropa-de-trabajo-san-nicolas': ciudad('ropa-de-trabajo-san-nicolas', 'San Nicolás de los Garza',
     'San Nicolás es una de las zonas industriales más antiguas del área metropolitana: metalmecánica, manufactura, talleres y empresas de mantenimiento. Para ese trabajo pesado hacemos pantalones y camisas de mezclilla 100% algodón con costuras dobles, en tallas completas.',
-    ['¿Pueden surtir un pedido grande para una planta de San Nicolás?', 'Sí. Tenemos stock de todas las tallas en Monterrey; arma la corrida en el cotizador para empresas y te respondemos con precio por volumen y tiempo de entrega.']),
+    ['¿Pueden surtir un pedido grande para una planta de San Nicolás?', 'Sí. Tenemos stock de todas las tallas en Monterrey; arma la corrida en el cotizador para empresas y te respondemos con precio por volumen y tiempo de entrega.'],
+    { secciones: `
+      <h2>Qué se trabaja en San Nicolás</h2>
+      <p>San Nicolás es una de las zonas industriales más antiguas del área metropolitana y eso se nota en el tipo de trabajo: metalmecánica, talleres, empresas de mantenimiento y proveeduría. Es trabajo pesado, con roce contra metal y herramienta, donde una prenda ligera dura semanas.</p>
+      <h2>Prenda recomendada para trabajo pesado</h2>
+      <p>Mezclilla con cuerpo y doble costura en las zonas de tensión, que es lo que revisamos en <a href="/articulos/que-buscar-en-un-pantalon-para-trabajo-pesado">qué buscar en un pantalón para trabajo pesado</a>. Para taller, la <a href="/camisas-de-trabajo">camisa de mezclilla</a> de manga larga protege los brazos del roce y de salpicaduras calientes mejor que una playera.</p>
+      <h2>Comprar aquí sale distinto</h2>
+      <p>Estamos en Monterrey y San Nicolás queda a un trayecto corto. Para una empresa eso permite algo que por internet no se puede: traer a dos o tres personas a probarse antes de decidir la corrida de cincuenta piezas. Es la forma más barata de no equivocarse en tallas.</p>`,
+      faq: [
+      ['Trabajamos metalmecánica, ¿aguanta la mezclilla?', 'Es la tela que usan históricamente los talleres por eso mismo: aguanta roce, grasa y lavado frecuente. Lo que no hace es proteger de fuego o arco eléctrico.'],
+      ['¿Podemos ir a probarnos tallas antes de pedir?', 'Sí, y es lo que recomendamos antes de una compra grande. La tienda está en Monterrey, de lunes a viernes de 9:00 a. m. a 6:00 p. m.'],
+      ] }),
   'ropa-de-trabajo-santa-catarina': ciudad('ropa-de-trabajo-santa-catarina', 'Santa Catarina',
     'Santa Catarina reúne industria pesada, plantas de manufactura y empresas de transporte sobre la carretera a Saltillo. Uniformes de mezclilla para planta y patio, con cinta reflejante verde o naranja para el personal que trabaja cerca de camiones y maquinaria.',
-    ['¿Manejan uniformes reflejantes para transporte en Santa Catarina?', 'Sí, camisa y pantalón con cintas reflejantes cosidas. No son prendas certificadas de alta visibilidad; si tu cliente exige certificación, consúltanos antes.']),
+    ['¿Manejan uniformes reflejantes para transporte en Santa Catarina?', 'Sí, camisa y pantalón con cintas reflejantes cosidas. No son prendas certificadas de alta visibilidad; si tu cliente exige certificación, consúltanos antes.'],
+    { secciones: `
+      <h2>Qué se trabaja en Santa Catarina</h2>
+      <p>Santa Catarina concentra industria pesada y empresas de materiales en el corredor poniente, además de talleres y operaciones de transporte. Es trabajo con polvo, carga y maniobra, donde la ropa se ensucia todos los días y se lava con la misma frecuencia.</p>
+      <h2>Prenda recomendada para polvo y carga</h2>
+      <p>Mezclilla en tono índigo oscuro, que disimula mejor el polvo y la mancha que un color claro, con doble costura en las zonas de desgaste. Para maniobra en patio y movimiento de unidades, la versión con <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a>. Para piso de planta, el criterio está en <a href="/pantalones-industriales">pantalones industriales</a>.</p>
+      <h2>Lavado frecuente sin que la prenda se rinda</h2>
+      <p>Cuando la ropa se lava casi a diario conviene rotar tres juegos por persona en vez de dos: cada prenda descansa entre lavados y el conjunto dura bastante más. Cómo cuidarla está en <a href="/articulos/como-cuidar-la-ropa-de-trabajo-de-mezclilla-para-que-dure-mas">cómo cuidar la ropa de trabajo de mezclilla</a>.</p>`,
+      faq: [
+      ['Nuestra gente se ensucia mucho, ¿qué color conviene?', 'El índigo oscuro que manejamos disimula bastante mejor el polvo y la grasa que un color claro.'],
+      ['¿Cuántos juegos conviene por persona con lavado diario?', 'Tres. Así cada prenda descansa entre lavados y el conjunto dura más que dos usadas a diario.'],
+      ] }),
   'ropa-de-trabajo-escobedo': ciudad('ropa-de-trabajo-escobedo', 'General Escobedo',
     'Escobedo crece con parques industriales, centros de distribución y empresas de construcción. Uniformamos a personal de almacén, obra y manufactura con ropa de mezclilla hecha en Monterrey, con entrega por paquetería o recolección en tienda.',
-    ['¿Cuánto tarda un pedido a Escobedo?', 'Preparamos el pedido en 1 a 2 días hábiles y la paquetería entrega en 3 a 7 días hábiles. Si tienes prisa, puedes recoger en nuestra tienda de Monterrey.']),
+    ['¿Cuánto tarda un pedido a Escobedo?', 'Preparamos el pedido en 1 a 2 días hábiles y la paquetería entrega en 3 a 7 días hábiles. Si tienes prisa, puedes recoger en nuestra tienda de Monterrey.'],
+    { secciones: `
+      <h2>Qué se trabaja en Escobedo</h2>
+      <p>Escobedo creció alrededor del corredor industrial del norte: manufactura, proveeduría automotriz y empresas de ensamble. Es trabajo de línea, con turnos largos y rotación de personal, y eso define dos necesidades concretas: prenda que aguante el turno y existencia de todas las tallas para vestir a quien entra a media quincena.</p>
+      <h2>Prenda recomendada para línea de producción</h2>
+      <p>Corte recto y sin partes sueltas, que es el criterio detrás de nuestros <a href="/pantalones-industriales">pantalones industriales</a>, con <a href="/camisas-de-trabajo">camisa de mezclilla</a> de manga larga. Donde circulan montacargas, la versión con <a href="/ropa-de-trabajo-reflejante">reflejante</a>. Importante para planta: la mezclilla de algodón no es retardante a la flama; si tu análisis de riesgos marca fuego o arco eléctrico, necesitas prenda certificada.</p>
+      <h2>Reposición sin frenar la línea</h2>
+      <p>Mantenemos existencia de la corrida completa, del 28 al 50 y de la XCH a la 5XG. Para una empresa de Escobedo con entradas constantes de personal eso significa reponer una talla suelta el mismo día en vez de esperar a la siguiente compra grande.</p>`,
+      faq: [
+      ['Tenemos rotación alta, ¿pueden surtir tallas sueltas?', 'Sí. Mantenemos existencia de todas las tallas justamente para eso: pides las piezas que necesitas sin abrir un pedido grande.'],
+      ['¿Las prendas sirven para áreas con riesgo de fuego?', 'No. La mezclilla 100% algodón no es retardante a la flama y no tenemos certificación para arco eléctrico. Para esos puestos se necesita prenda certificada.'],
+      ] }),
   'ropa-de-trabajo-garcia': ciudad('ropa-de-trabajo-garcia', 'García',
     'García es una de las zonas de mayor crecimiento industrial de Nuevo León, con parques nuevos y cuadrillas de construcción en obra todo el año. Pantalones y camisas de mezclilla para obra y planta, con cinta reflejante para quienes trabajan junto a maquinaria.',
-    ['¿Atienden constructoras en García?', 'Sí. Cotizamos corridas completas de tallas con bordado del logotipo y factura CFDI; arma tu pedido en la página para empresas.']),
+    ['¿Atienden constructoras en García?', 'Sí. Cotizamos corridas completas de tallas con bordado del logotipo y factura CFDI; arma tu pedido en la página para empresas.'],
+    { secciones: `
+      <h2>Qué se trabaja en García</h2>
+      <p>García es de los municipios de mayor crecimiento industrial de Nuevo León, con parques nuevos y obra activa durante todo el año. Eso significa dos tipos de comprador muy distintos: la planta que ya opera y uniforma a su gente, y el contratista que llega con cuadrilla a construir la siguiente nave.</p>
+      <h2>Prenda recomendada para obra</h2>
+      <p>Para cuadrilla de construcción, <a href="/pantalones-de-trabajo">pantalón de trabajo</a> con doble costura en las zonas que más sufren, porque en obra se rompe primero en rodillas y bolsas traseras. Si hay maquinaria pesada moviéndose en el terreno, la versión con <a href="/pantalon-de-mezclilla-con-reflejante">cinta reflejante</a> en las piernas. Lo desarrollamos en <a href="/uniformes-para-construccion">uniformes para construcción</a>.</p>
+      <h2>Cuadrillas que rotan de obra</h2>
+      <p>Cuando la cuadrilla cambia de frente cada pocos meses, el problema no es el primer pedido sino el segundo. Por eso trabajamos con existencia y no por producción: puedes pedir diez piezas hoy y otras diez el mes que entra, en las mismas tallas y con el mismo tono.</p>`,
+      faq: [
+      ['Somos contratistas y cambiamos de obra, ¿pueden surtir varias veces?', 'Sí. Trabajamos con existencia, no por producción, así que puedes repetir pedido en las mismas tallas cuando lo necesites.'],
+      ['¿Qué prenda aguanta mejor la obra?', 'El pantalón de mezclilla con doble costura en tiro, entrepierna y bolsas traseras, que son los puntos donde primero se rompe en construcción.'],
+      ] }),
 };
 
 // --- Páginas por producto y tipo de cliente -------------------------------
@@ -483,7 +551,7 @@ const NUEVAS_2026_09 = {
       <p>Ropa de trabajo es la que se pone alguien que va a usar las manos ocho horas o más: agacharse, arrodillarse, cargar, subir escaleras, rozar contra herramienta y superficies. No es un uniforme de oficina ni un jean de moda con etiqueta distinta. La diferencia está en la tela, en las costuras y en el corte, y se nota a los tres meses, cuando una prenda sigue entera y la otra ya se abrió del tiro.</p>
       <p>Nosotros fabricamos dos prendas y las hacemos bien: <a href="/pantalones-de-trabajo">pantalones de trabajo</a> y <a href="/camisas-de-trabajo">camisas de trabajo</a>, ambas en mezclilla 100% algodón, y ambas disponibles con <a href="/ropa-de-trabajo-reflejante">cinta reflejante</a> cosida para quien trabaja de noche o cerca de maquinaria.</p>
       <h2>Por qué mezclilla 100% algodón</h2>
-      <p>El algodón absorbe el sudor y lo deja evaporar, así que en turnos largos y con calor se siente menos pesado que una tela sintética, que retiene la humedad contra la piel. Además aguanta lavado frecuente, grasa y roce sin adelgazarse en las zonas críticas. Nuestra mezclilla viene preencogida: la talla que compras es la que conservas después del primer lavado.</p>
+      <p>El algodón absorbe el sudor y lo deja evaporar, así que en turnos largos y con calor se siente menos pesado que una tela sintética, que retiene la humedad contra la piel. Además aguanta lavado frecuente, grasa y roce sin adelgazarse en las zonas críticas. Nuestra mezclilla viene preencogida: el encogimiento después del lavado es mínimo si sigues las instrucciones de cuidado después del primer lavado.</p>
       <p>Hay un caso donde la mezclilla de algodón no es la prenda indicada, y lo decimos antes de vender: si tu operación tiene riesgo de arco eléctrico o exposición a fuego, necesitas una prenda retardante certificada, y la nuestra no lo es.</p>
       <h2>Con o sin cinta reflejante</h2>
       <p>Las mismas prendas existen en versión con cinta reflejante cosida, en verde lima o naranja: en la camisa va en pecho, espalda y mangas; en el pantalón, dos cintas en cada pierna. Sirve para vialidades, patios de maniobras, almacenes con montacargas y turnos de noche. Son prendas con cinta reflejante, no prendas certificadas de alta visibilidad bajo ANSI/ISEA 107 ni ISO 20471; si tu reglamento interno exige certificación, consúltanos antes de comprar.</p>
@@ -499,7 +567,7 @@ const NUEVAS_2026_09 = {
     faq: [
       ['¿Qué diferencia hay entre ropa de trabajo y un jean normal?', 'La tela, las costuras y el corte. La ropa de trabajo lleva mezclilla de más cuerpo, doble costura en las zonas de desgaste y corte recto para moverse. Un jean de moda se ve igual el primer día y se abre mucho antes.'],
       ['¿Venden solo a empresas?', 'No. Vendemos desde una pieza a cualquier persona y también armamos corridas completas para cuadrillas, con precio por volumen y factura.'],
-      ['¿La ropa encoge o destiñe?', 'La mezclilla viene preencogida, así que no encoge. Para que no destiña, lava del revés, con agua fría y sin cloro.'],
+      ['¿La ropa encoge o destiñe?', 'La mezclilla viene preencogida, así que el encogimiento es mínimo si lavas como indica la etiqueta. Para que no destiña, lava del revés, con agua fría y sin cloro.'],
       ['¿Las prendas reflejantes están certificadas?', 'No. Llevan cinta reflejante cosida sobre mezclilla, pero no cuentan con certificación ANSI/ISEA 107 ni ISO 20471. Si tu empresa exige prenda certificada, dínoslo antes de comprar.'],
       ['¿Sirve para trabajo con riesgo de fuego?', 'No. La mezclilla de algodón no es retardante a la flama. Para esos puestos se necesita una prenda certificada para ese uso.'],
       ...faqComunes(),
@@ -529,7 +597,7 @@ const NUEVAS_2026_09 = {
       <h2>Precio de distribuidor</h2>
       <p>Si revendes ropa de trabajo o uniformas a varias empresas en Nuevo León, manejamos precio de distribuidor y de socio por grupo de tallas. Las condiciones están en <a href="/distribuidores-de-ropa-de-trabajo">distribuidores</a>.</p>
       <h2>Qué fabricamos</h2>
-      <p>Dos prendas, hechas para durar: <a href="/pantalones-de-trabajo">pantalones de trabajo</a> de mezclilla 100% algodón con cinco bolsas, doble costura en las zonas de desgaste y corte recto, del 28 al 50; y <a href="/camisas-de-trabajo">camisas de trabajo</a> con botones reforzados y bolsillo frontal, de la XCH a la 5XG. Las dos existen con cinta reflejante cosida en verde lima o naranja. Toda la mezclilla viene preencogida, así que la talla que compras es la que conservas.</p>
+      <p>Dos prendas, hechas para durar: <a href="/pantalones-de-trabajo">pantalones de trabajo</a> de mezclilla 100% algodón con cinco bolsas, doble costura en las zonas de desgaste y corte recto, del 28 al 50; y <a href="/camisas-de-trabajo">camisas de trabajo</a> con botones reforzados y bolsillo frontal, de la XCH a la 5XG. Las dos existen con cinta reflejante cosida en verde lima o naranja. Toda la mezclilla viene preencogida, así que el encogimiento después del lavado es mínimo si sigues las instrucciones de cuidado.</p>
       <h2>Por qué comprar aquí y no en línea a ciegas</h2>
       <p>La talla es el problema más caro de la ropa de trabajo. Comprar sin probarse termina en cambios, en prendas que nadie usa y en gente esperando. Si estás en Monterrey tienes la ventaja de venir, tocar la tela y probarte antes de decidir por cincuenta personas. Y si de todos modos algo no queda, hay 15 días naturales para cambiar de talla con la prenda sin usar, sin lavar y con etiquetas; en tienda el cambio no tiene costo.</p>
       <h2>Reposición sin esperar producción</h2>
@@ -683,7 +751,7 @@ const ARTICLES_2026_09_21 = {
       <h2>La costura</h2>
       <p>Una tela que estira somete más a las costuras, porque la tela se mueve y el hilo no. En zonas de tensión como el tiro y la entrepierna eso se traduce en costuras abiertas antes de tiempo. En una tela sin estiramiento la costura trabaja parejo, y si además lleva doble costura y remaches, aguanta mucho más.</p>
       <h2>Encogimiento</h2>
-      <p>Un punto a favor de nuestra mezclilla: viene preencogida, así que la talla que compras es la que conservas. Con o sin elastano, cualquier mezclilla sin ese acabado puede encoger en el primer lavado con agua caliente.</p>
+      <p>Un punto a favor de nuestra mezclilla: viene preencogida, así que el encogimiento después del lavado es mínimo si sigues las instrucciones de cuidado. Con o sin elastano, cualquier mezclilla sin ese acabado puede encoger en el primer lavado con agua caliente.</p>
       <h2>Entonces, ¿cuál elegir?</h2>
       <p>Para trabajo diario con esfuerzo físico, 100% algodón preencogido. Aguanta más, se deforma menos y la costura trabaja mejor. Es lo que usamos en nuestros <a href="/pantalones-de-trabajo">pantalones de trabajo</a>. Si lo que buscas es un pantalón para estar sentado en oficina, el elastano es más cómodo y el desgaste nunca va a ser el problema.</p>
       <h2>Cómo hacerlo durar</h2>
@@ -808,7 +876,7 @@ const ARTICLES_2026_09_21 = {
     publishedAt: '2026-09-21',
     body: `
       <h2>1. La tela, con nombre y apellido</h2>
-      <p>Pide la composición exacta, no "tela resistente". Mezclilla 100% algodón se comporta distinto a una mezcla con poliéster o con elastano: respira mejor, aguanta más lavados y no se deforma con el uso. Lo comparamos en <a href="/articulos/mezclilla-100-algodon-o-con-elastano-para-trabajar">mezclilla 100% algodón o con elastano</a>. Que además venga preencogida importa: significa que la talla que compras es la que conservas.</p>
+      <p>Pide la composición exacta, no "tela resistente". Mezclilla 100% algodón se comporta distinto a una mezcla con poliéster o con elastano: respira mejor, aguanta más lavados y no se deforma con el uso. Lo comparamos en <a href="/articulos/mezclilla-100-algodon-o-con-elastano-para-trabajar">mezclilla 100% algodón o con elastano</a>. Que además venga preencogida importa: significa que el encogimiento después del lavado es mínimo si sigues las instrucciones de cuidado.</p>
       <h2>2. Las costuras en las zonas de tensión</h2>
       <p>Voltea el pantalón del revés y revisa el tiro, la entrepierna y las esquinas de las bolsas traseras. Ahí debe haber doble costura, no una sola línea de hilo. Es la diferencia entre un pantalón que se abre a los tres meses y uno que aguanta el año.</p>
       <h2>3. Remaches donde hay jalón</h2>

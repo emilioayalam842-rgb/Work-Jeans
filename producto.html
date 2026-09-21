@@ -29,7 +29,6 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="assets/fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="{{LCP_IMAGE}}" as="image" fetchpriority="high">
   <link rel="stylesheet" href="styles.css?v={{ASSET_V}}">
   <script type="application/ld+json">{{JSONLD}}</script>
 </head>
@@ -39,7 +38,7 @@
   <header class="header">
     <nav class="navbar" aria-label="Principal">
       <a href="/" class="logo" aria-label="Works Jeans, inicio">
-        <img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="logo-img" width="98" height="46">
+        <picture><source srcset="assets/img/works-jeans-logo.webp" type="image/webp"><img src="assets/img/works-jeans-logo.png" alt="Works Jeans" class="logo-img" width="98" height="46"></picture>
       </a>
       <div class="nav-right">
         <ul class="nav-links nav-links--static">
@@ -69,7 +68,11 @@
         <div class="pdp-gallery">
           <figure class="pdp-main">
             {{TAG}}
-            <img id="pdpPhoto" src="{{MAIN_SRC}}" srcset="{{MAIN_SRCSET}}" sizes="(max-width: 860px) 100vw, 560px" alt="{{NAME}} · frente" width="1000" height="1250" fetchpriority="high" decoding="async">
+            <picture>
+              <source id="pdpPhotoAvif" type="image/avif" srcset="{{MAIN_SRCSET_AVIF}}" sizes="(max-width: 860px) 100vw, 560px">
+              <source id="pdpPhotoWebp" type="image/webp" srcset="{{MAIN_SRCSET_WEBP}}" sizes="(max-width: 860px) 100vw, 560px">
+              <img id="pdpPhoto" src="{{MAIN_SRC}}" srcset="{{MAIN_SRCSET}}" sizes="(max-width: 860px) 100vw, 560px" alt="{{NAME}} · frente" width="1000" height="1250" fetchpriority="high" decoding="async">
+            </picture>
           </figure>
           <div class="pdp-thumbs" id="pdpThumbs">{{THUMBS}}</div>
           {{VIDEO}}

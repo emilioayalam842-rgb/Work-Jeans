@@ -42,7 +42,7 @@ const LANDINGS = {
     products: () => true,
     body: `
       <h2>Ropa de trabajo hecha en Monterrey</h2>
-      <p>Works Jeans nació en Monterrey para resolver un problema común en la industria regia: <a href="/uniformes-de-mezclilla">uniformes</a> que se rompen a los dos meses. Confeccionamos pantalones y camisas de mezclilla 100% algodón con costuras reforzadas, pensadas para obra, planta, taller mecánico, patio de carga y campo.</p>
+      <p>Works Jeans nació en Monterrey para resolver un problema común en la industria regia: <a href="/uniformes-de-mezclilla">uniformes</a> que se rompen mucho antes de lo que deberían. Confeccionamos pantalones y camisas de mezclilla 100% algodón con costuras reforzadas, pensadas para obra, planta, taller mecánico, patio de carga y campo.</p>
       <h2>Stock inmediato, no pedidos a 6 semanas</h2>
       <p>Mantenemos inventario de todas las tallas en nuestra tienda de Calle Emiliano Zapata 3737, Col. Venustiano Carranza. Puedes pasar a probar la talla, recoger el pedido el mismo día o pedir envío a cualquier parte de Nuevo León y del país.</p>
       <h2>Uniformes con tu logotipo</h2>
@@ -116,7 +116,7 @@ const LANDINGS = {
       <p>Puedes comprar un pantalón para probar tela y talla antes de decidir por todo el equipo. Para cuadrillas armamos la corrida completa con etiquetas por talla, precio por volumen, bordado o DTF con tu logotipo y factura con CFDI. Pide la cotización en el <a href="/empresas">cotizador para empresas</a>.</p>
     `,
     faq: [
-      ['¿El pantalón encoge al lavarlo?', 'No de forma apreciable: la mezclilla viene preencogida. La tolerancia de medidas es de una pulgada.'],
+      ['¿El pantalón encoge al lavarlo?', 'No de forma apreciable: la mezclilla viene preencogida. Lava con agua fría y del revés para conservar la talla y el color. Lava con agua fría y del revés para conservar la talla y el color. La tolerancia de medidas es de una pulgada.'],
       ['¿Tiene bolsa para herramienta?', 'Lleva cinco bolsas: dos delanteras, dos traseras y una relojera. Si necesitas bolsas especiales para tu equipo, cotízalo por mayoreo.'],
       ['¿Sirve para trabajo con riesgo de fuego o arco eléctrico?', 'No. La mezclilla de algodón no es retardante a la flama y no tenemos certificación para ese uso. Para esos puestos se necesita una prenda certificada.'],
       ['¿Aguanta arrodillarse en concreto?', 'Lleva mezclilla 100% algodón con doble costura en las zonas de mayor desgaste. Ninguna tela es eterna sobre concreto, pero aguanta bastante más que un jean de moda.'],
@@ -150,7 +150,7 @@ const LANDINGS = {
       </ul>
       {{TABLA_PANTALON}}
       <h2>Consejos para uniformar a un equipo</h2>
-      <p>Pide a cada persona su talla de pantalón habitual y su talla de camisa; con eso arma la corrida. Si dudas entre dos tallas, elige la mayor: en trabajo se agradece el espacio para moverse y la prenda no encoge. Para grupos grandes conviene pedir una o dos piezas extra de las tallas más comunes (32 a 36 en pantalón, M a XG en camisa).</p>
+      <p>Pide a cada persona su talla de pantalón habitual y su talla de camisa; con eso arma la corrida. Si dudas entre dos tallas, elige la mayor: en trabajo se agradece el espacio para moverse y la prenda prácticamente no cambia de talla con el lavado. Para grupos grandes conviene pedir una o dos piezas extra de las tallas más comunes (32 a 36 en pantalón, M a XG en camisa).</p>
       <p>¿Sigues con dudas? Mándanos por WhatsApp las medidas de una prenda que le quede bien a la persona y te decimos la talla.</p>
       <h2>Por qué medir una prenda y no el cuerpo</h2>
       <p>Medirse encima con una cinta de sastre es incómodo y da números distintos según qué tan apretado se jale la cinta. Medir una prenda que ya queda bien, extendida sobre una mesa, es más exacto y cualquiera lo puede hacer sin ayuda: la prenda no se mueve y la medida se repite igual las veces que quieras. Por eso todas nuestras tablas están hechas sobre prenda extendida y no sobre cuerpo.</p>
@@ -166,7 +166,7 @@ const LANDINGS = {
     faq: [
       ['¿Las medidas son en pulgadas o centímetros?', 'En pulgadas, como es costumbre en pantalones de mezclilla. Una pulgada equivale a 2.54 cm.'],
       ['¿Qué hago si compré la talla equivocada?', 'Tienes 15 días naturales para cambiar de talla con la prenda sin usar, sin lavar y con etiquetas. En tienda el cambio no tiene costo; por paquetería el cliente cubre el envío de ida y vuelta.'],
-      ['¿La ropa encoge después de lavarla?', 'No. La mezclilla viene preencogida, así que la talla que compras es la que conservas. Lava con agua fría y del revés para que además no destiña.'],
+      ['¿La ropa encoge después de lavarla?', 'No. La mezclilla viene preencogida, así que el encogimiento después del lavado es mínimo si sigues las instrucciones de cuidado. Lava con agua fría y del revés para que además no destiña.'],
       ['¿Mido el cuerpo o una prenda?', 'Una prenda que ya te quede bien, extendida sobre una mesa. Es más exacto que medirse encima y puedes repetir la medida las veces que quieras.'],
       ['¿Qué talla pido si estoy entre dos?', 'La mayor. La mezclilla no da de sí y en el trabajo conviene el espacio para agacharse y moverse.'],
       ['¿Hasta qué talla llegan?', 'Pantalón hasta la 50 y camisa hasta la 5XG, con el mismo patrón y acabado que las demás tallas.'],
@@ -198,7 +198,7 @@ const ARTICLES = {
     `,
     faq: [
       ['¿Puedo trabajar con un jean normal?', 'Puedes, pero dura menos. Un jean de moda no lleva las costuras reforzadas ni el corte recto que necesita alguien que se agacha, se arrodilla y carga todo el día; el desgaste aparece primero en tiro, rodillas y bolsas.'],
-      ['¿El work jean se siente más rígido al principio?', 'La mezclilla 100% algodón se siente firme los primeros usos y se ablanda con el uso y los lavados. Viene preencogida, así que no te va a encoger después de la primera lavada.'],
+      ['¿El work jean se siente más rígido al principio?', 'La mezclilla 100% algodón se siente firme los primeros usos y se ablanda con el uso y los lavados. Viene preencogida, así que el cambio de talla tras la primera lavada es mínimo si lavas con agua fría.'],
       ['¿Qué talla pido si uso jean de moda?', 'La misma que usas normalmente. Si dudas entre dos, elige la mayor: la mezclilla no da de sí y en el trabajo se agradece el espacio. Manejamos del 28 al 50.'],
     ],
   },

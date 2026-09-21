@@ -56,7 +56,7 @@ async function loadSettings() {
 
     const waLinks = {
       announcementWhatsapp: 'Hola, me interesa la ropa de trabajo de Works Jeans.',
-      whatsappFloat: 'Hola, me interesa la ropa de trabajo de Works Jeans.',
+      whatsappFloat: mensajeWhatsappContexto().texto,
       mayoreoWhatsapp: 'Hola, quiero cotizar un pedido por mayoreo de Works Jeans.',
       contactWhatsapp: '',
       faqWhatsapp: 'Hola, tengo una duda sobre la ropa de trabajo de Works Jeans.',
@@ -65,11 +65,68 @@ async function loadSettings() {
       const el = document.getElementById(id);
       if (!el) return;
       el.href = `https://wa.me/${WHATSAPP_NUMBER}${msg ? `?text=${encodeURIComponent(msg)}` : ''}`;
+      if (id === 'whatsappFloat') el.dataset.where = mensajeWhatsappContexto().donde;
       if (id === 'contactWhatsapp' && settings.phoneDisplay) el.textContent = settings.phoneDisplay;
     });
   } catch {
     // Storefront still works with the hardcoded fallback values.
   }
+}
+
+// El botón flotante de WhatsApp manda un mensaje distinto según dónde está el visitante:
+// así el mensaje llega con contexto y no hay que preguntarle de qué producto habla.
+// Los encabezados llevan saltos de línea y punto final: hay que limpiarlos antes de meterlos
+// en el mensaje, o queda "pantalonesde trabajo..".
+function textoDeEncabezado(el) {
+  if (!el) return '';
+  return el.innerHTML.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().replace(/\.$/, '');
+}
+
+function mensajeWhatsappContexto() {
+  {
+    const ruta = location.pathname;
+    let texto = 'Hola, me interesa la ropa de trabajo de Works Jeans.';
+    let donde = 'general';
+    if (ruta.startsWith('/producto/')) {
+      const nombre = textoDeEncabezado(document.querySelector('.pdp-info h1'));
+      if (nombre) { texto = `Hola, me interesa el ${nombre}. ¿Tienen disponible mi talla?`; donde = 'producto'; }
+    } else if (/^\/(empresas|uniformes-industriales|uniformes-de-mezclilla)/.test(ruta)) {
+      texto = 'Hola, quiero cotizar uniformes para mi empresa.';
+      donde = 'empresas';
+    } else if (/mayoreo|distribuidores/.test(ruta)) {
+      texto = 'Hola, quisiera información de precios por volumen.';
+      donde = 'mayoreo';
+    } else if (/^\/(pantalones|camisas|pantalon|camisa|ropa-de-trabajo)/.test(ruta)) {
+      const h1 = textoDeEncabezado(document.querySelector('main h1'));
+      if (h1) { texto = `Hola, me interesa ${h1.toLowerCase()}. ¿Me ayudas con tallas y precio?`; donde = 'categoria'; }
+    } else if (ruta.startsWith('/articulos')) {
+      texto = 'Hola, leí un artículo en su página y tengo una duda sobre la ropa de trabajo.';
+      donde = 'articulo';
+    } else if (ruta.startsWith('/guia-de-tallas')) {
+      texto = 'Hola, tengo una duda con la talla. ¿Me ayudan a elegir?';
+      donde = 'tallas';
+    } else if (ruta.startsWith('/rastrear')) {
+      texto = 'Hola, quiero saber el estado de mi pedido.';
+      donde = 'rastreo';
+    }
+    return { texto, donde };
+  }
+}
+
+function aplicarWhatsappContexto() {
+  const flotante = document.getElementById('whatsappFloat');
+  if (!flotante) return;
+  const { texto, donde } = mensajeWhatsappContexto();
+  const base = flotante.href.split('?')[0];
+  flotante.href = `${base}?text=${encodeURIComponent(texto)}`;
+  flotante.dataset.where = donde;
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aplicarWhatsappContexto);
+else aplicarWhatsappContexto();
+
+// Firma del carrito: sirve para no contar dos veces el mismo inicio de compra.
+function firmaCarrito(cart) {
+  return (cart || []).map((i) => `${i.id}:${i.size}:${i.quantity}`).join('|');
 }
 
 function getCart() {
@@ -394,7 +451,7 @@ async function startStripeCheckout() {
   }
   if (PAYMENTS.provider === 'openpay') {
     saveZip(getZip());
-    window.wjTrack?.('begin_checkout', { items: cart, valueCents: cart.reduce((t, i) => t + i.priceCents * i.quantity, 0) });
+    window.wjTrackOnce?.('begin_checkout', firmaCarrito(cart), { items: cart, valueCents: cart.reduce((t, i) => t + i.priceCents * i.quantity, 0) });
     window.location.href = '/pago';
     return;
   }
@@ -420,7 +477,7 @@ async function startStripeCheckout() {
   btn.textContent = 'Procesando…';
   cartMessage.textContent = 'Redirigiendo al pago...';
   const token = (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^\w-]/g, '');
-  window.wjTrack?.('begin_checkout', { items: cart, valueCents: cart.reduce((t, i) => t + i.priceCents * i.quantity, 0) });
+  window.wjTrackOnce?.('begin_checkout', firmaCarrito(cart), { items: cart, valueCents: cart.reduce((t, i) => t + i.priceCents * i.quantity, 0) });
 
   try {
     const res = await fetch('/api/create-checkout-session', {

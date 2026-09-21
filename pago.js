@@ -88,7 +88,12 @@
   $('coZip').addEventListener('input', () => { $('coZip').value = $('coZip').value.replace(/\D/g, '').slice(0, 5); clearTimeout(quoteTimer); quoteTimer = setTimeout(refreshQuote, 250); });
   renderItems();
   refreshQuote();
-  if (cart.length) window.wjTrack?.('view_cart', { items: cart, valueCents: cart.reduce((t, i) => t + i.priceCents * i.quantity, 0) });
+  if (cart.length) {
+    const total = cart.reduce((t, i) => t + i.priceCents * i.quantity, 0);
+    const firma = cart.map((i) => `${i.id}:${i.size}:${i.quantity}`).join('|');
+    window.wjTrack?.('view_cart', { items: cart, valueCents: total });
+    window.wjTrackOnce?.('begin_checkout', firma, { items: cart, valueCents: total });
+  }
   // El costo de envío queda confirmado cuando el código postal devuelve una zona válida.
   let envioAvisado = false;
   document.addEventListener('wj-quote-ready', () => {
@@ -135,7 +140,7 @@
     const original = btn.innerHTML;
     btn.textContent = 'Procesando…';
     const token = (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^\w-]/g, '');
-    window.wjTrack?.('begin_checkout', { items: cart, valueCents: quote ? quote.totalCents : undefined });
+    window.wjTrack?.('add_payment_info', { items: cart, valueCents: quote ? quote.totalCents : undefined, method: document.querySelector('input[name="method"]:checked')?.value });
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
