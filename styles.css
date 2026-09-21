@@ -3105,3 +3105,86 @@ h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px;
 .cart-header { position: sticky; top: 0; z-index: 2; }
 .cart-items { flex: 0 0 auto; overflow: visible; }
 .cart-footer { flex: 0 0 auto; }
+
+/* ============================================================
+   Ficha rápida de las páginas de categoría.
+   Era un bloque amarillo entero con un numeral gigante sin significado y todo en mayúsculas
+   espaciadas. Pasa a ser una tarjeta blanca de datos: encabezado discreto, una línea por
+   dato y una franja amarilla abajo con el origen y el envío.
+   ============================================================ */
+.category-panel {
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  padding: 0;
+  overflow: hidden;
+}
+.category-panel .num { display: none; }
+.category-panel-kicker {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 16px 20px 14px;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-deep);
+  border-bottom: 1px solid var(--line);
+}
+.category-panel-kicker::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--yellow);
+  box-shadow: 0 0 0 3px rgba(255, 207, 47, 0.28);
+  flex: none;
+}
+
+.category-facts { padding: 4px 20px 8px; }
+.category-facts div {
+  gap: 18px;
+  padding: 13px 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--line);
+}
+.category-facts div:last-child { border-bottom: 0; }
+.category-facts dt {
+  font-family: var(--body);
+  font-weight: 500;
+  font-size: 0.88rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+.category-facts dd { font-weight: 600; font-size: 0.95rem; }
+
+.category-panel-foot {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 14px 20px;
+  background: #fff8dd;
+  border-top: 1px solid var(--line);
+  font-family: var(--body);
+  font-weight: 500;
+  font-size: 0.88rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.category-panel-foot strong {
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  color: var(--ink-deep);
+}
+.category-panel-foot strong span { background: none; padding: 0; }
+.category-panel-foot > span { color: #6f6a52; }
