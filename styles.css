@@ -3021,3 +3021,139 @@ h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px;
 .faq-list + h2, .faq-list + h3 { margin-top: 44px; }
 .faq-item summary { padding: 20px 44px 20px 0; }
 .faq-list { gap: 14px; }
+
+/* ============================================================
+   Carrito: de formulario de oficina a resumen de compra.
+   Todo estaba en mayúsculas con letras muy separadas, los campos cambiaban de alto entre
+   sí y el total gritaba. Ahora cada línea lleva su foto, su talla y su importe, las
+   etiquetas se leen normales y los campos miden lo mismo.
+   ============================================================ */
+.cart-header {
+  padding: 16px 20px;
+  background: var(--yellow);
+  border-bottom: 0;
+}
+.cart-header h2 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.015em; }
+.cart-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ink-deep);
+  font-size: 1rem;
+}
+.cart-close:hover { background: rgba(0, 0, 0, 0.16); }
+
+/* --- Cada prenda del carrito --- */
+.cart-items { padding: 12px 18px; }
+.cart-item {
+  grid-template-columns: 60px 1fr auto;
+  gap: 14px;
+  align-items: start;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cart-item-foto {
+  width: 60px;
+  height: 75px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #f4f5f7;
+  display: block;
+}
+.cart-item-info { min-width: 0; display: grid; gap: 8px; }
+.cart-item-name { font-weight: 600; font-size: 0.95rem; line-height: 1.35; }
+.cart-item-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0; }
+.cart-item-size {
+  margin-left: 0;
+  font-family: var(--body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  background: var(--yellow);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.cart-item-price { font-size: 0.82rem; color: var(--muted); margin: 0; }
+.cart-item-qty { border-radius: 999px; border: 1px solid var(--line-2); width: fit-content; overflow: hidden; }
+.cart-item-qty .qty-btn { width: 34px; height: 34px; border: 0; background: transparent; font-size: 1.05rem; cursor: pointer; }
+.cart-item-qty .qty-btn:hover { background: var(--gray); }
+.cart-item-right { display: grid; justify-items: end; gap: 10px; }
+.cart-item-total { font-weight: 700; font-size: 0.95rem; margin: 0; white-space: nowrap; }
+.cart-item-remove {
+  width: 30px; height: 30px;
+  border: 0; border-radius: 999px;
+  background: transparent; color: var(--muted);
+  font-size: 0.85rem; cursor: pointer;
+}
+.cart-item-remove:hover { background: var(--gray); color: var(--ink-deep); }
+
+/* --- Cupón, código postal y factura --- */
+.cart-footer { padding: 16px 18px 20px; display: grid; gap: 12px; }
+.cart-coupon input,
+.cart-ship input,
+.cart-invoice-fields input,
+.cart-invoice-fields select {
+  font-family: var(--body);
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+  min-height: 46px;
+  padding: 11px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: #fff;
+}
+.cart-coupon input::placeholder,
+.cart-ship input::placeholder { letter-spacing: 0; text-transform: none; color: #9a9da4; }
+.cart-coupon .btn { padding: 0 20px; font-size: 0.9rem; min-height: 46px; }
+.cart-ship label,
+.cart-invoice-fields label {
+  font-family: var(--body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #5c5f66;
+}
+.cart-ship { gap: 8px; margin: 2px 0 4px; }
+
+.cart-summary { border-top: 1px solid var(--line); padding-top: 12px; gap: 8px; font-size: 0.92rem; }
+.cart-total {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.45rem;
+  letter-spacing: -0.015em;
+  text-transform: none;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-bottom: 4px;
+}
+
+.cart-invoice { border: 1px solid var(--line-2); border-radius: var(--radius-card); padding: 0 14px; }
+.cart-invoice summary {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 14px 0;
+}
+.cart-invoice-check { width: 20px; height: 20px; border-radius: 6px; }
+.cart-invoice-fields { gap: 12px; padding: 4px 0 16px; }
+.cart-invoice-fields label { display: grid; gap: 6px; }
+
+.cart-footer .btn { width: 100%; min-height: 50px; }
+.cart-keep {
+  border: 0; background: transparent; color: var(--muted);
+  font: inherit; font-size: 0.9rem; cursor: pointer; padding: 6px 0; text-decoration: underline;
+}
+.cart-b2b { margin: 6px 0 0; }
+
+/* El cajón entero se desplaza: antes la lista de prendas se aplastaba cuando el pie crecía */
+.cart-drawer { overflow-y: auto; overscroll-behavior: contain; }
+.cart-header { position: sticky; top: 0; z-index: 2; }
+.cart-items { flex: 0 0 auto; overflow: visible; }
+.cart-footer { flex: 0 0 auto; }

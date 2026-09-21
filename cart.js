@@ -234,20 +234,30 @@ function renderCart() {
   if (cart.length === 0) {
     itemsEl.innerHTML = '<p class="cart-empty">Tu carrito está vacío.</p>';
   } else {
-    itemsEl.innerHTML = cart.map((item) => `
+    itemsEl.innerHTML = cart.map((item) => {
+      // La foto sale del catálogo ya cargado; si todavía no llega, queda el recuadro vacío.
+      const producto = (PRODUCTS || []).find((p) => p.id === item.id);
+      const foto = producto
+        ? `<img class="cart-item-foto" src="${imgSrc(producto.image, 320)}" alt="" width="60" height="75" loading="lazy" decoding="async">`
+        : '<span class="cart-item-foto" aria-hidden="true"></span>';
+      return `
       <div class="cart-item" data-id="${item.id}" data-size="${item.size}">
+        ${foto}
         <div class="cart-item-info">
-          <p class="cart-item-name">${item.name} <span class="cart-item-size">Talla ${item.size}</span></p>
-          <p class="cart-item-price">${formatPrice(item.priceCents)} c/u</p>
+          <p class="cart-item-name">${item.name}</p>
+          <p class="cart-item-meta"><span class="cart-item-size">Talla ${item.size}</span><span class="cart-item-price">${formatPrice(item.priceCents)} c/u</span></p>
+          <div class="cart-item-qty">
+            <button class="qty-btn" data-action="decrease" aria-label="Quitar uno">−</button>
+            <span>${item.quantity}</span>
+            <button class="qty-btn" data-action="increase" aria-label="Agregar uno">+</button>
+          </div>
         </div>
-        <div class="cart-item-qty">
-          <button class="qty-btn" data-action="decrease">−</button>
-          <span>${item.quantity}</span>
-          <button class="qty-btn" data-action="increase">+</button>
+        <div class="cart-item-right">
+          <button class="cart-item-remove" data-action="remove" aria-label="Eliminar">✕</button>
+          <p class="cart-item-total">${formatPrice(item.priceCents * item.quantity)}</p>
         </div>
-        <button class="cart-item-remove" data-action="remove" aria-label="Eliminar">✕</button>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   }
 
   totalEl.textContent = formatPrice(cartTotalCents());
@@ -638,6 +648,7 @@ async function loadProducts() {
     const res = await fetch('products.json');
     const products = await res.json();
     PRODUCTS = products;
+    renderCart();   // ahora sí hay fotos para las líneas del carrito
     window.onProductsLoaded?.();
     if (!grid) return;
     grid.innerHTML = products.map(renderProductCard).join('');
