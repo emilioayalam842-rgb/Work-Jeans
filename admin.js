@@ -28,6 +28,11 @@ let ordersMonth = ''; // filtro de mes en Pedidos ('' = todos, 'YYYY-MM')
 // Íconos en línea (trazo, 16px) para los botones del panel.
 const ICONS = {
   edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  box: '<path d="M21 8v8a2 2 0 0 1-1 1.7l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.7l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  user: '<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/>',
   trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   up: '<path d="m18 15-6-6-6 6"/>',
@@ -1055,38 +1060,97 @@ function openOrderDetail(id) {
   const date = new Date(order.createdAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
   const sourceLabel = order.source === 'stripe' ? `${icon('card', 14)} Pago con tarjeta` : order.source === 'openpay' ? `${icon('card', 14)} Openpay · ${order.payment?.method === 'spei' ? 'transferencia SPEI' : order.payment?.method === 'store' ? 'pago en tienda' : 'tarjeta'} · ${order.payment?.status === 'paid' ? 'pagado' : order.payment?.status === 'failed' ? 'pago fallido' : 'pago pendiente'}${order.payment?.clabe ? ` · CLABE ${esc(order.payment.clabe)}` : ''}${order.payment?.reference ? ` · ref. ${esc(order.payment.reference)}` : ''}` : `${icon('chat', 14)} Pedido por WhatsApp`;
 
-  const envio = order.shipping ? esc([order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode, order.shipping.references ? `Ref.: ${order.shipping.references}` : ''].filter(Boolean).join(', ')) : '';
-  const contacto = [order.customerPhone, order.customerEmail].filter(Boolean).map((x) => esc(x)).join(' · ');
+  const sh = order.shipping || {};
+  const dirCompleta = esc([sh.name, sh.line1, sh.line2, sh.city, sh.state, sh.postalCode, sh.references ? `Ref.: ${sh.references}` : ''].filter(Boolean).join(', '));
+  const campo = (etiqueta, valor) => `<div class="od-field"><span>${etiqueta}</span><b>${valor || '—'}</b></div>`;
+  const seccion = (id, icono, titulo, cuerpo, extra = '') => `
+    <section class="od-sec" id="${id}">
+      <h3 class="od-sec-title">${icon(icono, 15)} ${titulo}${extra}</h3>
+      ${cuerpo}
+    </section>`;
+  const piezas = order.items.reduce((n, i) => n + i.quantity, 0);
+  const pagoEstado = order.payment?.status === 'paid' ? 'pagado' : order.payment?.status === 'failed' ? 'falló' : order.payment ? 'pendiente' : '—';
+  const historia = [
+    ['Recibido', order.createdAt],
+    ['Pagado', order.payment?.paidAt],
+    ['En preparación', order.preparingAt],
+    ['Enviado', order.shippedAt],
+    ['Entregado', order.deliveredAt],
+  ].filter(([, cuando]) => cuando).reverse();
+
   orderDetailContent.innerHTML = `
-    <dl class="admin-facts">
-      <div><dt>Pago</dt><dd><strong>${sourceLabel}</strong><span class="admin-muted">${date}</span></dd></div>
-      <div><dt>Cliente</dt><dd>${esc(order.customerName) || 'Cliente sin nombre'}${contacto ? `<span class="admin-muted">${contacto}</span>` : ''}</dd></div>
-      ${envio ? `<div><dt>Envío a</dt><dd>${envio}</dd></div>` : ''}
-    </dl>
-    <table class="admin-table admin-detail-table">
-      <thead><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
-      <tbody>
-        ${order.items.map((i) => `
-          <tr>
-            <td>${esc(i.name)}</td>
-            <td>${esc(i.size) || '—'}</td>
-            <td>${i.quantity}</td>
-            <td>${formatPrice(i.priceCents)}</td>
-            <td>${formatPrice(i.priceCents * i.quantity)}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-    ${order.discount ? `<p class="admin-muted">Subtotal ${formatPrice(order.subtotalCents || order.totalCents + order.discount.cents)} · Descuento −${formatPrice(order.discount.cents)}${order.discount.code ? ` (cupón ${order.discount.code})` : ''}</p>` : ''}
-    <p class="admin-order-total">Total: ${formatPrice(order.totalCents)}</p>
-    <div class="admin-mail-row">
-      <span class="admin-muted admin-small">Correos al cliente: ${(order.emails || []).length ? order.emails.map((e) => `${e.type} ${e.ok ? '✓' : `✗ (${esc(e.reason || 'error')})`}`).join(', ') : 'ninguno todavía'}</span>
-      <span class="admin-mail-btns">
-        ${order.customerEmail ? '<button type="button" class="admin-inline-btn" data-action="resend-confirmation">Reenviar confirmación</button>' : ''}
-        <button type="button" class="admin-inline-btn" data-action="track-link">Copiar enlace de rastreo</button>
-        <button type="button" class="admin-inline-btn" data-action="review-link">Copiar enlace para reseña</button>
-      </span>
-    </div>
+    ${seccion('odCliente', 'user', 'Cliente', `
+      <div class="od-grid">
+        ${campo('Nombre', esc(order.customerName))}
+        ${campo('Fecha del pedido', date)}
+        ${campo('Correo', esc(order.customerEmail))}
+        ${campo('Teléfono', esc(order.customerPhone))}
+      </div>`)}
+
+    ${seccion('odEnvio', 'pin', 'Envío', `
+      <div class="od-address"><span>Dirección completa</span><p id="odDireccion">${dirCompleta || 'Sin dirección capturada'}</p></div>
+      <div class="od-grid">
+        ${campo('Calle y número', esc(sh.line1))}
+        ${campo('Colonia', esc(sh.line2))}
+        ${campo('Código postal', esc(sh.postalCode))}
+        ${campo('Ciudad', esc(sh.city))}
+        ${campo('Estado', esc(sh.state))}
+        ${campo('Referencias', esc(sh.references))}
+      </div>
+      ${order.tracking?.number ? `<div class="od-box od-box--info">
+        <b>${icon('box', 15)} Guía registrada</b>
+        <div class="od-grid">
+          ${campo('Paquetería', esc(order.tracking.carrier))}
+          ${campo('Número de guía', esc(order.tracking.number))}
+        </div>
+        ${order.tracking.url ? `<a class="admin-inline-btn" href="${esc(order.tracking.url)}" target="_blank" rel="noopener">Rastrear</a>` : ''}
+      </div>` : ''}
+      <p class="od-ship-cost">Costo de envío <b>${order.shippingCostCents ? formatPrice(order.shippingCostCents) : 'Gratis'}</b>${order.shippingZone ? ` <span class="admin-muted">· ${esc(order.shippingZone)}</span>` : ''}</p>`)}
+
+    ${seccion('odProductos', 'box', 'Productos', `
+      <table class="admin-table admin-detail-table">
+        <thead><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>P. unit.</th><th>Total</th></tr></thead>
+        <tbody>
+          ${order.items.map((i) => `
+            <tr>
+              <td>${esc(i.name)}</td>
+              <td>${esc(i.size) || '—'}</td>
+              <td>${i.quantity}</td>
+              <td>${formatPrice(i.priceCents)}</td>
+              <td>${formatPrice(i.priceCents * i.quantity)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      <p class="od-chip">${piezas} ${piezas === 1 ? 'pieza' : 'piezas'}</p>
+      <div class="od-totals">
+        <div><span>Subtotal</span><b>${formatPrice(order.subtotalCents || order.totalCents)}</b></div>
+        ${order.discount ? `<div><span>Descuento${order.discount.code ? ` (${esc(order.discount.code)})` : ''}</span><b>−${formatPrice(order.discount.cents)}</b></div>` : ''}
+        <div><span>Envío</span><b>${order.shippingCostCents ? formatPrice(order.shippingCostCents) : 'Gratis'}</b></div>
+        <div class="od-totals-final"><span>Total</span><b>${formatPrice(order.totalCents)}</b></div>
+      </div>`)}
+
+    ${seccion('odPagos', 'card', 'Pagos', `
+      <div class="od-grid">
+        ${campo('Forma de pago', sourceLabel)}
+        ${campo('Estado del pago', pagoEstado)}
+        ${order.payment?.paidAt ? campo('Pagado el', new Date(order.payment.paidAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' })) : ''}
+        ${order.payment?.chargeId ? campo('Referencia del cargo', esc(order.payment.chargeId)) : ''}
+      </div>`)}
+
+    ${seccion('odHistorial', 'clock', 'Historial', `
+      <ul class="od-hist">
+        ${historia.map(([texto, cuando]) => `<li><span></span><div><b>${texto}</b><small>${new Date(cuando).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</small></div></li>`).join('')}
+      </ul>
+      <h4 class="od-sub">Correos enviados</h4>
+      ${(order.emails || []).length
+        ? `<ul class="od-mails">${order.emails.map((e) => `<li>${e.ok ? '✓' : '✗'} ${esc(e.type)}${e.ok ? '' : ` · ${esc(e.reason || 'error')}`}</li>`).join('')}</ul>`
+        : '<p class="admin-muted admin-small">Ninguno todavía.</p>'}`)}
+
+    <p id="odResumenTexto" hidden>Pedido ${esc(order.id)} · ${date}
+${esc(order.customerName)}${order.customerPhone ? ` · ${esc(order.customerPhone)}` : ''}${order.customerEmail ? ` · ${esc(order.customerEmail)}` : ''}
+${dirCompleta}
+${order.items.map((i) => `${i.quantity} x ${esc(i.name)}${i.size ? ` (${esc(i.size)})` : ''}`).join('\n')}
+Total ${formatPrice(order.totalCents)}</p>
   `;
   orderDetailNotes.value = order.notes || '';
   document.getElementById('orderDetailStatus').value = order.status;

@@ -51,8 +51,22 @@
     if (o.status === 'preparacion' && !n.some((x) => x.key === 'enviar')) parts.push(btn('enviado', 'Marcar como enviado'));
     if (o.status === 'pagado') parts.push(btn('preparacion', 'Pasar a preparación', 'btn-secondary'));
     if (o.status === 'enviado' && !n.some((x) => x.key === 'entrega')) parts.push(btn('entregado', 'Marcar como entregado', 'btn-secondary'));
-    if (!parts.length) return '';
-    return `<div class="admin-quick"><span class="admin-kicker">Siguiente paso</span><div class="admin-quick-btns">${parts.join('')}</div></div>`;
+    return parts.join('');
+  }
+
+  const SECCIONES = [
+    ['odCliente', 'Cliente'],
+    ['odEnvio', 'Envío'],
+    ['odProductos', 'Productos'],
+    ['odPagos', 'Pagos'],
+    ['odHistorial', 'Historial'],
+  ];
+
+  function haceCuanto(iso) {
+    const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (min < 60) return `hace ${min} min`;
+    if (min < 60 * 48) return `hace ${Math.round(min / 60)} h`;
+    return `hace ${Math.round(min / 1440)} días`;
   }
 
   const baseOpen = window.openOrderDetail;
@@ -60,14 +74,51 @@
     baseOpen(id);
     const o = ordersCache.find((x) => x.id === id);
     if (!o) return;
-    const box = document.getElementById('orderDetailContent');
-    const head = document.createElement('div');
-    head.className = 'admin-detail-head';
-    head.innerHTML = `<div class="admin-detail-id"><span class="admin-kicker">Pedido</span><b>${esc(o.id)}</b><span class="admin-badge status-${o.status}">${STATUS_LABELS[o.status] || o.status}</span></div>${timelineHtml(o)}${actionsHtml(o)}`;
-    box.prepend(head);
+
+    const fechaLarga = new Date(o.createdAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
+    document.getElementById('orderDetailHead').innerHTML = `
+      <div class="od-head-top">
+        <span class="od-head-icon" aria-hidden="true">${icon('box', 20) || ''}</span>
+        <div class="od-head-title">
+          <b>${esc(o.id)}</b>
+          <span class="od-head-date">${fechaLarga} <i>(${haceCuanto(o.createdAt)})</i></span>
+        </div>
+        <span class="admin-badge status-${o.status}">${STATUS_LABELS[o.status] || o.status}</span>
+      </div>
+      <div class="od-head-actions">
+        <button type="button" class="admin-inline-btn" data-od="copiar-resumen">Copiar resumen</button>
+        <button type="button" class="admin-inline-btn" data-od="copiar-direccion">Copiar dirección</button>
+        <button type="button" class="admin-inline-btn" data-action="track-link">Copiar enlace de rastreo</button>
+        ${o.customerEmail ? '<button type="button" class="admin-inline-btn" data-action="resend-confirmation">Reenviar confirmación</button>' : ''}
+      </div>`;
+
+    document.getElementById('orderDetailTabs').innerHTML = SECCIONES
+      .map(([ancla, texto]) => `<button type="button" class="od-tab" data-ancla="${ancla}">${texto}</button>`).join('');
+
+    document.getElementById('orderDetailSteps').innerHTML = timelineHtml(o);
+    document.getElementById('orderQuickBtns').innerHTML = actionsHtml(o);
   };
 
-  document.getElementById('orderDetailContent').addEventListener('click', (e) => {
+  document.getElementById('orderDetailTabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ancla]');
+    if (!b) return;
+    document.getElementById(b.dataset.ancla)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  document.getElementById('orderDetailHead').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-od]');
+    if (!b) return;
+    const id = b.dataset.od === 'copiar-direccion' ? 'odDireccion' : 'odResumenTexto';
+    const texto = (document.getElementById(id)?.textContent || '').trim();
+    if (!texto) return;
+    const antes = b.textContent;
+    try { await navigator.clipboard.writeText(texto); b.textContent = 'Copiado'; } catch { b.textContent = 'No se pudo copiar'; }
+    setTimeout(() => { b.textContent = antes; }, 1200);
+  });
+
+
+  // Los botones de paso siguiente viven ahora en la barra de estado, así que se escucha la ficha completa
+  document.getElementById('orderDetailBox').addEventListener('click', (e) => {
     const b = e.target.closest('[data-quick]');
     if (!b) return;
     const q = b.dataset.quick;

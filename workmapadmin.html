@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260923m">
-  <link rel="stylesheet" href="admin.css?v=20260923m">
+  <link rel="stylesheet" href="styles.css?v=20260923p">
+  <link rel="stylesheet" href="admin.css?v=20260923p">
 </head>
 <body class="admin-body">
 
@@ -1360,12 +1360,14 @@
   </div>
 
   <div class="admin-overlay" id="orderDetailOverlay" hidden>
-    <div class="admin-form" id="orderDetailBox">
-      <h2>Detalle del pedido</h2>
-      <div id="orderDetailContent"></div>
+    <div class="admin-form od" id="orderDetailBox">
+      <div class="od-head" id="orderDetailHead"></div>
+      <nav class="od-tabs" id="orderDetailTabs" aria-label="Secciones del pedido"></nav>
+      <div class="od-steps" id="orderDetailSteps"></div>
 
-      <label for="orderDetailStatus">Estado</label>
-      <select id="orderDetailStatus" class="admin-filter">
+      <div class="od-statusbar">
+        <label for="orderDetailStatus">Cambiar estado</label>
+        <select id="orderDetailStatus" class="admin-filter">
         <option value="pendiente">Pendiente</option>
         <option value="pagado">Pagado</option>
         <option value="preparacion">En preparación</option>
@@ -1373,8 +1375,14 @@
         <option value="entregado">Entregado</option>
         <option value="cancelado">Cancelado (devuelve las piezas al inventario)</option>
         <option value="devuelto">Devuelto</option>
-      </select>
+        </select>
+        <span class="od-quick" id="orderQuickBtns"></span>
+      </div>
 
+      <div id="orderDetailContent"></div>
+
+      <section class="od-sec" id="odGuia">
+        <h3 class="od-sec-title">Guía de envío</h3>
       <div class="admin-tracking">
         <div class="admin-tracking-pair">
           <div>
@@ -1392,6 +1400,7 @@
         <label for="orderTrackingUrl">Enlace de rastreo de la paquetería</label>
         <input type="url" id="orderTrackingUrl" placeholder="https://… (opcional, va en el correo al cliente)">
       </div>
+      </section>
 
       <details class="admin-invoice" id="orderCustomerBox">
         <summary>Datos del cliente y dirección de envío</summary>
@@ -1427,8 +1436,10 @@
         <label class="admin-check"><input type="checkbox" id="orderInvoiceIssued"> Factura emitida</label>
       </details>
 
-      <label for="orderDetailNotes">Notas</label>
-      <textarea id="orderDetailNotes" rows="3"></textarea>
+      <section class="od-sec">
+        <h3 class="od-sec-title">Notas internas</h3>
+        <textarea id="orderDetailNotes" rows="3" placeholder="Solo las ves tú y tu equipo"></textarea>
+      </section>
 
       <div class="admin-form-actions admin-form-actions--wrap">
         <button type="button" id="orderWhatsappBtn" class="btn btn-secondary admin-btn-icon"><svg class="admin-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L4 20l1.1-4.2A8.5 8.5 0 1 1 21 11.5Z"/></svg> WhatsApp al cliente</button>
@@ -1442,20 +1453,20 @@
   </div>
 
   <p class="admin-sr-live" id="stockLive" role="status" aria-live="polite"></p>
-  <script src="admin-reauth.js?v=20260923m"></script>
-  <script src="admin.js?v=20260923m"></script>
-  <script src="admin-catalogo.js?v=20260923m"></script>
-  <script src="admin-compras.js?v=20260923m"></script>
-  <script src="admin-marketing.js?v=20260923m"></script>
-  <script src="admin-reportes.js?v=20260923m"></script>
-  <script src="admin-dashboard.js?v=20260923m"></script>
-  <script src="admin-pedidos.js?v=20260923m"></script>
-  <script src="admin-ui.js?v=20260923m"></script>
-  <script src="admin-mas.js?v=20260923m"></script>
-  <script src="admin-seguridad.js?v=20260923m"></script>
-  <script src="admin-leads.js?v=20260923m"></script>
-  <script src="admin-resenas.js?v=20260923m"></script>
-  <script src="admin-contenido.js?v=20260923m"></script>
-  <script src="admin-sistema.js?v=20260923m"></script>
+  <script src="admin-reauth.js?v=20260923p"></script>
+  <script src="admin.js?v=20260923p"></script>
+  <script src="admin-catalogo.js?v=20260923p"></script>
+  <script src="admin-compras.js?v=20260923p"></script>
+  <script src="admin-marketing.js?v=20260923p"></script>
+  <script src="admin-reportes.js?v=20260923p"></script>
+  <script src="admin-dashboard.js?v=20260923p"></script>
+  <script src="admin-pedidos.js?v=20260923p"></script>
+  <script src="admin-ui.js?v=20260923p"></script>
+  <script src="admin-mas.js?v=20260923p"></script>
+  <script src="admin-seguridad.js?v=20260923p"></script>
+  <script src="admin-leads.js?v=20260923p"></script>
+  <script src="admin-resenas.js?v=20260923p"></script>
+  <script src="admin-contenido.js?v=20260923p"></script>
+  <script src="admin-sistema.js?v=20260923p"></script>
 </body>
 </html>
