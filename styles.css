@@ -3268,3 +3268,36 @@ h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px;
 /* Datos bancarios: la clabe y la cuenta se seleccionan de un clic */
 .datos-banco code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem; letter-spacing: 0.04em; user-select: all; }
 .datos-banco th { white-space: nowrap; }
+
+/* ============================================================
+   Redes sociales en el pie
+   ============================================================ */
+.footer-redes {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0 0;
+  padding: 0;
+}
+.footer-redes a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  color: var(--ink-deep);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+}
+.footer-redes a:hover { background: var(--yellow); border-color: var(--yellow); }
+.footer-redes svg { flex: none; }
+@media (max-width: 480px) {
+  .footer-redes a span { display: none; }
+  .footer-redes a { padding: 10px; width: 44px; justify-content: center; }
+}

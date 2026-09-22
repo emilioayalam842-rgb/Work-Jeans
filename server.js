@@ -1453,7 +1453,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260923q';
+const ASSET_V = '20260923r';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1990,6 +1990,13 @@ function fmtLongDate(iso) {
 
 // Ficha del negocio para las páginas locales (contacto, nosotros y las de cada municipio). Google la usa
 // para el panel lateral y para las búsquedas con intención local. Los datos salen de Configuración.
+// Redes sociales de la tienda. Se usan en el pie de todas las páginas y en los datos
+// estructurados que lee Google.
+const REDES = [
+  { nombre: 'Instagram', url: 'https://www.instagram.com/somosworksjeans/', icono: '<path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Z"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none"/>' },
+  { nombre: 'Facebook', url: 'https://www.facebook.com/Worksjeans', icono: '<path d="M14 9V7.5c0-.8.5-1.5 1.5-1.5H17V3h-2.5A4.5 4.5 0 0 0 10 7.5V9H7.5v3H10v9h4v-9h2.5l.5-3H14Z"/>' },
+];
+
 function negocioJsonLd(origin) {
   const cfg = getSettings();
   const partes = String(cfg.address || '').split(',').map((x) => x.trim());
@@ -2013,7 +2020,9 @@ function negocioJsonLd(origin) {
       ...(cp ? { postalCode: cp } : {}),
       addressCountry: 'MX',
     },
-    ...(cfg.googleMapsUrl ? { hasMap: cfg.googleMapsUrl, sameAs: [cfg.googleMapsUrl] } : {}),
+    // Perfiles oficiales: Google los usa para ligar la marca con sus redes.
+    sameAs: [...(cfg.googleMapsUrl ? [cfg.googleMapsUrl] : []), ...REDES.map((r) => r.url)],
+    ...(cfg.googleMapsUrl ? { hasMap: cfg.googleMapsUrl } : {}),
     geo: { '@type': 'GeoCoordinates', latitude: 25.6895993, longitude: -100.2771409 },
     areaServed: 'México',
     ...(horas.length >= 2 ? { openingHoursSpecification: { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: horas[0].padStart(5, '0'), closes: horas[1].padStart(5, '0') } } : {}),
