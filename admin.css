@@ -1743,10 +1743,15 @@ td.admin-order-btns .admin-icon-btn:first-child { margin-left: 0; }
    ============================================================ */
 #orderDetailBox.od {
   max-width: 820px;
+  max-height: 90vh;
   padding: 0;
   gap: 0;
   border-radius: 18px;
-  overflow: hidden;
+  /* En horizontal se recorta para que las esquinas redondeadas se respeten, pero en vertical
+     tiene que poder desplazarse: con overflow hidden la ficha se quedaba cortada. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 /* Solo las pestañas se quedan fijas: con el encabezado también fijo, los dos se encimaban */
 .od > .od-head { padding: 20px 26px 14px; border-bottom: 1px solid var(--line); background: var(--paper); }
