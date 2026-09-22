@@ -1453,7 +1453,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260922x';
+const ASSET_V = '20260922y';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3891,7 +3891,7 @@ app.get('/api/verify-openpay', async (req, res) => {
 });
 
 // Webhook de Openpay: avisa cobros completados (SPEI, tienda y tarjeta). Nunca se confía en el cuerpo: se consulta el cobro.
-app.post('/api/openpay/webhook', express.json({ limit: '200kb' }), async (req, res) => {
+app.post('/api/openpay/webhook', express.text({ limit: '200kb', type: () => true }), async (req, res) => {
   // Se comparan usuario y contraseña ya decodificados y sin espacios sobrantes: al pegar la
   // variable en el servidor es fácil que se cuele un espacio o un salto de línea al final.
   const user = (process.env.OPENPAY_WEBHOOK_USER || '').trim();
@@ -3916,13 +3916,19 @@ app.post('/api/openpay/webhook', express.json({ limit: '200kb' }), async (req, r
       return;
     }
   }
-  const ev = req.body || {};
-  if (ev.type === 'verification') {
-    console.log(`Openpay webhook: código de verificación ${ev.verification_code}`);
-    guardarVerificacionOpenpay(ev.verification_code);
+  // Openpay no siempre manda el aviso como application/json, así que el cuerpo llega en texto
+  // y se interpreta aquí. Si no es JSON, todavía se busca el código dentro del texto.
+  const crudo = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+  let ev = {};
+  try { ev = JSON.parse(crudo || '{}'); } catch { ev = {}; }
+  const codigo = ev.verification_code || (crudo.match(/"?verification_code"?\s*[:=]\s*"?([\w-]{3,40})/i) || [])[1];
+  if (codigo || ev.type === 'verification') {
+    guardarVerificacionOpenpay(codigo);
+    logSeguridad('openpay.webhook', `Openpay mandó el código de verificación${codigo ? '' : ', pero venía vacío'}.`);
     res.status(200).json({ ok: true });
     return;
   }
+  logSeguridad('openpay.webhook', `Aviso recibido: ${String(ev.type || 'sin tipo').slice(0, 40)}`);
   res.status(200).json({ ok: true }); // responder rápido; el trabajo sigue abajo
   if (!OPENPAY || !ev.transaction?.id) return;
   try {
