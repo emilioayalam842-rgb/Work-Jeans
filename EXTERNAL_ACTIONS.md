@@ -10,7 +10,7 @@ Cosas que el sitio ya está preparado para aprovechar, pero que requieren cuenta
 
 ## Google
 
-3. **Google Business Profile:** reclamar la ficha "Works jeans", confirmar dirección (Calle Emiliano Zapata 3737, Venustiano Carranza, 64560 Monterrey), horario (lunes a viernes 9:00–18:00), teléfono (81 2861 3551) y sitio (https://www.workjeans.mx). Verificar que **no exista una ubicación anterior** en Google Maps ni en Waze; si existe, solicitar su cierre o corrección. Pedir reseñas a clientes reales.
+3. **Google Business Profile:** reclamar la ficha "Works jeans", confirmar dirección (Calle Emiliano Zapata 3737, Venustiano Carranza, 64560 Monterrey), horario (lunes a viernes 9:00–18:00), teléfono (956 231 3696) y sitio (https://www.workjeans.mx). Verificar que **no exista una ubicación anterior** en Google Maps ni en Waze; si existe, solicitar su cierre o corrección. Pedir reseñas a clientes reales.
 4. **Search Console:** ya está verificado el dominio y enviado el sitemap. Pedir indexación de las URLs nuevas: `/empresas`, `/producto/...` (6), `/articulos/...`, `/guia-de-tallas`, `/ropa-de-trabajo-reflejante`. Límite ~10 solicitudes por día.
 5. **Merchant Center:** crear la cuenta, verificar el dominio y registrar el feed `https://www.workjeans.mx/feed/google-merchant.xml` (title, description, image, price, availability, condition, brand y URL ya van en el feed). Requiere política de envíos y devoluciones visibles (ya existen).
 6. **Google Analytics 4 (opcional):** crear la propiedad y capturar el ID `G-…` en Panel → Configuración. Solo se carga con consentimiento de cookies. La medición propia del embudo funciona sin GA.
