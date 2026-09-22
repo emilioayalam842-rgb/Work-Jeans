@@ -1453,7 +1453,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260923s';
+const ASSET_V = '20260923v';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1803,7 +1803,8 @@ function renderCategoryPage(req, res, slug, page) {
       ...(page.faq ? [{ '@type': 'FAQPage', mainEntity: page.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }] : []),
     ],
   };
-  const faqHtml = page.faq ? `<h2>Preguntas frecuentes sobre ${page.h1.toLowerCase()}</h2>${page.faq.map(([q, a]) => `<details class="faq-item"><summary>${escapeHtml(q)}</summary><p>${escapeHtml(a)}</p></details>`).join('')}` : '';
+  // Las preguntas van dentro de .faq-list: así reciben la separación y el espacio entre tarjetas.
+  const faqHtml = page.faq ? `<h2>Preguntas frecuentes sobre ${page.h1.toLowerCase()}</h2><div class="faq-list">${page.faq.map(([q, a]) => `<details class="faq-item"><summary>${escapeHtml(q)}</summary><p>${escapeHtml(a)}</p></details>`).join('')}</div>` : '';
   let html = fs.readFileSync(path.join(__dirname, 'categoria.html'), 'utf-8');
   const fill = {
     TITLE: escapeHtml(page.title),

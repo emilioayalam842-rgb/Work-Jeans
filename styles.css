@@ -3301,3 +3301,18 @@ h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px;
   .footer-redes a span { display: none; }
   .footer-redes a { padding: 10px; width: 44px; justify-content: center; }
 }
+
+/* ============================================================
+   Preguntas frecuentes dentro del texto de las páginas.
+   El título iba pegado a la primera tarjeta porque las preguntas colgaban sueltas del
+   cuerpo, sin su contenedor. Ahora van agrupadas y con aire alrededor.
+   ============================================================ */
+.content-body .faq-list, .category-text .faq-list { margin-top: 26px; gap: 12px; }
+.content-body h2 + .faq-list, .category-text h2 + .faq-list { margin-top: 26px; }
+.content-body .faq-list + h2, .category-text .faq-list + h2 { margin-top: 48px; }
+.content-body .faq-item, .category-text .faq-item { padding: 2px 20px; }
+.content-body .faq-item summary, .category-text .faq-item summary { padding: 18px 44px 18px 0; font-size: 1.02rem; line-height: 1.4; }
+.content-body .faq-item p, .category-text .faq-item p { padding: 0 0 18px; }
+/* En la columna de texto una sola pregunta por renglón: en dos columnas las tarjetas
+   quedan de alturas distintas y se leen peor. */
+.content-body .faq-list, .category-text .faq-list { grid-template-columns: 1fr; }
