@@ -1692,3 +1692,45 @@ td.admin-order-btns .admin-icon-btn {
 }
 td.admin-table-actions .admin-icon-btn:first-child,
 td.admin-order-btns .admin-icon-btn:first-child { margin-left: 0; }
+
+/* ============================================================
+   Ficha del pedido: datos en rejilla y guía en dos campos por renglón.
+   El resumen eran párrafos sueltos uno debajo de otro; ahora cada dato tiene su etiqueta
+   a la izquierda y su valor a la derecha, que es como se lee un pedido.
+   ============================================================ */
+.admin-facts { display: grid; gap: 12px; margin: 4px 0 18px; }
+.admin-facts > div { display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: baseline; }
+.admin-facts dt { font-size: 0.85rem; color: #83868d; }
+.admin-facts dd { margin: 0; line-height: 1.5; }
+.admin-facts dd span.admin-muted { display: block; font-size: 0.88rem; margin-top: 2px; }
+.admin-facts dd strong { font-weight: 600; }
+.admin-facts .admin-source, .admin-facts svg { vertical-align: -2px; }
+
+/* Correos: el texto a la izquierda y los botones juntos abajo, sin puntos sueltos */
+.admin-mail-row { display: grid; gap: 10px; margin-top: 14px; }
+.admin-mail-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Guía de envío: paquetería y número comparten renglón */
+.admin-tracking-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.admin-tracking-pair > div { display: grid; gap: 4px; }
+.admin-tracking-pair label { margin-top: 0; }
+
+/* Paso siguiente: una barra delgada en vez de un recuadro alto */
+.admin-quick {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: #fffdf4;
+  border: 1px solid #f0e6c0;
+}
+.admin-quick .admin-kicker { margin: 0; color: #7d6a2a; }
+.admin-quick-btns { gap: 8px; }
+
+/* Línea de tiempo más discreta */
+.admin-tl { margin: 14px 0 4px; }
+.admin-tl-step { font-size: 0.82rem; }
+.admin-tl-date { font-size: 0.76rem; }
+.admin-quick { flex-direction: row; justify-content: flex-start; text-align: left; border-radius: 12px; }
+.admin-quick .admin-quick-btns { margin-left: auto; }

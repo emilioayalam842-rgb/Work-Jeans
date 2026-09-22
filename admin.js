@@ -1055,11 +1055,14 @@ function openOrderDetail(id) {
   const date = new Date(order.createdAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
   const sourceLabel = order.source === 'stripe' ? `${icon('card', 14)} Pago con tarjeta` : order.source === 'openpay' ? `${icon('card', 14)} Openpay · ${order.payment?.method === 'spei' ? 'transferencia SPEI' : order.payment?.method === 'store' ? 'pago en tienda' : 'tarjeta'} · ${order.payment?.status === 'paid' ? 'pagado' : order.payment?.status === 'failed' ? 'pago fallido' : 'pago pendiente'}${order.payment?.clabe ? ` · CLABE ${esc(order.payment.clabe)}` : ''}${order.payment?.reference ? ` · ref. ${esc(order.payment.reference)}` : ''}` : `${icon('chat', 14)} Pedido por WhatsApp`;
 
+  const envio = order.shipping ? esc([order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode, order.shipping.references ? `Ref.: ${order.shipping.references}` : ''].filter(Boolean).join(', ')) : '';
+  const contacto = [order.customerPhone, order.customerEmail].filter(Boolean).map((x) => esc(x)).join(' · ');
   orderDetailContent.innerHTML = `
-    <p><strong>${sourceLabel}</strong></p>
-    <p class="admin-muted">${date}</p>
-    <p>${esc(order.customerName) || 'Cliente sin nombre'}${order.customerPhone ? ` · ${esc(order.customerPhone)}` : ''}${order.customerEmail ? ` · ${esc(order.customerEmail)}` : ''}</p>
-    ${order.shipping ? `<p><strong>Envío a:</strong> ${esc([order.shipping.name, order.shipping.line1, order.shipping.line2, order.shipping.city, order.shipping.state, order.shipping.postalCode, order.shipping.references ? `Ref.: ${order.shipping.references}` : ''].filter(Boolean).join(', '))}</p>` : ''}
+    <dl class="admin-facts">
+      <div><dt>Pago</dt><dd><strong>${sourceLabel}</strong><span class="admin-muted">${date}</span></dd></div>
+      <div><dt>Cliente</dt><dd>${esc(order.customerName) || 'Cliente sin nombre'}${contacto ? `<span class="admin-muted">${contacto}</span>` : ''}</dd></div>
+      ${envio ? `<div><dt>Envío a</dt><dd>${envio}</dd></div>` : ''}
+    </dl>
     <table class="admin-table admin-detail-table">
       <thead><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
       <tbody>
@@ -1074,9 +1077,16 @@ function openOrderDetail(id) {
         `).join('')}
       </tbody>
     </table>
-    ${order.discount ? `<p class="admin-muted">Subtotal ${formatPrice(order.subtotalCents || order.totalCents + order.discount.cents)} · Descuento −${formatPrice(order.discount.cents)}${order.discount.code ? ` (cupón ${order.discount.code})` : ''}${order.discount.promotions?.length ? ` · ${order.discount.promotions.map((p) => p.name).join(', ')}` : ''}</p>` : ''}
+    ${order.discount ? `<p class="admin-muted">Subtotal ${formatPrice(order.subtotalCents || order.totalCents + order.discount.cents)} · Descuento −${formatPrice(order.discount.cents)}${order.discount.code ? ` (cupón ${order.discount.code})` : ''}</p>` : ''}
     <p class="admin-order-total">Total: ${formatPrice(order.totalCents)}</p>
-    <p class="admin-muted admin-small">Correos al cliente: ${(order.emails || []).length ? order.emails.map((e) => `${e.type} ${e.ok ? '✓' : `✗ (${esc(e.reason || 'error')})`}`).join(' · ') : 'ninguno todavía'}${order.customerEmail ? ` · <button type="button" class="admin-inline-btn" data-action="resend-confirmation">Reenviar confirmación</button>` : ' · sin correo del cliente'} · <button type="button" class="admin-inline-btn" data-action="track-link">Copiar enlace de rastreo</button> · <button type="button" class="admin-inline-btn" data-action="review-link">Copiar enlace para reseña</button></p>
+    <div class="admin-mail-row">
+      <span class="admin-muted admin-small">Correos al cliente: ${(order.emails || []).length ? order.emails.map((e) => `${e.type} ${e.ok ? '✓' : `✗ (${esc(e.reason || 'error')})`}`).join(', ') : 'ninguno todavía'}</span>
+      <span class="admin-mail-btns">
+        ${order.customerEmail ? '<button type="button" class="admin-inline-btn" data-action="resend-confirmation">Reenviar confirmación</button>' : ''}
+        <button type="button" class="admin-inline-btn" data-action="track-link">Copiar enlace de rastreo</button>
+        <button type="button" class="admin-inline-btn" data-action="review-link">Copiar enlace para reseña</button>
+      </span>
+    </div>
   `;
   orderDetailNotes.value = order.notes || '';
   document.getElementById('orderDetailStatus').value = order.status;

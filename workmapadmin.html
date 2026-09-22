@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260923k">
-  <link rel="stylesheet" href="admin.css?v=20260923k">
+  <link rel="stylesheet" href="styles.css?v=20260923m">
+  <link rel="stylesheet" href="admin.css?v=20260923m">
 </head>
 <body class="admin-body">
 
@@ -1376,13 +1376,19 @@
       </select>
 
       <div class="admin-tracking">
-        <label for="orderTrackingCarrier">Paquetería</label>
-        <input type="text" id="orderTrackingCarrier" list="carriersList" placeholder="Estafeta, DHL, FedEx, Paquetexpress…">
+        <div class="admin-tracking-pair">
+          <div>
+            <label for="orderTrackingCarrier">Paquetería</label>
+            <input type="text" id="orderTrackingCarrier" list="carriersList" placeholder="Estafeta, DHL, FedEx…">
         <datalist id="carriersList">
           <option value="Estafeta"></option><option value="DHL"></option><option value="FedEx"></option><option value="Paquetexpress"></option><option value="Redpack"></option><option value="99minutos"></option><option value="Entrega en tienda"></option>
         </datalist>
-        <label for="orderTrackingNumber">Número de guía</label>
-        <input type="text" id="orderTrackingNumber" placeholder="Opcional">
+          </div>
+          <div>
+            <label for="orderTrackingNumber">Número de guía</label>
+            <input type="text" id="orderTrackingNumber" placeholder="Opcional">
+          </div>
+        </div>
         <label for="orderTrackingUrl">Enlace de rastreo de la paquetería</label>
         <input type="url" id="orderTrackingUrl" placeholder="https://… (opcional, va en el correo al cliente)">
       </div>
@@ -1436,20 +1442,20 @@
   </div>
 
   <p class="admin-sr-live" id="stockLive" role="status" aria-live="polite"></p>
-  <script src="admin-reauth.js?v=20260923k"></script>
-  <script src="admin.js?v=20260923k"></script>
-  <script src="admin-catalogo.js?v=20260923k"></script>
-  <script src="admin-compras.js?v=20260923k"></script>
-  <script src="admin-marketing.js?v=20260923k"></script>
-  <script src="admin-reportes.js?v=20260923k"></script>
-  <script src="admin-dashboard.js?v=20260923k"></script>
-  <script src="admin-pedidos.js?v=20260923k"></script>
-  <script src="admin-ui.js?v=20260923k"></script>
-  <script src="admin-mas.js?v=20260923k"></script>
-  <script src="admin-seguridad.js?v=20260923k"></script>
-  <script src="admin-leads.js?v=20260923k"></script>
-  <script src="admin-resenas.js?v=20260923k"></script>
-  <script src="admin-contenido.js?v=20260923k"></script>
-  <script src="admin-sistema.js?v=20260923k"></script>
+  <script src="admin-reauth.js?v=20260923m"></script>
+  <script src="admin.js?v=20260923m"></script>
+  <script src="admin-catalogo.js?v=20260923m"></script>
+  <script src="admin-compras.js?v=20260923m"></script>
+  <script src="admin-marketing.js?v=20260923m"></script>
+  <script src="admin-reportes.js?v=20260923m"></script>
+  <script src="admin-dashboard.js?v=20260923m"></script>
+  <script src="admin-pedidos.js?v=20260923m"></script>
+  <script src="admin-ui.js?v=20260923m"></script>
+  <script src="admin-mas.js?v=20260923m"></script>
+  <script src="admin-seguridad.js?v=20260923m"></script>
+  <script src="admin-leads.js?v=20260923m"></script>
+  <script src="admin-resenas.js?v=20260923m"></script>
+  <script src="admin-contenido.js?v=20260923m"></script>
+  <script src="admin-sistema.js?v=20260923m"></script>
 </body>
 </html>
