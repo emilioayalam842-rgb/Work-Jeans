@@ -3232,3 +3232,35 @@ h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px;
   font-size: 0.92rem;
   color: #6f5a12;
 }
+
+/* ============================================================
+   Página de pago: las etiquetas también dejan las mayúsculas.
+   Es la pantalla donde el cliente escribe sus datos; con las letras separadas se leía como
+   formulario de trámite y no coincidía con el resto de la tienda.
+   ============================================================ */
+.checkout-block h2,
+.checkout-summary h2 { text-transform: none; font-size: 1.05rem; font-weight: 700; }
+.checkout-fields label,
+.checkout-check {
+  font-family: var(--body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #5c5f66;
+}
+.checkout-fields input,
+.checkout-fields select,
+.checkout-fields textarea { min-height: 46px; border-radius: var(--radius); border: 1px solid var(--line-2); }
+.checkout-method {
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+}
+.checkout-method:has(input:checked) {
+  border-color: var(--ink-deep);
+  background: #fffdf3;
+  box-shadow: none;
+}
+.checkout-submit { min-height: 52px; }
+.checkout-head-note { letter-spacing: 0; text-transform: none; }
