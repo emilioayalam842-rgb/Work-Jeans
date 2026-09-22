@@ -1442,3 +1442,146 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
   padding: 3px 9px;
   user-select: all;
 }
+
+/* ============================================================
+   Panel más limpio: pedidos y su ficha.
+   Las cabeceras de tabla, las etiquetas y los botones chicos iban en mayúsculas con las
+   letras muy separadas; las filas quedaban apretadas y con dos etiquetas de estado encimadas.
+   Se baja el tono tipográfico, se reparte mejor el aire y las formas se suavizan.
+   ============================================================ */
+
+/* --- Tipografía: se acaban las mayúsculas donde no aportan --- */
+.admin-table th {
+  font-family: var(--body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #83868d;
+}
+.admin-kicker {
+  font-family: var(--body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.admin-inline-btn {
+  font-family: var(--body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+  color: #3d4048;
+}
+.admin-inline-btn:hover { background: #f2f3f5; border-color: #c9ccd2; color: var(--black); }
+.admin-detail-id b { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92rem; letter-spacing: 0; }
+
+/* --- Lista de pedidos: filas con aire y sin ahogar el producto --- */
+.admin-table { font-size: 0.92rem; }
+.admin-table th { padding: 14px 16px; border-bottom: 1px solid #e8e9ec; }
+.admin-table td { padding: 16px; border-bottom: 1px solid #f0f1f3; vertical-align: top; }
+.admin-table tbody tr:hover { background: #fafbfc; }
+/* La lista de productos se corta a tres líneas: antes una fila con cinco prendas medía media pantalla */
+.admin-table .admin-order-items-cell {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.45;
+}
+
+/* --- Filtros: más chicos para que quepan en una sola franja --- */
+.admin-chips { gap: 6px; margin-bottom: 16px; }
+.admin-chip {
+  min-height: 30px;
+  padding: 0 10px 0 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-width: 1px;
+  border-color: #e0e2e6;
+  color: #4b4e55;
+}
+.admin-chip span { min-width: 20px; font-size: 0.72rem; line-height: 18px; }
+
+/* --- Ficha del pedido --- */
+.admin-detail-head { margin-bottom: 18px; padding-bottom: 18px; }
+.admin-quick {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #fffdf4;
+  border: 1px solid #f0e6c0;
+  border-radius: 14px;
+}
+.admin-detail-table th {
+  font-family: var(--body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #83868d;
+}
+.admin-detail-table th, .admin-detail-table td { padding: 11px 8px; }
+.admin-order-total { font-size: 1.15rem; font-weight: 700; }
+
+/* --- Botones del pie de la ficha, todos con la misma forma --- */
+.admin-body .btn-sm { min-height: 38px; padding: 0 16px; font-size: 0.85rem; letter-spacing: 0; text-transform: none; }
+
+/* --- Estado: una sola etiqueta legible en vez de dos encimadas --- */
+.admin-badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border-width: 1px;
+}
+.admin-needs { margin-top: 7px; }
+.admin-need {
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* --- El aviso de desplazamiento ya no se encima con la cabecera --- */
+.admin-table-wrap.has-overflow::before {
+  content: 'Desliza →';
+  top: auto;
+  bottom: 8px;
+  right: 10px;
+  font-family: var(--body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* --- Columnas: menos aire lateral para que quepa más sin apretar el texto --- */
+.admin-table th, .admin-table td { padding-left: 13px; padding-right: 13px; }
+.admin-table td { padding-top: 14px; padding-bottom: 14px; }
+.admin-table .admin-muted.admin-small { font-size: 0.8rem; }
+
+/* --- Guía de envío: etiqueta arriba del campo, como el resto del panel --- */
+.admin-tracking {
+  grid-template-columns: 1fr;
+  gap: 4px;
+  margin-top: 6px;
+}
+.admin-tracking label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #5c5f66;
+  margin-top: 10px;
+}
+.admin-tracking label:first-child { margin-top: 0; }
+.admin-tracking input { width: 100%; }
+
+/* --- Estado y notas con la misma etiqueta --- */
+.admin-detail-fields > label,
+#orderDetailForm > label { font-size: 0.85rem; font-weight: 500; color: #5c5f66; }
