@@ -65,6 +65,13 @@ function logError(scope, err, extra) {
 // su trabajo. Se guardan aparte para que el contador de errores signifique algo.
 const SEGURIDAD_PATH = path.join(DATA_DIR, 'seguridad.log');
 const eventosSeguridad = [];
+function igualSeguro(a, b) {
+  const x = Buffer.from(String(a));
+  const y = Buffer.from(String(b));
+  if (x.length !== y.length) return false;
+  return crypto.timingSafeEqual(x, y);
+}
+
 function logSeguridad(tipo, detalle, contexto) {
   const entrada = { at: new Date().toISOString(), tipo, detalle: String(detalle || '').slice(0, 300) };
   if (contexto) entrada.contexto = String(contexto).slice(0, 200);
@@ -1446,7 +1453,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260922w';
+const ASSET_V = '20260922x';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3885,11 +3892,29 @@ app.get('/api/verify-openpay', async (req, res) => {
 
 // Webhook de Openpay: avisa cobros completados (SPEI, tienda y tarjeta). Nunca se confía en el cuerpo: se consulta el cobro.
 app.post('/api/openpay/webhook', express.json({ limit: '200kb' }), async (req, res) => {
-  const user = process.env.OPENPAY_WEBHOOK_USER;
-  const pass = process.env.OPENPAY_WEBHOOK_PASS;
+  // Se comparan usuario y contraseña ya decodificados y sin espacios sobrantes: al pegar la
+  // variable en el servidor es fácil que se cuele un espacio o un salto de línea al final.
+  const user = (process.env.OPENPAY_WEBHOOK_USER || '').trim();
+  const pass = (process.env.OPENPAY_WEBHOOK_PASS || '').trim();
   if (user && pass) {
-    const expected = `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`;
-    if (req.headers.authorization !== expected) { res.status(401).end(); return; }
+    const cabecera = String(req.headers.authorization || '');
+    const m = /^Basic\s+(.+)$/i.exec(cabecera);
+    let ok = false;
+    if (m) {
+      let claro = '';
+      try { claro = Buffer.from(m[1].trim(), 'base64').toString('utf-8'); } catch { claro = ''; }
+      const corte = claro.indexOf(':');
+      if (corte > -1) {
+        const u = claro.slice(0, corte).trim();
+        const c = claro.slice(corte + 1);
+        ok = igualSeguro(u, user) && igualSeguro(c.trim(), pass);
+      }
+    }
+    if (!ok) {
+      logSeguridad('openpay.webhook', cabecera ? 'El usuario o la contraseña del webhook no coinciden con las variables del servidor.' : 'Openpay llamó al webhook sin usuario ni contraseña.');
+      res.status(401).end();
+      return;
+    }
   }
   const ev = req.body || {};
   if (ev.type === 'verification') {
