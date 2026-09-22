@@ -967,7 +967,7 @@ document.getElementById('exportOrdersBtn').addEventListener('click', () => {
 function renderOrders(orders) {
   updateFilterState();
   if (orders.length === 0) {
-    ordersTableBody.innerHTML = `<tr><td colspan="7">${ordersMonth || ordersSearch || ordersStatus ? 'No hay pedidos con esos filtros.' : 'No hay pedidos todavía.'}</td></tr>`;
+    ordersTableBody.innerHTML = `<tr><td colspan="6">${ordersMonth || ordersSearch || ordersStatus ? 'No hay pedidos con esos filtros.' : 'No hay pedidos todavía.'}</td></tr>`;
     return;
   }
 
@@ -977,8 +977,7 @@ function renderOrders(orders) {
     const sourceLabel = o.source === 'stripe' ? `<span class="admin-source">${icon('card', 14)} Tarjeta</span>` : o.source === 'openpay' ? `<span class="admin-source">${icon('card', 14)} ${o.payment?.method === 'spei' ? 'SPEI' : o.payment?.method === 'store' ? 'Tienda' : 'Tarjeta'}${o.payment?.status === 'paid' ? '' : ' · <b>pago pendiente</b>'}</span>` : `<span class="admin-source">${icon('chat', 14)} WhatsApp</span>`;
     return `
       <tr data-id="${esc(o.id)}">
-        <td class="admin-clickable" data-action="view">${date}</td>
-        <td class="admin-clickable" data-action="view">${sourceLabel}</td>
+        <td class="admin-clickable admin-order-when" data-action="view">${date}<br><span class="admin-muted">${sourceLabel}</span></td>
         <td class="admin-clickable" data-action="view">${esc(o.customerName) || '—'}${o.customerPhone ? `<br><span class="admin-muted">${esc(o.customerPhone)}</span>` : ''}</td>
         <td class="admin-order-items-cell admin-clickable" data-action="view">${esc(itemsSummary)}</td>
         <td class="admin-clickable" data-action="view">${formatPrice(o.totalCents)}</td>
@@ -1307,7 +1306,7 @@ async function loadCustomers() {
   customersCache = customers;
   const body = document.getElementById('customersTableBody');
   if (customers.length === 0) {
-    body.innerHTML = '<tr><td colspan="7">Todavía no hay clientes. Se agregan solos con cada pedido, o captúralos con "Nuevo cliente".</td></tr>';
+    body.innerHTML = '<tr><td colspan="6">Todavía no hay clientes. Se agregan solos con cada pedido, o captúralos con "Nuevo cliente".</td></tr>';
     return;
   }
   body.innerHTML = customers.map((c) => `

@@ -1585,3 +1585,56 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 /* --- Estado y notas con la misma etiqueta --- */
 .admin-detail-fields > label,
 #orderDetailForm > label { font-size: 0.85rem; font-weight: 500; color: #5c5f66; }
+
+/* ============================================================
+   Acomodo de la lista de pedidos: menos columnas y anchos con criterio.
+   Siete columnas no caben en una pantalla normal, así que la tabla salía con desplazamiento
+   lateral y todo apretado. La fecha y el origen del pedido van juntos en una sola columna,
+   y cada columna recibe el ancho que le corresponde.
+   ============================================================ */
+.admin-table th, .admin-table td { padding: 15px 14px; }
+.admin-order-when { white-space: nowrap; line-height: 1.5; }
+.admin-order-when .admin-muted { font-size: 0.85rem; }
+.admin-order-when .admin-source { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Anchos: el nombre y el producto son lo que se lee, el resto se aprieta */
+#ordersTable th:nth-child(1), #ordersTable td:nth-child(1) { width: 1%; }
+#ordersTable th:nth-child(2), #ordersTable td:nth-child(2) { width: 22%; white-space: normal; }
+#ordersTable th:nth-child(3), #ordersTable td:nth-child(3) { width: auto; }
+#ordersTable th:nth-child(4), #ordersTable td:nth-child(4) { width: 1%; white-space: nowrap; text-align: right; }
+#ordersTable th:nth-child(5), #ordersTable td:nth-child(5) { width: 1%; }
+#ordersTable th:nth-child(6), #ordersTable td:nth-child(6) { width: 1%; }
+
+/* La rejilla de acciones en horizontal ocupa menos alto que en columna */
+.admin-order-btns { flex-direction: row; gap: 6px; }
+.admin-order-btns .admin-icon-btn { width: 32px; height: 32px; }
+
+/* ============================================================
+   Ficha del pedido: más ancha y con los bloques separados.
+   En 440 px de ancho la tabla de productos y los campos de envío se amontonaban.
+   ============================================================ */
+#orderDetailBox {
+  max-width: 640px;
+  padding: 30px 34px 34px;
+  gap: 0;
+}
+#orderDetailBox > h2 { margin-bottom: 4px; }
+#orderDetailBox > label { margin-top: 22px; margin-bottom: 6px; display: block; }
+#orderDetailBox > select,
+#orderDetailBox > textarea { margin-bottom: 4px; }
+#orderDetailBox > details { margin-top: 18px; }
+#orderDetailBox .admin-tracking { margin-top: 18px; }
+#orderDetailBox .admin-form-actions { margin-top: 26px; }
+#orderDetailBox .btn-primary { margin-top: 14px; }
+#orderDetailContent { margin-bottom: 6px; }
+
+/* Un respiro entre el resumen del pedido y los campos que se editan */
+#orderDetailContent + label { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
+
+/* Los plegables de cliente y factura, como tarjetas separadas */
+#orderDetailBox > details {
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  padding: 2px 16px;
+}
+#orderDetailBox > details > summary { padding: 13px 0; font-weight: 600; cursor: pointer; }
