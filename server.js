@@ -1453,7 +1453,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260923r';
+const ASSET_V = '20260923s';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1994,7 +1994,7 @@ function fmtLongDate(iso) {
 // estructurados que lee Google.
 const REDES = [
   { nombre: 'Instagram', url: 'https://www.instagram.com/somosworksjeans/', icono: '<path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Z"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none"/>' },
-  { nombre: 'Facebook', url: 'https://www.facebook.com/Worksjeans', icono: '<path d="M14 9V7.5c0-.8.5-1.5 1.5-1.5H17V3h-2.5A4.5 4.5 0 0 0 10 7.5V9H7.5v3H10v9h4v-9h2.5l.5-3H14Z"/>' },
+  { nombre: 'Facebook', url: 'https://www.facebook.com/WorksJeansUniformes/', icono: '<path d="M14 9V7.5c0-.8.5-1.5 1.5-1.5H17V3h-2.5A4.5 4.5 0 0 0 10 7.5V9H7.5v3H10v9h4v-9h2.5l.5-3H14Z"/>' },
 ];
 
 function negocioJsonLd(origin) {
