@@ -452,6 +452,19 @@ const APOYO = {
       <p>Calle Emiliano Zapata 3737, colonia Venustiano Carranza, C.P. 64560, Monterrey, Nuevo León. Lunes a viernes de 9:00 a. m. a 6:00 p. m. Puedes probar tallas, recoger pedidos y ver las prendas antes de un pedido grande. <a href="https://maps.google.com/?cid=2378529028541799733" target="_blank" rel="noopener">Cómo llegar</a>.</p>
       <h2>Empresas y distribuidores</h2>
       <p>Para pedidos por volumen usa el <a href="/empresas">cotizador para empresas</a>: capturas prenda y cantidades por talla y te respondemos con la cotización formal por escrito, con precio de distribuidor o de socio y factura CFDI.</p>
+      <h2>Pagar por transferencia</h2>
+      <p>Si prefieres transferir directo en vez de pagar con tarjeta en la tienda, estos son los datos. Manda tu comprobante por WhatsApp con el número de pedido o tu nombre y confirmamos en cuanto entre.</p>
+      <table class="content-table datos-banco">
+        <tbody>
+          <tr><th scope="row">A nombre de</th><td>Works Jeans México S.A. de C.V.</td></tr>
+          <tr><th scope="row">RFC</th><td>WJM1509071NA</td></tr>
+          <tr><th scope="row">Banco</th><td>Banca Afirme</td></tr>
+          <tr><th scope="row">CLABE interbancaria</th><td><code>062580001021168873</code></td></tr>
+          <tr><th scope="row">Número de cuenta</th><td><code>102116887</code></td></tr>
+        </tbody>
+      </table>
+      <p>También puedes pagar con tarjeta, transferencia SPEI o en tienda de conveniencia desde el <a href="/pago">carrito</a>: ahí el pedido se confirma solo, sin que tengas que mandar comprobante.</p>
+
       <h2>Pedidos en curso</h2>
       <p>Consulta el estado de tu pedido en <a href="/rastrear">Rastrear mi pedido</a> con tu número de pedido y tu correo o teléfono. Para cambios de talla revisa las <a href="/envios-y-devoluciones">políticas de envío y cambios</a>.</p>
       <h2>Qué necesitamos para cotizarte rápido</h2>

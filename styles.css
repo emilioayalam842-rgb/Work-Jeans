@@ -3264,3 +3264,7 @@ h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px;
 }
 .checkout-submit { min-height: 52px; }
 .checkout-head-note { letter-spacing: 0; text-transform: none; }
+
+/* Datos bancarios: la clabe y la cuenta se seleccionan de un clic */
+.datos-banco code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem; letter-spacing: 0.04em; user-select: all; }
+.datos-banco th { white-space: nowrap; }
