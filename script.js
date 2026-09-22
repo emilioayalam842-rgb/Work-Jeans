@@ -35,13 +35,13 @@ if (contactForm) {
 
   const openWhatsapp = () => {
     const { nombre, contacto, mensaje } = readForm();
-    const number = (typeof WHATSAPP_NUMBER !== 'undefined' && WHATSAPP_NUMBER) || '528128613551';
+    const number = (typeof WHATSAPP_NUMBER !== 'undefined' && WHATSAPP_NUMBER) || '19562313696';
     const text = `Hola, soy ${nombre || '...'}.\n${mensaje}\n\nContacto: ${contacto}`;
     const win = window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
     if (formStatus) {
       formStatus.textContent = win
         ? 'Se abrió WhatsApp con tu mensaje. Si no lo ves, revisa las ventanas emergentes.'
-        : 'No se pudo abrir WhatsApp. Escríbenos al 81 2861 3551.';
+        : 'No se pudo abrir WhatsApp. Escríbenos al 956 231 3696.';
     }
   };
 

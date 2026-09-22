@@ -4,7 +4,7 @@
 
 const PUBLISHED_2 = '2026-09-17';
 
-const WA = 'https://wa.me/528128613551';
+const WA = 'https://wa.me/19562313696';
 
 function faqComunes() {
   return [
@@ -442,12 +442,12 @@ const APOYO = {
     h1: 'Contacto: WhatsApp, teléfono y tienda en Monterrey',
     h1Html: 'Hablemos.',
     title: 'Contacto: WhatsApp y Tienda en Monterrey | Works Jeans',
-    description: 'Escríbenos por WhatsApp al 81 2861 3551 o visita la tienda en Emiliano Zapata 3737, Monterrey. Lunes a viernes de 9:00 a. m. a 6:00 p. m.',
+    description: 'Escríbenos por WhatsApp al 956 231 3696 o visita la tienda en Emiliano Zapata 3737, Monterrey. Lunes a viernes de 9:00 a. m. a 6:00 p. m.',
     intro: 'Escríbenos para cotizaciones, tallas especiales o personalización con tu logotipo. Respondemos por WhatsApp en horario de tienda.',
     products: null,
     body: `
       <h2>WhatsApp y teléfono</h2>
-      <p><a href="${WA}?text=Hola%2C%20me%20interesa%20la%20ropa%20de%20trabajo%20de%20Works%20Jeans.">WhatsApp 81 2861 3551</a> es la forma más rápida: cotizaciones, dudas de talla, seguimiento de pedidos. También puedes llamar al <a href="tel:+528128613551">81 2861 3551</a> en horario de tienda.</p>
+      <p><a href="${WA}?text=Hola%2C%20me%20interesa%20la%20ropa%20de%20trabajo%20de%20Works%20Jeans.">WhatsApp 956 231 3696</a> es la forma más rápida: cotizaciones, dudas de talla, seguimiento de pedidos. También puedes llamar al <a href="tel:+19562313696">956 231 3696</a> en horario de tienda.</p>
       <h2>Tienda</h2>
       <p>Calle Emiliano Zapata 3737, colonia Venustiano Carranza, C.P. 64560, Monterrey, Nuevo León. Lunes a viernes de 9:00 a. m. a 6:00 p. m. Puedes probar tallas, recoger pedidos y ver las prendas antes de un pedido grande. <a href="https://maps.google.com/?cid=2378529028541799733" target="_blank" rel="noopener">Cómo llegar</a>.</p>
       <h2>Empresas y distribuidores</h2>
@@ -517,7 +517,7 @@ const APOYO = {
     products: null,
     body: `
       <h2>1. Quién vende</h2>
-      <p>Works Jeans, con tienda en Calle Emiliano Zapata 3737, colonia Venustiano Carranza, C.P. 64560, Monterrey, Nuevo León, México. Contacto: WhatsApp y teléfono 81 2861 3551, de lunes a viernes de 9:00 a. m. a 6:00 p. m.</p>
+      <p>Works Jeans, con tienda en Calle Emiliano Zapata 3737, colonia Venustiano Carranza, C.P. 64560, Monterrey, Nuevo León, México. Contacto: WhatsApp y teléfono 956 231 3696, de lunes a viernes de 9:00 a. m. a 6:00 p. m.</p>
       <h2>2. Precios</h2>
       <p>Los precios publicados en la tienda en línea son de cliente final, en pesos mexicanos y con IVA incluido. Pueden variar por talla y se indican en cada ficha de producto. Los precios de distribuidor y de socio se cotizan por escrito y dependen del volumen. Nos reservamos el derecho de corregir errores evidentes de precio antes de confirmar un pedido.</p>
       <h2>3. Pedidos y pago</h2>

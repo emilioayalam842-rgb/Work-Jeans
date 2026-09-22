@@ -2,7 +2,7 @@ const CART_KEY = 'worksjeans_cart';
 const COUPON_KEY = 'worksjeans_coupon';
 let CART_QUOTE = null; // última cotización del servidor (precios, promociones, cupón)
 let quoteTimer = null;
-let WHATSAPP_NUMBER = '528128613551';
+let WHATSAPP_NUMBER = '19562313696';
 let PAYMENTS = { provider: null };
 
 async function loadSettings() {

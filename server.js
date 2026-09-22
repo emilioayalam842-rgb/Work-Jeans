@@ -1453,7 +1453,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260923w';
+const ASSET_V = '20260923x';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1998,6 +1998,14 @@ const REDES = [
   { nombre: 'Facebook', url: 'https://www.facebook.com/WorksJeansUniformes/', icono: '<path d="M14 9V7.5c0-.8.5-1.5 1.5-1.5H17V3h-2.5A4.5 4.5 0 0 0 10 7.5V9H7.5v3H10v9h4v-9h2.5l.5-3H14Z"/>' },
 ];
 
+// Teléfono en formato internacional a partir de lo que guarda el panel.
+function telefonoE164(cfg) {
+  const digitos = String(cfg.whatsappNumber || '').replace(/\D/g, '');
+  if (digitos.length >= 10) return `+${digitos}`;
+  const sueltos = String(cfg.phoneDisplay || '').replace(/\D/g, '');
+  return sueltos.length >= 10 ? `+52${sueltos}` : '';
+}
+
 function negocioJsonLd(origin) {
   const cfg = getSettings();
   const partes = String(cfg.address || '').split(',').map((x) => x.trim());
@@ -2010,7 +2018,8 @@ function negocioJsonLd(origin) {
     url: `${origin}/`,
     logo: `${origin}/assets/img/works-jeans-logo.png`,
     image: `${origin}/assets/img/og-works-jeans.jpg`,
-    ...(cfg.phoneDisplay ? { telephone: `+52 ${cfg.phoneDisplay}` } : {}),
+    // El teléfono sale del número de WhatsApp, que ya trae la clave del país; antes iba fijo a +52.
+    ...(telefonoE164(cfg) ? { telephone: telefonoE164(cfg) } : {}),
     priceRange: '$$',
     currenciesAccepted: 'MXN',
     address: {
@@ -3570,7 +3579,7 @@ const CUSTOMER_EMAILS = {
   confirmacion: (o) => ({ subject: `Recibimos tu pedido ${o.id} · Works Jeans`, title: 'Recibimos tu pedido.', intro: o.source === 'stripe' ? 'Tu pago se procesó correctamente. Preparamos tu pedido en 1 a 2 días hábiles y te avisamos por este medio y por WhatsApp cuando salga.' : 'Registramos tu pedido. Te confirmamos por WhatsApp la forma de pago y el envío.', outro: o.invoice ? 'Pediste factura: te la enviamos al correo indicado en cuanto se emita.' : '' }),
   enviado: (o) => ({ subject: `Tu pedido ${o.id} va en camino · Works Jeans`, title: 'Tu pedido va en camino.', intro: o.tracking?.number ? `Salió por ${escapeHtml(o.tracking.carrier || 'paquetería')} con la guía <b>${escapeHtml(o.tracking.number)}</b>.${o.tracking.url ? ` <a href="${escapeHtml(o.tracking.url)}">Rastrear envío</a>.` : ''} La entrega suele tardar de 3 a 7 días hábiles según el destino.` : 'Salió con la paquetería. Te compartimos la guía por WhatsApp.', outro: '' }),
   entregado: (o) => ({ subject: `Tu pedido ${o.id} fue entregado · Works Jeans`, title: 'Pedido entregado.', intro: 'Tu pedido ya está contigo. Si algo no quedó bien, tienes 15 días para cambio de talla con la prenda sin usar y con etiquetas.', outro: `Gracias por comprar ropa de trabajo hecha en Monterrey.${o.reviewToken ? ` <br><br><b>¿Nos cuentas cómo te fue?</b> Toma un minuto y ayuda a otros a elegir.<br><a href="https://www.workjeans.mx/resena?t=${o.reviewToken}" style="display:inline-block;margin-top:8px;padding:12px 18px;background:#ffd600;color:#0f0f0f;text-decoration:none;font-weight:700;border:1.5px solid #0f0f0f">Calificar mi compra</a>` : ''}` }),
-  recordatorio: (o) => ({ subject: `Tu pedido ${o.id} sigue esperando tu pago · Works Jeans`, title: 'Tu pedido te espera.', intro: o.payment?.clabe ? `Recibimos tu pedido pero aún no vemos el pago. Puedes hacer la transferencia SPEI a la CLABE <b>${escapeHtml(o.payment.clabe)}</b>${o.payment.bank ? ` (${escapeHtml(o.payment.bank)})` : ''}${o.payment.reference ? `, referencia <b>${escapeHtml(o.payment.reference)}</b>` : ''}. En cuanto lo recibamos, preparamos tu pedido.` : o.payment?.reference ? `Recibimos tu pedido pero aún no vemos el pago. Puedes pagarlo en tienda de conveniencia con la referencia <b>${escapeHtml(o.payment.reference)}</b>. En cuanto lo recibamos, preparamos tu pedido.` : 'Recibimos tu pedido pero aún no confirmamos el pago. Escríbenos por WhatsApp al 81 2861 3551 y te decimos cómo pagarlo (transferencia, tarjeta o en tienda) para apartar tus tallas.', outro: 'Si ya pagaste, ignora este correo o respóndenos con tu comprobante. Si ya no lo necesitas, no tienes que hacer nada.' }),
+  recordatorio: (o) => ({ subject: `Tu pedido ${o.id} sigue esperando tu pago · Works Jeans`, title: 'Tu pedido te espera.', intro: o.payment?.clabe ? `Recibimos tu pedido pero aún no vemos el pago. Puedes hacer la transferencia SPEI a la CLABE <b>${escapeHtml(o.payment.clabe)}</b>${o.payment.bank ? ` (${escapeHtml(o.payment.bank)})` : ''}${o.payment.reference ? `, referencia <b>${escapeHtml(o.payment.reference)}</b>` : ''}. En cuanto lo recibamos, preparamos tu pedido.` : o.payment?.reference ? `Recibimos tu pedido pero aún no vemos el pago. Puedes pagarlo en tienda de conveniencia con la referencia <b>${escapeHtml(o.payment.reference)}</b>. En cuanto lo recibamos, preparamos tu pedido.` : 'Recibimos tu pedido pero aún no confirmamos el pago. Escríbenos por WhatsApp al 956 231 3696 y te decimos cómo pagarlo (transferencia, tarjeta o en tienda) para apartar tus tallas.', outro: 'Si ya pagaste, ignora este correo o respóndenos con tu comprobante. Si ya no lo necesitas, no tienes que hacer nada.' }),
   cancelado: (o) => ({ subject: `Tu pedido ${o.id} fue cancelado · Works Jeans`, title: 'Pedido cancelado.', intro: 'Cancelamos tu pedido. Si pagaste con tarjeta, el reembolso aparece en tu estado de cuenta en los días que marque tu banco. Si tienes dudas, escríbenos por WhatsApp.', outro: '' }),
 };
 

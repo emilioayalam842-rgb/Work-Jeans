@@ -39,7 +39,7 @@
       if (!res.ok) throw new Error(data.error || 'No pudimos enviar tu mensaje. Intenta de nuevo o escríbenos por WhatsApp.');
       form.hidden = true;
       estado.className = 'form-status is-ok';
-      estado.innerHTML = `Gracias, ${nombre.split(' ')[0]}. Recibimos tu mensaje y te respondemos en horario de tienda, de lunes a viernes de 9:00 a. m. a 6:00 p. m. Si es urgente, escríbenos por <a href="https://wa.me/528128613551?text=${encodeURIComponent(`Hola, acabo de enviar un mensaje desde la página. Soy ${nombre}.`)}" target="_blank" rel="noopener">WhatsApp</a>.`;
+      estado.innerHTML = `Gracias, ${nombre.split(' ')[0]}. Recibimos tu mensaje y te respondemos en horario de tienda, de lunes a viernes de 9:00 a. m. a 6:00 p. m. Si es urgente, escríbenos por <a href="https://wa.me/19562313696?text=${encodeURIComponent(`Hola, acabo de enviar un mensaje desde la página. Soy ${nombre}.`)}" target="_blank" rel="noopener">WhatsApp</a>.`;
       window.wjTrack?.('b2b_quote_submitted', { where: 'contacto' });
     } catch (err) {
       estado.textContent = err.message;

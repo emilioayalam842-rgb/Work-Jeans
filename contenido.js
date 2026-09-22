@@ -46,7 +46,7 @@ const LANDINGS = {
       <h2>Stock inmediato, no pedidos a 6 semanas</h2>
       <p>Mantenemos inventario de todas las tallas en nuestra tienda de Calle Emiliano Zapata 3737, Col. Venustiano Carranza. Puedes pasar a probar la talla, recoger el pedido el mismo día o pedir envío a cualquier parte de Nuevo León y del país.</p>
       <h2>Uniformes con tu logotipo</h2>
-      <p>Bordamos o estampamos en DTF el logotipo de tu empresa en camisas y pantalones. Para pedidos de mayoreo armamos la corrida de tallas contigo y te damos precio por volumen. Usa el <a href="/empresas">cotizador</a> o llama al 81 2861 3551.</p>
+      <p>Bordamos o estampamos en DTF el logotipo de tu empresa en camisas y pantalones. Para pedidos de mayoreo armamos la corrida de tallas contigo y te damos precio por volumen. Usa el <a href="/empresas">cotizador</a> o llama al 956 231 3696.</p>
       <h2>Zonas que atendemos</h2>
       <p>Monterrey, San Nicolás, Guadalupe, Apodaca, Escobedo, Santa Catarina, San Pedro, García, Juárez y toda el área metropolitana, además de envíos por paquetería a todo México.</p>
     `,

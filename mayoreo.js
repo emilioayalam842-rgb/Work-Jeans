@@ -158,13 +158,13 @@
       statusEl.textContent = 'Agrega al menos una prenda a la cotización.';
       return;
     }
-    const number = (typeof WHATSAPP_NUMBER !== 'undefined' && WHATSAPP_NUMBER) || '528128613551';
+    const number = (typeof WHATSAPP_NUMBER !== 'undefined' && WHATSAPP_NUMBER) || '19562313696';
     window.wjTrack?.('whatsapp_click', { where: 'cotizador' });
     const url = `https://wa.me/${number}?text=${encodeURIComponent(buildMessage())}`;
     const win = window.open(url, '_blank', 'noopener');
     statusEl.textContent = win
       ? 'Se abrió WhatsApp con tu cotización. Si no lo ves, revisa las ventanas emergentes.'
-      : 'No se pudo abrir WhatsApp. Escríbenos al 81 2861 3551.';
+      : 'No se pudo abrir WhatsApp. Escríbenos al 956 231 3696.';
   });
 
   // Formulario de cotización (página /empresas): guarda el lead en el servidor.
@@ -203,7 +203,7 @@
       statusEl.textContent = 'Recibimos tu cotización. Te respondemos por WhatsApp o correo en horario de tienda; te mandamos un correo con un enlace para repetir este pedido cuando lo necesites.';
       window.wjTrack?.('b2b_quote_submitted', { pieces: lines.reduce((s, l) => s + l.total, 0) });
     } catch {
-      statusEl.textContent = 'Sin conexión. Escríbenos por WhatsApp al 81 2861 3551.';
+      statusEl.textContent = 'Sin conexión. Escríbenos por WhatsApp al 956 231 3696.';
     } finally {
       btn.disabled = false;
       btn.textContent = original;
