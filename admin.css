@@ -1484,8 +1484,9 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
 .admin-table th { padding: 14px 16px; border-bottom: 1px solid #e8e9ec; }
 .admin-table td { padding: 16px; border-bottom: 1px solid #f0f1f3; vertical-align: top; }
 .admin-table tbody tr:hover { background: #fafbfc; }
-/* La lista de productos se corta a tres líneas: antes una fila con cinco prendas medía media pantalla */
-.admin-table .admin-order-items-cell {
+/* La lista de productos se corta a tres líneas. El recorte va en un elemento interno:
+   ponerlo en la celda cambia su tipo de caja y desarma las columnas de la tabla. */
+.admin-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -1638,3 +1639,56 @@ body:not(.perm-pedidos-editar) select.admin-status-select, body:not(.perm-invent
   padding: 2px 16px;
 }
 #orderDetailBox > details > summary { padding: 13px 0; font-weight: 600; cursor: pointer; }
+
+/* ============================================================
+   La columna de acciones ya no se encima con el estado.
+   Con cuatro botones por fila la última columna no cabía y se dibujaba sobre la anterior.
+   En la fila quedan ver y eliminar; imprimir y WhatsApp viven en la ficha del pedido,
+   que es donde ya estaban también.
+   ============================================================ */
+#ordersTable th:nth-child(5), #ordersTable td:nth-child(5) { width: 1%; min-width: 156px; }
+#ordersTable th:nth-child(6), #ordersTable td:nth-child(6) { width: 92px; min-width: 92px; }
+#ordersTable .admin-table-actions { gap: 8px; }
+#ordersTable .admin-status-select { max-width: 100%; }
+
+/* ============================================================
+   Anchos fijos para la tabla de pedidos.
+   Con anchos automáticos el navegador estiraba las columnas hasta pasarse del recuadro
+   blanco y la última quedaba fuera. Ahora los seis anchos suman cien y nada se desborda.
+   ============================================================ */
+#ordersTable { table-layout: fixed; width: 100%; min-width: 0; }
+#ordersTable th:nth-child(1), #ordersTable td:nth-child(1) { width: 19%; min-width: 0; }
+#ordersTable th:nth-child(2), #ordersTable td:nth-child(2) { width: 18%; min-width: 0; }
+#ordersTable th:nth-child(3), #ordersTable td:nth-child(3) { width: 27%; min-width: 0; }
+#ordersTable th:nth-child(4), #ordersTable td:nth-child(4) { width: 11%; min-width: 0; }
+#ordersTable th:nth-child(5), #ordersTable td:nth-child(5) { width: 17%; min-width: 0; }
+#ordersTable th:nth-child(6), #ordersTable td:nth-child(6) { width: 8%; min-width: 0; }
+#ordersTable td { word-break: break-word; }
+#ordersTable .admin-order-when { white-space: normal; }
+#ordersTable .admin-status-select { width: 100%; }
+
+/* Los dos botones necesitan 68 px libres: la columna se lleva 10% y menos aire a los lados */
+#ordersTable th:nth-child(5), #ordersTable td:nth-child(5) { width: 15%; padding-right: 10px; }
+#ordersTable th:nth-child(6), #ordersTable td:nth-child(6) { width: 10%; padding-left: 6px; padding-right: 10px; }
+#ordersTable .admin-icon-btn { width: 30px; height: 30px; }
+
+/* ============================================================
+   Las celdas de acciones vuelven a ser celdas.
+   Estaban declaradas como flex, y una celda con display flex deja de participar en las
+   columnas de la tabla: por eso la última quedaba de 16 px y los botones se dibujaban
+   encima del estado. Ahora la celda sigue siendo celda y los botones van en línea.
+   ============================================================ */
+td.admin-table-actions,
+td.admin-order-btns {
+  display: table-cell;
+  text-align: right;
+  white-space: nowrap;
+}
+td.admin-table-actions .admin-icon-btn,
+td.admin-order-btns .admin-icon-btn {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+td.admin-table-actions .admin-icon-btn:first-child,
+td.admin-order-btns .admin-icon-btn:first-child { margin-left: 0; }

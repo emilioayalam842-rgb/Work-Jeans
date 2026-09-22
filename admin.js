@@ -979,7 +979,7 @@ function renderOrders(orders) {
       <tr data-id="${esc(o.id)}">
         <td class="admin-clickable admin-order-when" data-action="view">${date}<br><span class="admin-muted">${sourceLabel}</span></td>
         <td class="admin-clickable" data-action="view">${esc(o.customerName) || '—'}${o.customerPhone ? `<br><span class="admin-muted">${esc(o.customerPhone)}</span>` : ''}</td>
-        <td class="admin-order-items-cell admin-clickable" data-action="view">${esc(itemsSummary)}</td>
+        <td class="admin-order-items-cell admin-clickable" data-action="view"><span class="admin-clamp-3">${esc(itemsSummary)}</span></td>
         <td class="admin-clickable" data-action="view">${formatPrice(o.totalCents)}</td>
         <td>
           <select class="admin-status-select status-${o.status}" data-action="status">${statusOptions(o.status)}</select>
@@ -988,8 +988,6 @@ function renderOrders(orders) {
         </td>
         <td class="admin-table-actions">
           ${iconBtn('view-order', 'eye', 'Ver detalle')}
-          ${iconBtn('print-order', 'print', 'Imprimir nota')}
-          ${whatsappDigits(o.customerPhone) ? iconBtn('whatsapp-order', 'whatsapp', 'WhatsApp al cliente') : ''}
           ${iconBtn('delete-order', 'trash', 'Eliminar')}
         </td>
       </tr>
