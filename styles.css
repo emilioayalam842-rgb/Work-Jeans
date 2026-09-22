@@ -3188,3 +3188,36 @@ h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px;
 }
 .category-panel-foot strong span { background: none; padding: 0; }
 .category-panel-foot > span { color: #6f6a52; }
+
+/* ============================================================
+   Portada: la prenda se ve más y el pie de la foto deja de parecer un letrero.
+   La foto tenía 64 px de aire arriba y 76 abajo dentro de un recuadro de 620 px, así que el
+   pantalón salía chico y flotando. El pie mezclaba mayúsculas separadas con un resaltado
+   amarillo sobre una palabra suelta.
+   ============================================================ */
+.hero-figure {
+  border-radius: var(--radius-card);
+  border-color: var(--line);
+  box-shadow: var(--shadow-soft);
+  max-height: 560px;
+}
+.hero-figure img { padding: 26px 22px 74px; }
+
+.hero-figure figcaption {
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  font-family: var(--body);
+  font-weight: 500;
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+.hero-figure figcaption strong {
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--ink-deep);
+}
+/* El resaltado amarillo sobre una sola palabra se veía como un borrón */
+.hero-figure figcaption strong span { background: none; padding: 0; }
