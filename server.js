@@ -1453,7 +1453,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260922y';
+const ASSET_V = '20260922z';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3921,10 +3921,15 @@ app.post('/api/openpay/webhook', express.text({ limit: '200kb', type: () => true
   const crudo = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
   let ev = {};
   try { ev = JSON.parse(crudo || '{}'); } catch { ev = {}; }
-  const codigo = ev.verification_code || (crudo.match(/"?verification_code"?\s*[:=]\s*"?([\w-]{3,40})/i) || [])[1];
-  if (codigo || ev.type === 'verification') {
-    guardarVerificacionOpenpay(codigo);
-    logSeguridad('openpay.webhook', `Openpay mandó el código de verificación${codigo ? '' : ', pero venía vacío'}.`);
+  // Openpay manda el tipo en mayúsculas y el código puede venir con distintos nombres.
+  const esVerificacion = /verification/i.test(String(ev.type || '')) || /verification/i.test(crudo.slice(0, 200));
+  const codigo = ev.verification_code || ev.verificationCode || ev.code
+    || (crudo.match(/"?verification[_-]?code"?\s*[:=]\s*"?([\w-]{3,40})/i) || [])[1]
+    || (esVerificacion ? (crudo.match(/"?code"?\s*[:=]\s*"?([\w-]{3,40})/i) || [])[1] : undefined);
+  if (esVerificacion) {
+    guardarVerificacionOpenpay(codigo || '');
+    // Si el código viniera con otro nombre, el aviso completo queda aquí para poder leerlo.
+    logSeguridad('openpay.webhook', codigo ? `Código de verificación recibido: ${codigo}` : `Verificación sin código reconocido. Aviso completo: ${crudo.slice(0, 220)}`);
     res.status(200).json({ ok: true });
     return;
   }
