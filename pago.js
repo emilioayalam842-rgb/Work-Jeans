@@ -48,6 +48,13 @@
   // Métodos disponibles según lo configurado en el servidor
   fetch('settings.json').then((r) => r.json()).then((s) => {
     const p = s.payments || {};
+    // Con llaves de prueba ningún cobro es real: hay que decirlo antes de que capturen su tarjeta.
+    if (p.sandbox && p.provider === 'openpay') {
+      const aviso = document.createElement('p');
+      aviso.className = 'checkout-sandbox';
+      aviso.textContent = 'Estamos probando la pasarela: los cobros con tarjeta no se procesan de verdad. Para comprar ahora, pide por WhatsApp.';
+      document.getElementById('checkoutForm')?.prepend(aviso);
+    }
     if (!p.provider) { status.textContent = 'El pago en línea no está disponible ahora mismo. Pide por WhatsApp desde el carrito.'; $('coSubmit').disabled = true; return; }
     if (!p.spei) document.querySelector('input[value="spei"]').closest('label').hidden = true;
     if (p.store) $('coStoreMethod').hidden = false;

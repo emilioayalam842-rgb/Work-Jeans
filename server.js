@@ -1446,7 +1446,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260922u';
+const ASSET_V = '20260922v';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3707,8 +3707,9 @@ const PENDING_CHECKOUTS_PATH = path.join(DATA_DIR, 'pending-checkouts.json');
 const getPendingCheckouts = () => readJsonList(PENDING_CHECKOUTS_PATH);
 const savePendingCheckouts = (list) => writeFileSafe(PENDING_CHECKOUTS_PATH, JSON.stringify(list, null, 2) + '\n');
 
-function paymentsInfo() {
-  return { provider: OPENPAY ? 'openpay' : (stripe ? 'stripe' : null), spei: Boolean(OPENPAY), store: Boolean(OPENPAY) && process.env.OPENPAY_STORES !== 'false', sandbox: Boolean(OPENPAY?.sandbox) , verificacion: verificacionOpenpay()};
+function paymentsInfo({ privado = false } = {}) {
+  // La verificación del webhook solo va al panel: no debe salir en la API pública.
+  return { provider: OPENPAY ? 'openpay' : (stripe ? 'stripe' : null), spei: Boolean(OPENPAY), store: Boolean(OPENPAY) && process.env.OPENPAY_STORES !== 'false', sandbox: Boolean(OPENPAY?.sandbox) , ...(privado ? { verificacion: verificacionOpenpay() } : {})};
 }
 
 async function openpayRequest(method, route, body) {
@@ -5225,7 +5226,7 @@ app.get('/api/admin/system-status', requireAdmin, perm('respaldo'), (req, res) =
     errors: { last24h: errors.length, list: errors.slice(-20).reverse() },
     seguridad: { last24h: seguridad.length, list: seguridad.slice(-20).reverse() },
     email: { configured: Boolean(process.env.RESEND_API_KEY), notifyTo: Boolean(notifyTarget()), customerFrom: Boolean(process.env.NOTIFY_FROM), ...emailState },
-    payments: paymentsInfo(),
+    payments: paymentsInfo({ privado: true }),
   });
 });
 
