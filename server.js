@@ -1050,6 +1050,21 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   res.json({ received: true });
 });
 
+// Asistente de WhatsApp. Va antes del lector de JSON porque la firma de Meta se comprueba
+// sobre el cuerpo tal cual llega.
+const montarWhatsapp = require('./whatsapp');
+const whatsapp = montarWhatsapp(app, {
+  express,
+  DATA_DIR,
+  writeFileSafe,
+  getOrders: () => getOrders(),
+  getSettings: () => getSettings(),
+  logError: (...a) => logError(...a),
+  logSeguridad: (...a) => logSeguridad(...a),
+  sendEmail: (...a) => sendEmail(...a),
+  escapeHtml: (...a) => escapeHtml(...a),
+});
+
 app.use(express.json({ limit: '1mb' }));
 // Protección contra peticiones falsificadas desde otro sitio: cualquier operación que cambie datos
 // debe venir del propio dominio. La cookie ya es SameSite=Lax, esto lo refuerza para navegadores
@@ -1070,7 +1085,7 @@ function csrfValido(req) {
   const b = Buffer.from(String(esperado));
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
-const SIN_ORIGEN = new Set(['/api/stripe/webhook', '/api/openpay/webhook']);
+const SIN_ORIGEN = new Set(['/api/stripe/webhook', '/api/openpay/webhook', '/api/whatsapp/webhook']);
 app.use((req, res, next) => {
   if (!CAMBIAN_DATOS.has(req.method) || SIN_ORIGEN.has(req.path)) return next();
   const origen = req.headers.origin || req.headers.referer || '';
@@ -1453,7 +1468,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260923x';
+const ASSET_V = '20260923y';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3284,7 +3299,23 @@ app.put('/api/admin/orders/:id', requireAdmin, perm('pedidos.editar'), (req, res
   }
   saveOrders(orders);
   if (req.emailAfterSave) emailCustomer(order.id, req.emailAfterSave);
+  // Aviso por WhatsApp cuando el pedido sale; solo si hay plantilla aprobada en Meta.
+  if (req.emailAfterSave === 'enviado') whatsapp.avisarEnvio(order).catch((err) => logError('whatsapp.envio', err));
   res.json(order);
+});
+
+// Últimos mensajes del asistente de WhatsApp, para verlos desde el panel.
+app.get('/api/admin/whatsapp', requireAdmin, perm('configuracion.ver'), (req, res) => {
+  const datos = whatsapp.almacen.leer();
+  const charlas = Object.entries(datos.charlas || {}).map(([numero, c]) => ({ numero, ...c }));
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    activo: whatsapp.activo(),
+    encendido: getSettings().whatsappBot !== false,
+    plantillaEnvio: Boolean(process.env.WHATSAPP_TEMPLATE_ENVIADO),
+    esperandoPersona: charlas.filter((c) => c.estado === 'humano' && c.hasta > Date.now()).length,
+    mensajes: (datos.mensajes || []).slice(-40).reverse(),
+  });
 });
 
 app.post('/api/admin/orders/:id/email', requireAdmin, perm('pedidos.editar'), async (req, res) => {

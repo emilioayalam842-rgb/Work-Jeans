@@ -1970,6 +1970,8 @@ async function loadSettingsForm() {
   document.getElementById('settingCustomerEmails').checked = settings.customerEmails !== false;
   document.getElementById('settingPaymentReminders').checked = settings.paymentReminders !== false;
   document.getElementById('settingDailySummary').checked = settings.dailySummary !== false;
+  document.getElementById('settingWhatsappBot').checked = settings.whatsappBot !== false;
+  cargarWhatsapp();
   const ship = settings.shipping || {};
   document.getElementById('settingFreeFrom').value = ship.freeFromCents ? (ship.freeFromCents / 100).toFixed(0) : '';
   document.getElementById('settingQuoteFromQty').value = ship.quoteFromQty || '';
@@ -2064,6 +2066,7 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
     customerEmails: document.getElementById('settingCustomerEmails').checked,
     paymentReminders: document.getElementById('settingPaymentReminders').checked,
     dailySummary: document.getElementById('settingDailySummary').checked,
+    whatsappBot: document.getElementById('settingWhatsappBot').checked,
   };
 
   const res = await fetch('/api/admin/settings', {
@@ -2084,3 +2087,34 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
 // El cambio de contraseña vive en admin-seguridad.js (Mi cuenta).
 
 checkSession();
+
+
+// --- Asistente de WhatsApp: estado y últimos mensajes ------------------------
+async function cargarWhatsapp() {
+  const caja = document.getElementById('whatsappBox');
+  if (!caja) return;
+  try {
+    const r = await fetch('/api/admin/whatsapp');
+    if (!r.ok) throw new Error('No se pudo leer el estado del asistente.');
+    const d = await r.json();
+    const pastilla = (ok, si, no, aviso) => `<span class="admin-sys-pill ${ok ? 'is-ok' : aviso ? 'is-warn' : 'is-bad'}">${ok ? si : no}</span>`;
+    const filas = [
+      ['Conexión con Meta', d.activo
+        ? pastilla(true, 'Conectado', '')
+        : `${pastilla(false, '', 'Sin configurar', true)} <span class="admin-muted admin-small">faltan WHATSAPP_TOKEN y WHATSAPP_PHONE_ID en las variables del servidor</span>`],
+      ['Asistente', d.encendido ? pastilla(true, 'Contestando', '') : pastilla(false, '', 'Apagado', true)],
+      ['Aviso de envío por WhatsApp', d.plantillaEnvio
+        ? pastilla(true, 'Con plantilla', '')
+        : `${pastilla(false, '', 'Sin plantilla', true)} <span class="admin-muted admin-small">define WHATSAPP_TEMPLATE_ENVIADO con el nombre de la plantilla aprobada en Meta</span>`],
+      ['Esperando a una persona', d.esperandoPersona
+        ? `${pastilla(false, '', String(d.esperandoPersona), true)} <span class="admin-muted admin-small">charlas donde el asistente se calló</span>`
+        : pastilla(true, 'Ninguna', '')],
+    ];
+    caja.innerHTML = `<dl class="admin-sys">${filas.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+      ${d.mensajes.length ? `<details class="admin-sys-errors"><summary>Últimos mensajes (${d.mensajes.length})</summary><ul>${d.mensajes.map((m) => `<li><small>${new Date(m.at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</small> <b>${esc(m.de)}</b> · ${esc(m.texto)} <span class="admin-muted">→ ${esc(m.intencion || 'sin clasificar')}${m.respondido ? '' : ' · sin contestar'}</span></li>`).join('')}</ul></details>` : '<p class="admin-muted admin-small">Todavía no llegan mensajes.</p>'}
+      <div class="admin-sys-actions"><button type="button" class="btn btn-secondary btn-sm" id="waRefreshBtn">Actualizar</button></div>`;
+    document.getElementById('waRefreshBtn').addEventListener('click', cargarWhatsapp);
+  } catch (err) {
+    caja.innerHTML = `<p class="admin-muted admin-small">${esc(err.message)}</p>`;
+  }
+}

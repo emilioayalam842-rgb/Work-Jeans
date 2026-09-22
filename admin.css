@@ -1848,3 +1848,9 @@ td.admin-order-btns .admin-icon-btn:first-child { margin-left: 0; }
   .od > .od-head, .od > .od-tabs, .od-sec, .od-statusbar, .od .admin-invoice, .od .admin-form-actions { padding-left: 16px; padding-right: 16px; }
   .od-statusbar, .od .admin-invoice, .od .admin-form-actions { margin-left: 16px; margin-right: 16px; }
 }
+
+/* Asistente de WhatsApp en Configuración */
+.admin-wa-box { margin-top: 10px; }
+.admin-wa-box ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; font-size: 0.88rem; }
+.admin-wa-box li { padding-bottom: 8px; border-bottom: 1px solid #f0f1f3; }
+.admin-wa-box li small { color: #83868d; margin-right: 6px; }
