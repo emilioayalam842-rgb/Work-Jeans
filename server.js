@@ -1453,7 +1453,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260923v';
+const ASSET_V = '20260923w';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -1823,7 +1823,7 @@ function renderCategoryPage(req, res, slug, page) {
   };
   for (const [key, value] of Object.entries(fill)) html = html.split(`{{${key}}}`).join(value);
   res.set('Cache-Control', 'no-cache');
-  res.send(html);
+  res.send(applySiteTexts(html));
 }
 
 app.get('/:slug(pantalones-de-trabajo|camisas-de-trabajo)', (req, res) => renderCategoryPage(req, res, req.params.slug, CATEGORY_PAGES[req.params.slug]));
@@ -2089,7 +2089,7 @@ function renderContentPage(req, res, slug, page, { isArticle }) {
   };
   for (const [key, value] of Object.entries(fill)) html = html.split(`{{${key}}}`).join(value);
   res.set('Cache-Control', 'no-cache');
-  res.send(html);
+  res.send(applySiteTexts(html));
 }
 
 app.get('/articulos', (req, res) => {
@@ -2199,6 +2199,17 @@ app.get(['/aviso-de-privacidad.html', '/envios-y-devoluciones.html', '/terminos-
 // El inicio se sirve con los textos editables del panel (va antes del estático para que no lo gane index.html).
 app.get('/', (req, res) => {
   const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
+  res.set('Cache-Control', 'public, max-age=0, must-revalidate');
+  res.type('html').send(applySiteTexts(html));
+});
+
+// Las páginas sueltas (pago, rastrear, empresas, avisos…) también llevan la franja superior y
+// la barra de promoción, así que pasan por los textos que edita el panel antes de servirse.
+app.get(['/pago', '/rastrear', '/empresas', '/aviso-de-privacidad', '/envios-y-devoluciones', '/resena'], (req, res, next) => {
+  const archivo = path.join(__dirname, `${req.path.slice(1)}.html`);
+  if (!fs.existsSync(archivo)) return next();
+  let html;
+  try { html = fs.readFileSync(archivo, 'utf-8'); } catch { return next(); }
   res.set('Cache-Control', 'public, max-age=0, must-revalidate');
   res.type('html').send(applySiteTexts(html));
 });
