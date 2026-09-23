@@ -3316,3 +3316,26 @@ h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px;
 /* En la columna de texto una sola pregunta por renglón: en dos columnas las tarjetas
    quedan de alturas distintas y se leen peor. */
 .content-body .faq-list, .category-text .faq-list { grid-template-columns: 1fr; }
+
+/* ============================================================
+   Ventajas: iconos en lugar de numerales.
+   Los 01 a 06 solo contaban; un icono dice de qué trata el punto antes de leerlo.
+   ============================================================ */
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #fff6d6;
+  color: #7a6410;
+  margin-bottom: 4px;
+}
+.feature { gap: 12px; padding: 32px 28px 30px; }
+.feature h3 { font-size: 1.05rem; }
+.feature p { font-size: 0.94rem; line-height: 1.6; color: #55585f; }
+@media (max-width: 860px) {
+  .feature { padding: 24px 20px; }
+  .feature-icon { width: 40px; height: 40px; border-radius: 12px; }
+}
