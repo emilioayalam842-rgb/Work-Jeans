@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260924d">
-  <link rel="stylesheet" href="admin.css?v=20260924d">
+  <link rel="stylesheet" href="styles.css?v=20260924e">
+  <link rel="stylesheet" href="admin.css?v=20260924e">
 </head>
 <body class="admin-body">
 
@@ -642,45 +642,45 @@
 
       <div id="tabConfiguracion" class="admin-tab-panel" hidden>
         <h2>Configuración del sitio</h2>
-        <form id="settingsForm" class="admin-panel-box admin-settings-form">
+        <form id="settingsForm" class="admin-panel-box admin-settings-form" autocomplete="off">
           <label for="settingStoreName">Nombre de la tienda</label>
-          <input type="text" id="settingStoreName" name="storeName">
+          <input autocomplete="off" type="text" id="settingStoreName" name="storeName">
 
           <label for="settingWhatsapp">Número de WhatsApp (con código de país, sin +)</label>
-          <input type="text" id="settingWhatsapp" name="whatsappNumber" placeholder="528112345678">
+          <input autocomplete="off" type="text" id="settingWhatsapp" name="whatsappNumber" placeholder="528112345678">
 
           <label for="settingPhoneDisplay">Teléfono a mostrar</label>
-          <input type="text" id="settingPhoneDisplay" name="phoneDisplay" placeholder="81 1234 5678">
+          <input autocomplete="off" type="text" id="settingPhoneDisplay" name="phoneDisplay" placeholder="81 1234 5678">
 
           <label for="settingAddress">Dirección</label>
-          <input type="text" id="settingAddress" name="address">
+          <input autocomplete="off" type="text" id="settingAddress" name="address">
 
           <label for="settingHours">Horario</label>
-          <input type="text" id="settingHours" name="hours">
+          <input autocomplete="off" type="text" id="settingHours" name="hours">
 
           <label for="settingRating">Calificación de Google</label>
-          <input type="text" id="settingRating" name="googleRating" placeholder="4.0">
+          <input autocomplete="off" type="text" id="settingRating" name="googleRating" placeholder="4.0">
 
           <label for="settingReviewCount">Número de opiniones</label>
-          <input type="text" id="settingReviewCount" name="googleReviewCount" placeholder="1">
+          <input autocomplete="off" type="text" id="settingReviewCount" name="googleReviewCount" placeholder="1">
 
           <label for="settingNotifyEmail">Correo para avisos de pedidos y stock bajo</label>
-          <input type="email" id="settingNotifyEmail" name="notifyEmail" placeholder="tucorreo@ejemplo.com">
+          <input autocomplete="off" type="email" id="settingNotifyEmail" name="notifyEmail" placeholder="tucorreo@ejemplo.com">
           <p class="admin-help">Requiere la llave RESEND_API_KEY en Railway. <button type="button" id="testEmailBtn" class="admin-inline-btn">Enviar correo de prueba</button> <button type="button" id="emailPreviewBtn" class="admin-inline-btn">Ver cómo se ven los correos al cliente</button> <span id="testEmailStatus"></span></p>
 
-          <label class="admin-check"><input type="checkbox" id="settingCustomerEmails"> <span><strong>Enviar correos al cliente</strong> (pedido recibido, enviado, entregado, cancelado y confirmación de cotización). Requiere la llave de Resend y un remitente con dominio verificado.</span></label>
+          <label class="admin-check"><input autocomplete="off" type="checkbox" id="settingCustomerEmails"> <span><strong>Enviar correos al cliente</strong> (pedido recibido, enviado, entregado, cancelado y confirmación de cotización). Requiere la llave de Resend y un remitente con dominio verificado.</span></label>
 
-          <label class="admin-check"><input type="checkbox" id="settingWhatsappBot" checked> <span><strong>Asistente de WhatsApp</strong> contesta solo las dudas frecuentes, consulta el estado de un pedido y avisa al equipo cuando alguien pide hablar con una persona.</span></label>
+          <label class="admin-check"><input autocomplete="off" type="checkbox" id="settingWhatsappBot" checked> <span><strong>Asistente de WhatsApp</strong> contesta solo las dudas frecuentes, consulta el estado de un pedido y avisa al equipo cuando alguien pide hablar con una persona.</span></label>
           <div class="admin-panel-box admin-wa-box" id="whatsappBox"><p class="admin-muted">Cargando…</p></div>
 
           <label for="settingGa4">Google Analytics 4 (ID de medición, opcional)</label>
-          <input type="text" id="settingGa4" placeholder="G-XXXXXXXXXX">
+          <input autocomplete="off" type="text" id="settingGa4" placeholder="G-XXXXXXXXXX">
           <p class="admin-help">Solo se carga cuando el visitante acepta todas las cookies. La medición propia del embudo funciona sin esto.</p>
 
-          <label class="admin-check"><input type="checkbox" id="settingPaymentReminders" checked> Recordar por correo los pedidos sin pagar (a las 24 h y a las 72 h; solo pedidos con correo)</label>
-          <label class="admin-check"><input type="checkbox" id="settingDailySummary" checked> <span><strong>Resumen diario por correo</strong> a las 8:00: ventas de ayer, pedidos por cobrar o enviar, cotizaciones sin responder y stock bajo. <button type="button" id="dailySummaryPreviewBtn" class="admin-inline-btn">Ver ejemplo</button> <button type="button" id="dailySummarySendBtn" class="admin-inline-btn">Enviármelo ahora</button> <em id="dailySummaryStatus"></em></span></label>
+          <label class="admin-check"><input autocomplete="off" type="checkbox" id="settingPaymentReminders" checked> Recordar por correo los pedidos sin pagar (a las 24 h y a las 72 h; solo pedidos con correo)</label>
+          <label class="admin-check"><input autocomplete="off" type="checkbox" id="settingDailySummary" checked> <span><strong>Resumen diario por correo</strong> a las 8:00: ventas de ayer, pedidos por cobrar o enviar, cotizaciones sin responder y stock bajo. <button type="button" id="dailySummaryPreviewBtn" class="admin-inline-btn">Ver ejemplo</button> <button type="button" id="dailySummarySendBtn" class="admin-inline-btn">Enviármelo ahora</button> <em id="dailySummaryStatus"></em></span></label>
           <label for="settingLowStock">Avisar cuando una talla tenga estas piezas o menos</label>
-          <input type="number" id="settingLowStock" name="lowStockThreshold" min="0" step="1" placeholder="5">
+          <input autocomplete="off" type="number" id="settingLowStock" name="lowStockThreshold" min="0" step="1" placeholder="5">
 
           <h3 class="admin-section-spacer">Envíos por código postal</h3>
           <p class="admin-help">Cada zona cubre un rango de códigos postales. Si dejas el costo vacío, la tienda muestra "te confirmamos el costo antes de enviar" y no cobra envío al pagar con tarjeta. Cuando pongas el costo, se suma al total y se cobra al pagar en línea. Como la paquetería cobra por peso y tamaño de caja, puedes usar <strong>escalones por piezas</strong> en vez de un precio único: por ejemplo hasta 3 piezas $99, hasta 10 piezas $180. Arriba del último escalón el envío se cotiza aparte. Si no pones escalones, se usa el precio único de la columna.</p>
@@ -692,11 +692,11 @@
           </div>
           <button type="button" id="addZoneBtn" class="btn btn-secondary admin-add-item-btn">+ Agregar zona</button>
           <div class="admin-field-grid">
-            <div><label for="settingFreeFrom">Envío gratis a partir de (MXN, vacío = nunca)</label><input type="number" id="settingFreeFrom" min="0" step="1" placeholder="Ej. 1500"></div>
-            <div><label for="settingQuoteFromQty">Envío por cotizar a partir de (piezas, vacío = nunca)</label><input type="number" id="settingQuoteFromQty" min="0" step="1" placeholder="Ej. 12"></div>
+            <div><label for="settingFreeFrom">Envío gratis a partir de (MXN, vacío = nunca)</label><input autocomplete="off" type="number" id="settingFreeFrom" min="0" step="1" placeholder="Ej. 1500"></div>
+            <div><label for="settingQuoteFromQty">Envío por cotizar a partir de (piezas, vacío = nunca)</label><input autocomplete="off" type="number" id="settingQuoteFromQty" min="0" step="1" placeholder="Ej. 12"></div>
           </div>
           <label for="settingShipSummary">Texto de envíos en la página de producto (opcional)</label>
-          <textarea id="settingShipSummary" rows="2" placeholder="Enviamos a todo México por paquetería…"></textarea>
+          <textarea autocomplete="off" id="settingShipSummary" rows="2" placeholder="Enviamos a todo México por paquetería…"></textarea>
 
           <button type="submit" class="btn btn-primary">Guardar configuración</button>
           <p class="admin-error" id="settingsError"></p>
@@ -1456,20 +1456,20 @@
   </div>
 
   <p class="admin-sr-live" id="stockLive" role="status" aria-live="polite"></p>
-  <script src="admin-reauth.js?v=20260924d"></script>
-  <script src="admin.js?v=20260924d"></script>
-  <script src="admin-catalogo.js?v=20260924d"></script>
-  <script src="admin-compras.js?v=20260924d"></script>
-  <script src="admin-marketing.js?v=20260924d"></script>
-  <script src="admin-reportes.js?v=20260924d"></script>
-  <script src="admin-dashboard.js?v=20260924d"></script>
-  <script src="admin-pedidos.js?v=20260924d"></script>
-  <script src="admin-ui.js?v=20260924d"></script>
-  <script src="admin-mas.js?v=20260924d"></script>
-  <script src="admin-seguridad.js?v=20260924d"></script>
-  <script src="admin-leads.js?v=20260924d"></script>
-  <script src="admin-resenas.js?v=20260924d"></script>
-  <script src="admin-contenido.js?v=20260924d"></script>
-  <script src="admin-sistema.js?v=20260924d"></script>
+  <script src="admin-reauth.js?v=20260924e"></script>
+  <script src="admin.js?v=20260924e"></script>
+  <script src="admin-catalogo.js?v=20260924e"></script>
+  <script src="admin-compras.js?v=20260924e"></script>
+  <script src="admin-marketing.js?v=20260924e"></script>
+  <script src="admin-reportes.js?v=20260924e"></script>
+  <script src="admin-dashboard.js?v=20260924e"></script>
+  <script src="admin-pedidos.js?v=20260924e"></script>
+  <script src="admin-ui.js?v=20260924e"></script>
+  <script src="admin-mas.js?v=20260924e"></script>
+  <script src="admin-seguridad.js?v=20260924e"></script>
+  <script src="admin-leads.js?v=20260924e"></script>
+  <script src="admin-resenas.js?v=20260924e"></script>
+  <script src="admin-contenido.js?v=20260924e"></script>
+  <script src="admin-sistema.js?v=20260924e"></script>
 </body>
 </html>

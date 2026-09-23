@@ -1468,7 +1468,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260924d';
+const ASSET_V = '20260924e';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -2845,6 +2845,16 @@ app.put('/api/admin/settings', requireAdmin, perm('configuracion.editar'), (req,
   // Nada de lo que guarda el panel debe llevar etiquetas HTML.
   if (req.body && typeof req.body === 'object') {
     limpiarTextos(req.body, { storeName: 80, phoneDisplay: 40, address: 200, hours: 120, googleRating: 10, googleReviewCount: 10, mapsQuery: 200, notifyEmail: 160, ga4Id: 30 });
+    // El número de WhatsApp tiene que ser número. El autocompletado del navegador llegó a
+    // meter aquí el país del formulario de direcciones y dejó los enlaces rotos.
+    if ('whatsappNumber' in req.body) {
+      const digitos = String(req.body.whatsappNumber || '').replace(/\D/g, '');
+      if (digitos.length < 10 || digitos.length > 15) {
+        res.status(400).json({ error: 'El número de WhatsApp debe traer entre 10 y 15 dígitos, con la clave del país y sin el signo de más.' });
+        return;
+      }
+      req.body.whatsappNumber = digitos;
+    }
     for (const lista of ['categories', 'collections', 'warehouses']) {
       if (Array.isArray(req.body[lista])) {
         req.body[lista] = req.body[lista].map((x) => (typeof x === 'string' ? cleanText(x, 80) : limpiarTextos(x, { name: 80, id: 40, address: 200 }))).filter(Boolean).slice(0, 60);

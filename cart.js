@@ -10,7 +10,10 @@ async function loadSettings() {
     const res = await fetch('settings.json');
     const settings = await res.json();
 
-    WHATSAPP_NUMBER = settings.whatsappNumber || WHATSAPP_NUMBER;
+    // Solo se acepta si son dígitos: si la configuración trae basura, se queda el del HTML.
+    const waConfigurado = String(settings.whatsappNumber || '').replace(/\D/g, '');
+    if (waConfigurado.length >= 10) WHATSAPP_NUMBER = waConfigurado;
+    settings.whatsappNumber = waConfigurado.length >= 10 ? waConfigurado : '';
     PAYMENTS = settings.payments || PAYMENTS;
     const payBtn = document.getElementById('checkoutStripe');
     if (payBtn) payBtn.textContent = PAYMENTS.provider === 'openpay' ? 'Pagar en línea (tarjeta o SPEI)' : 'Pagar con tarjeta';
