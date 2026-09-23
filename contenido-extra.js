@@ -699,7 +699,137 @@ const NUEVAS_2026_09 = {
   },
 };
 
-const LANDINGS_EXTRA = { ...INDUSTRIAS, ...CIUDADES, ...PRODUCTO_Y_CLIENTE, ...APOYO, ...NUEVAS_2026_09 };
+
+// --- Vocabulario de la industria y alcance nacional (23 sep 2026) ----------
+// Tres huecos detectados al comparar con la competencia: nadie en el sitio usaba la palabra
+// "camisola", que es como llaman los compradores de planta a esta prenda; no existía una
+// página que explicara las onzas de la mezclilla, que es la especificación con la que se
+// decide una compra industrial; y todo el alcance estaba escrito para Monterrey.
+const VOCABULARIO_2026_09_23 = {
+  'camisola-de-mezclilla': {
+    kicker: 'Camisola · Uso industrial',
+    h1: 'Camisola de mezclilla para trabajo',
+    h1Html: 'Camisola de<br>mezclilla.',
+    title: 'Camisola de Mezclilla para Trabajo | Works Jeans',
+    description: 'Camisola de mezclilla 100% algodón de manga larga para planta, taller y obra: botones reforzados, acabado preencogido y tallas de la XCH a la 5XG.',
+    intro: 'En planta la llaman camisola; en la tienda de la esquina, camisa de trabajo. Es la misma prenda: manga larga, mezclilla de algodón y botones que aguantan el uso diario.',
+    products: (p) => /camisa/.test(p.id),
+    body: `
+      <h2>Camisola o camisa de trabajo, la misma prenda</h2>
+      <p>Si compras uniformes para una planta seguramente pides "camisola". Si compras para ti, dices "camisa de trabajo". Las dos palabras nombran lo mismo: una prenda de manga larga, cuello con botón y bolsillo al pecho, hecha para trabajar y no para vestir.</p>
+      <p>Nosotros la fabricamos en mezclilla 100% algodón, con acabado preencogido, botones reforzados y costuras pensadas para el uso de todos los días. Puedes verla en <a href="/camisas-de-trabajo">camisas de trabajo</a> o comprar una sola pieza sin mínimo.</p>
+      <h2>Por qué de algodón y no de poliéster</h2>
+      <p>El algodón respira y no se derrite con una chispa; el poliéster aguanta más lavadas pero se funde con el calor. En soldadura, fundición o cualquier área con chispa, la camisola de algodón es la opción sensata. Lo explicamos con detalle en <a href="/articulos/camisa-de-mezclilla-o-de-poliester-para-trabajar-en-planta">camisa de mezclilla o de poliéster para trabajar en planta</a>.</p>
+      <h2>Con reflejante cuando hace falta que te vean</h2>
+      <p>La misma camisola lleva cintas reflejantes en pecho y mangas, en verde o naranja, para patio, vialidad o turno de noche. Están en <a href="/ropa-de-trabajo-reflejante">ropa de trabajo reflejante</a>.</p>
+      <h2>Tallas y corridas</h2>
+      <p>De la XCH a la 5XG con el mismo patrón en toda la corrida, así una cuadrilla se ve pareja. Si no sabes qué talla pedir, la <a href="/guia-de-tallas">guía de tallas</a> trae las medidas en pulgadas y cómo tomarlas.</p>
+      <h2>Una pieza o corrida completa</h2>
+      <p>Vendemos desde una pieza en la tienda en línea y por volumen con precio de distribuidor. Para una corrida por tallas usa el <a href="/empresas">cotizador para empresas</a>: capturas cantidades por talla y te respondemos con precio por escrito el mismo día hábil.</p>
+      <h2>Envíos a todo México</h2>
+      <p>Fabricamos y despachamos desde Monterrey, con envío por paquetería y número de guía a cualquier estado. También puedes recoger sin costo en la tienda.</p>
+    `,
+    faq: [
+      ['¿Camisola y camisa de trabajo son lo mismo?', 'Sí. Camisola es como se le dice en la industria a la camisa de trabajo de manga larga. Es la misma prenda que vendemos.'],
+      ['¿La camisola encoge al lavarla?', 'Tiene acabado preencogido. Como toda la mezclilla de algodón puede ceder un poco en el primer lavado; lava con agua fría y del revés.'],
+      ['¿Manejan camisola con reflejante?', 'Sí, con cintas reflejantes en pecho y mangas, en verde o naranja.'],
+      ...faqComunes().slice(1),
+    ],
+  },
+
+  'pantalon-de-mezclilla-industrial': {
+    kicker: 'Pantalón industrial · Mezclilla',
+    h1: 'Pantalón de mezclilla industrial',
+    h1Html: 'Pantalón de<br>mezclilla industrial.',
+    title: 'Pantalón de Mezclilla Industrial | Works Jeans',
+    description: 'Pantalón de mezclilla industrial 100% algodón: costuras dobles, cinco bolsas, corte recto, tallas 28 a 50 y opción reflejante. Envíos a todo México.',
+    intro: 'El pantalón industrial no es un jean de fin de semana. Cambian la tela, las costuras y el corte, porque va a cargar herramienta y a arrodillarse sobre concreto.',
+    products: (p) => /pantalon/.test(p.id),
+    body: `
+      <h2>Qué hace industrial a un pantalón</h2>
+      <p>Tres cosas: la tela, la costura y el corte. La mezclilla de algodón aguanta el raspón y no se funde con una chispa. Las costuras dobles en tiro y entrepierna son donde primero se revienta un pantalón de vestir. Y el corte recto deja moverse en cuclillas sin que se abra la cintura por atrás.</p>
+      <p>Nuestro <a href="/producto/pantalon-mezclilla">pantalón de trabajo</a> es de mezclilla 100% algodón, cinco bolsas y corte recto, en tallas de la 28 a la 50.</p>
+      <h2>Con cinta reflejante para patio y turno nocturno</h2>
+      <p>El mismo pantalón con cintas reflejantes en las piernas, en verde o naranja, para quien trabaja cerca de montacargas, camiones o en vialidad. Están en <a href="/ropa-de-trabajo-reflejante">ropa de trabajo reflejante</a>.</p>
+      <h2>Cuánto dura y de qué depende</h2>
+      <p>Depende del trabajo y del lavado. Arrodillarse sobre concreto o cargar herramienta con filo desgasta cualquier tela. Lo que sí controlas es el cuidado: agua fría, del revés y sin cloro alarga bastante la vida de la prenda. Lo detallamos en <a href="/articulos/como-cuidar-la-ropa-de-trabajo-de-mezclilla-para-que-dure-mas">cómo cuidar la ropa de trabajo</a>.</p>
+      <h2>Para comprar por volumen</h2>
+      <p>Manejamos precio de distribuidor por cantidad y corridas completas de tallas para cuadrillas. Arma la tuya en el <a href="/empresas">cotizador para empresas</a>, con bordado o DTF si quieres el logotipo.</p>
+      <h2>A qué parte del país llega</h2>
+      <p>Enviamos por paquetería con número de guía a toda la República, y entregamos en persona en el área metropolitana de Monterrey.</p>
+    `,
+    faq: [
+      ['¿Qué diferencia hay con un pantalón de mezclilla normal?', 'La tela es más firme, las costuras van dobles en las zonas que primero se revientan y el corte es recto para moverse en cuclillas. Lo comparamos en nuestro artículo de work jeans contra mezclilla normal.'],
+      ['¿Hasta qué talla manejan?', 'De la 28 a la 50, con el mismo corte en toda la corrida.'],
+      ['¿Tienen versión con reflejante?', 'Sí, el mismo pantalón con cintas reflejantes en verde o naranja.'],
+      ...faqComunes().slice(1),
+    ],
+  },
+
+  'onzas-de-mezclilla-para-ropa-de-trabajo': {
+    kicker: 'Guía técnica · Mezclilla',
+    h1: 'Onzas de mezclilla para ropa de trabajo',
+    h1Html: 'Las onzas de<br>la mezclilla.',
+    title: 'Onzas de Mezclilla para Ropa de Trabajo | Works Jeans',
+    description: 'Qué significan las onzas en la mezclilla de trabajo, para qué sirve cada rango y cómo elegir entre una tela ligera y una pesada según el puesto y el clima.',
+    intro: 'Cuando cotizas uniformes te van a preguntar de cuántas onzas quieres la mezclilla. Aquí está qué significa ese número y cómo elegir sin pagar de más ni quedarte corto.',
+    products: null,
+    body: `
+      <h2>Qué mide la onza</h2>
+      <p>La onza mide el peso de una yarda cuadrada de tela. Una mezclilla de doce onzas pesa doce onzas por yarda cuadrada. Más onzas significa tela más pesada y en general más resistente al raspón, pero también más rígida, más calurosa y más cara.</p>
+      <p>No es una medida de calidad. Una tela pesada mal tejida se rompe antes que una ligera bien hecha. La onza dice el peso, no el tejido ni el hilo.</p>
+      <h2>Para qué sirve cada rango</h2>
+      <p><b>Ligera, alrededor de ocho onzas.</b> Camisolas y trabajo en interiores con clima caliente. Se siente cómoda desde el primer día y no da calor, pero se desgasta más rápido en contacto con superficies ásperas.</p>
+      <p><b>Media, entre diez y doce onzas.</b> Es el rango donde vive la mayoría de la ropa de trabajo industrial. Aguanta el uso diario de planta y taller sin sentirse como una armadura, y es lo que la mayoría de las empresas termina pidiendo.</p>
+      <p><b>Pesada, de catorce onzas en adelante.</b> Obra, soldadura, minería y cualquier puesto donde la ropa se raspa contra material todo el día. Dura más, pero pesa, da calor y tarda en ablandarse.</p>
+      <h2>El clima pesa tanto como el puesto</h2>
+      <p>En el norte de México, con veranos de cuarenta grados, una camisola de catorce onzas se vuelve un problema de productividad. Muchas empresas piden pantalón pesado y camisola ligera, que es una buena combinación: la pierna es la que se raspa y el torso es el que suda.</p>
+      <h2>Cómo pedirlo sin equivocarte</h2>
+      <p>Pide siempre una muestra física antes de cerrar una corrida grande. Un número en una cotización no te dice cómo se siente la tela después de ocho horas. Nosotros te la damos en la tienda o te la enviamos; escríbenos por <a href="${WA}" target="_blank" rel="noopener">WhatsApp</a> y te decimos exactamente de cuántas onzas es la mezclilla de cada prenda.</p>
+      <h2>Qué más revisar además de la onza</h2>
+      <p>Si la tela es 100% algodón o tiene mezcla, porque el poliéster se funde con la chispa. Si las costuras van dobles en tiro y entrepierna. Si el acabado es preencogido. Y si la corrida completa de tallas sale del mismo patrón, para que la cuadrilla se vea pareja. Eso lo revisamos en <a href="/articulos/que-preguntar-antes-de-comprar-ropa-de-trabajo-por-mayoreo">qué preguntar antes de comprar por mayoreo</a>.</p>
+    `,
+    faq: [
+      ['¿Cuántas onzas debe tener la mezclilla de trabajo?', 'Para planta y taller, el rango de diez a doce onzas cubre bien. Para obra o soldadura conviene subir a catorce o más. Para camisola en clima caliente, una tela más ligera se trabaja mejor.'],
+      ['¿Más onzas significa mejor calidad?', 'No. La onza mide el peso de la tela, no el tejido ni el hilo. Una mezclilla ligera bien tejida puede durar más que una pesada mal hecha.'],
+      ['¿De cuántas onzas es su mezclilla?', 'Te damos la especificación exacta de cada prenda por WhatsApp, y te enviamos muestra física antes de una corrida grande.'],
+      ['¿Puedo pedir distinta onza para pantalón y camisola?', 'Sí, y es lo que recomendamos en climas calurosos: pierna más pesada y torso más ligero.'],
+    ],
+  },
+
+  'uniformes-industriales-mexico': {
+    kicker: 'Cobertura nacional',
+    h1: 'Uniformes industriales en México',
+    h1Html: 'Uniformes<br>industriales<br>en México.',
+    title: 'Uniformes Industriales en México | Fabricante | Works Jeans',
+    description: 'Fabricante de uniformes industriales de mezclilla con envío a toda la República: pantalón y camisola, corridas de tallas, bordado con tu logotipo y factura.',
+    intro: 'Fabricamos en Monterrey y enviamos a toda la República. Si tu planta está en Querétaro, Tijuana o Mérida, el pedido llega igual, con número de guía y factura.',
+    products: () => true,
+    body: `
+      <h2>Qué fabricamos</h2>
+      <p>Pantalón de trabajo y camisola de mezclilla 100% algodón, con versión reflejante en verde y naranja. Tallas de pantalón de la 28 a la 50 y de camisola de la XCH a la 5XG, con el mismo patrón en toda la corrida.</p>
+      <p>No somos una tienda que revende: fabricamos, y por eso podemos sostener el mismo corte pedido tras pedido y reponer tallas sueltas cuando entra alguien nuevo a la cuadrilla.</p>
+      <h2>Cómo se surte un pedido fuera de Nuevo León</h2>
+      <p>Armas la corrida por talla en el <a href="/empresas">cotizador para empresas</a>, te respondemos con precio por escrito el mismo día hábil, confirmas y sale por paquetería con número de guía. Puedes seguirlo en <a href="/rastrear">rastrear mi pedido</a>.</p>
+      <h2>Personalización con tu logotipo</h2>
+      <p>Bordado o estampado DTF con el logotipo de la empresa, el nombre del trabajador o el área. Se cotiza junto con la corrida; mándanos el logotipo en el formato que tengas.</p>
+      <h2>Factura y condiciones para empresa</h2>
+      <p>Emitimos CFDI con tus datos fiscales. Para volumen manejamos precio de distribuidor: pide la lista al cotizar.</p>
+      <h2>Si estás en el área de Monterrey</h2>
+      <p>Tenemos tienda física y entrega en persona en el área metropolitana. Ahí puedes ver la tela, probar tallas y recoger sin costo de envío: <a href="/uniformes-industriales-monterrey">uniformes industriales en Monterrey</a>.</p>
+      <h2>Antes de decidir</h2>
+      <p>Si estás comparando proveedores, revisa <a href="/onzas-de-mezclilla-para-ropa-de-trabajo">las onzas de la mezclilla</a> y <a href="/articulos/que-preguntar-antes-de-comprar-ropa-de-trabajo-por-mayoreo">qué preguntar antes de comprar por mayoreo</a>. Son las dos cosas que más cambian el resultado de una compra de uniformes.</p>
+    `,
+    faq: [
+      ['¿Envían a toda la República?', 'Sí, por paquetería con número de guía a cualquier estado. El costo se calcula con el código postal de entrega.'],
+      ['¿Cuánto tardan en surtir una corrida completa?', 'Depende del volumen y de si lleva personalización. Al cotizar te damos el plazo por escrito junto con el precio.'],
+      ['¿Puedo reponer tallas sueltas después?', 'Sí. Mantenemos el mismo patrón, así que la reposición se ve igual que el pedido original.'],
+      ...faqComunes().slice(1),
+    ],
+  },
+};
+
+const LANDINGS_EXTRA = { ...INDUSTRIAS, ...CIUDADES, ...PRODUCTO_Y_CLIENTE, ...APOYO, ...NUEVAS_2026_09, ...VOCABULARIO_2026_09_23 };
 
 // --- Artículos nuevos ------------------------------------------------------
 

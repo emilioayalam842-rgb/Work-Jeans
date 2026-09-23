@@ -1447,7 +1447,7 @@ function escapeXml(text) {
   return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
 }
 
-const CONTENT_LASTMOD = '2026-09-21';
+const CONTENT_LASTMOD = '2026-09-23';
 
 // Descripción para buscadores: Google corta alrededor de 160 caracteres, así que se arma con las
 // frases completas que quepan más la cola con tallas y envío.
@@ -1468,7 +1468,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260923y';
+const ASSET_V = '20260923z';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
