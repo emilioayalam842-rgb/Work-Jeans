@@ -319,7 +319,7 @@ test('panel: textos del inicio editables y etiqueta de envío', async () => {
   const after = await api('/');
   assert.match(after.text, /data-t="heroTitle">Uniformes<br>que aguantan\.</);
   assert.match(after.text, /class="promo-bar" data-t="promo">Envío gratis esta semana bx\/b</);
-  assert.match(after.text, /data-t="heroLead">Pantalones y camisas/);
+  assert.match(after.text, /data-t="heroLead">Jeans de trabajo y camisas/);
   await api('/api/admin/site-texts', { method: 'PUT', body: { texts: {} } });
   assert.match((await api('/')).text, /data-t="heroTitle">Pantalones<br>/);
   const orders = (await api('/api/admin/orders')).json;

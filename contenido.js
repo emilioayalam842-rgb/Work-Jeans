@@ -14,6 +14,10 @@ const LANDINGS = {
     intro: 'Mezclilla resistente con cintas reflejantes cosidas en pecho, mangas y piernas. Para que tu equipo se vea de lejos sin cambiar la ropa que ya aguanta el trabajo.',
     products: (p) => /reflejante/.test(p.id),
     body: `
+      <h2>Pantalón naranja, pantalón verde: de qué color conviene</h2>
+      <p>La gente los busca por color antes que por la palabra reflejante: pantalón naranja, camisa verde. El color de la cinta no cambia la protección, cambia el contraste con el fondo donde trabajas. El naranja resalta contra vegetación, tierra y concreto, así que es el de obra, vialidad y patio exterior. El verde resalta contra maquinaria oscura y naves industriales, y es el que piden más en planta y almacén.</p>
+      <p>Manejamos las dos versiones en pantalón y en camisa, con el mismo corte y la misma mezclilla que el resto de la línea.</p>
+
       <h2>Qué es la ropa reflejante y cuándo ayuda</h2>
       <p>La ropa reflejante lleva cintas retrorreflectantes que devuelven la luz de faros y lámparas hacia su origen. Así, una persona que trabaja de noche, en vialidades, patios de maniobras, plantas con montacargas o zonas con poca luz se distingue a decenas de metros. En México, la NOM-017-STPS-2024 (publicada en el DOF el 28 de marzo de 2025 y vigente desde el 28 de septiembre de 2025, en sustitución de la NOM-017-STPS-2008) obliga al patrón a seleccionar y entregar el equipo de protección personal según los riesgos de cada puesto; en muchos giros la ropa con reflejante forma parte de ese equipo.</p>
       <p><strong>Importante:</strong> nuestras prendas llevan cinta reflejante cosida sobre mezclilla. No son prendas certificadas de alta visibilidad bajo ANSI/ISEA 107 ni ISO 20471. Si el reglamento de tu centro de trabajo exige una prenda certificada, consúltanos antes de comprar.</p>
@@ -95,7 +99,7 @@ const LANDINGS = {
     h1Html: 'Pantalón de<br>mezclilla para<br>trabajo.',
     title: 'Pantalón de Mezclilla para Trabajo Resistente | Works Jeans',
     description: 'Pantalón de mezclilla para trabajo 100% algodón, corte recto, cinco bolsas y costuras reforzadas. Tallas 28 a 50, con opción reflejante y envío a México.',
-    intro: 'El pantalón de mezclilla que sí aguanta el trabajo: tela pesada, remaches, cinco bolsas y tallas hasta la 50.',
+    intro: 'El pantalón de mezclilla que sí aguanta el trabajo: tela pesada, remaches, cinco bolsas y tallas hasta la 50. Unos jeans de trabajo de verdad, no un pantalón de vestir disfrazado.',
     products: (p) => p.category === 'Pantalones',
     body: `
       <h2>Qué hace diferente a un pantalón de mezclilla para trabajo</h2>
