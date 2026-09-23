@@ -3339,3 +3339,29 @@ h2 + .faq-list, h3 + .faq-list, .content-body h2 + .faq-list { margin-top: 24px;
   .feature { padding: 24px 20px; }
   .feature-icon { width: 40px; height: 40px; border-radius: 12px; }
 }
+
+/* ============================================================
+   Pasos de compra: el número va dentro de un círculo sólido.
+   En los pasos el orden sí significa algo, así que el número se queda; lo que cambia es
+   cómo se ve: de numeral hueco de cartel a un círculo amarillo con el número dentro.
+   ============================================================ */
+.step .num,
+.mayoreo-list .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--ink-deep);
+  font-family: var(--body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  -webkit-text-stroke: 0;
+  flex: none;
+}
+.section--dark .step .num { background: var(--yellow); color: var(--ink-deep); -webkit-text-stroke: 0; }
+.mayoreo-list .num { width: 28px; height: 28px; font-size: 0.85rem; margin-right: 10px; }
+.mayoreo-list li { display: flex; align-items: flex-start; gap: 0; }
