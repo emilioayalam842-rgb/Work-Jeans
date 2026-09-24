@@ -25,7 +25,7 @@
     actividad: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
     envios: '<path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="17.5" cy="18" r="1.8"/>',
     alertas: '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
-    envios_preparar: '<path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="m8 15 3 2 5-5"/>',
+    preparar: '<path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="m8 15 3 2 5-5"/>',
     pagos: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/>',
     segmentos: '<circle cx="9" cy="9" r="5"/><circle cx="15" cy="15" r="5"/>',
   };

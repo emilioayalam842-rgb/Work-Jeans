@@ -1468,7 +1468,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260924i';
+const ASSET_V = '20260924k';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3481,6 +3481,50 @@ app.get('/api/admin/orders-summary', requireAdmin, perm('pedidos.ver'), (req, re
     reviewsPending: reviews.filter((r) => r.status === 'pendiente').length,
     newLeads: since ? leads.filter((l) => new Date(l.createdAt) > since).map((l) => ({ id: l.id, company: l.company || l.name, totalPieces: l.totalPieces || 0, createdAt: l.createdAt })) : [],
   });
+});
+
+// Pedidos listos para empacar, con lo que hay que meter en la caja.
+app.get('/api/admin/preparar', requireAdmin, perm('pedidos.ver'), (req, res) => {
+  const filas = getOrders()
+    .filter((o) => ['pagado', 'preparacion'].includes(o.status))
+    .map((o) => ({
+      id: o.id,
+      createdAt: o.createdAt,
+      cliente: o.customerName || '',
+      telefono: o.customerPhone || '',
+      destino: [o.shipping?.city, o.shipping?.state].filter(Boolean).join(', ') || 'recoge en tienda',
+      estado: o.status,
+      piezas: (o.items || []).reduce((n, i) => n + i.quantity, 0),
+      lineas: (o.items || []).map((i) => ({ nombre: i.name, talla: i.size || '', cantidad: i.quantity })),
+      conGuia: Boolean(o.tracking?.number),
+      totalCents: o.totalCents,
+      factura: Boolean(o.invoice?.requested && !o.invoice?.issued),
+    }))
+    .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+  res.set('Cache-Control', 'no-store');
+  res.json({ piezas: filas.reduce((n, f) => n + f.piezas, 0), filas });
+});
+
+// Cambio de estado en lote desde la pantalla de preparación.
+app.put('/api/admin/orders-estado', requireAdmin, perm('pedidos.editar'), (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 100).map(String) : [];
+  const estado = String(req.body?.status || '');
+  if (!ids.length) { res.status(400).json({ error: 'No se recibió ningún pedido.' }); return; }
+  if (!['preparacion', 'enviado'].includes(estado)) { res.status(400).json({ error: 'Solo se puede pasar a preparación o a enviado desde aquí.' }); return; }
+  const orders = getOrders();
+  const cambiados = [];
+  for (const o of orders) {
+    if (!ids.includes(o.id) || o.status === estado) continue;
+    if (estado === 'enviado' && !o.tracking?.number) continue; // sin guía no se marca enviado
+    o.status = estado;
+    if (estado === 'preparacion') o.preparingAt = o.preparingAt || new Date().toISOString();
+    if (estado === 'enviado') o.shippedAt = o.shippedAt || new Date().toISOString();
+    cambiados.push(o.id);
+  }
+  if (cambiados.length) saveOrders(orders);
+  auditLog(req, 'pedidos.estado-lote', { details: { estado, cambiados: cambiados.length } });
+  if (estado === 'enviado') cambiados.forEach((id) => emailCustomer(id, 'enviado'));
+  res.json({ cambiados, sinGuia: ids.length - cambiados.length });
 });
 
 // Tallas que hay que reponer, ordenadas por urgencia.

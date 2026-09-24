@@ -1,6 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /workmapadmin.html
+Disallow: /empaque.html
+Disallow: /nota.html
+Disallow: /etiqueta.html
 Disallow: /api/
 
 Sitemap: https://www.workjeans.mx/sitemap.xml

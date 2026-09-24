@@ -1959,3 +1959,18 @@ td.admin-order-btns .admin-icon-btn:first-child { margin-left: 0; }
 
 /* Fila que pide revisión: un envío que lleva más de una semana sin confirmarse */
 .admin-row-warn > td { background: #fffdf3; }
+
+/* Barra de acciones en lote y columna de selección */
+.admin-bulkbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  background: #f7f8f9;
+  border-radius: 14px;
+}
+.admin-bulkbar > span { font-size: 0.92rem; font-weight: 600; margin-right: auto; }
+.admin-col-check { width: 40px; }
+.admin-col-check input { width: 18px; height: 18px; accent-color: var(--ink-deep); }
