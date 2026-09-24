@@ -2076,7 +2076,12 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
   });
 
   if (!res.ok) {
-    settingsError.textContent = 'No se pudo guardar la configuración.';
+    // El servidor explica qué campo está mal; antes se tragaba el motivo y solo decía "no se pudo".
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 401) { settingsError.textContent = 'Tu sesión expiró. Vuelve a entrar y guarda de nuevo.'; showLogin(); return; }
+    settingsError.textContent = d.error || (res.status === 403
+      ? 'La sesión caducó o la petición no viene de este sitio. Recarga la página con Cmd+Shift+R y vuelve a intentar.'
+      : 'No se pudo guardar la configuración.');
     return;
   }
   settingsSuccess.textContent = 'Configuración guardada.';
