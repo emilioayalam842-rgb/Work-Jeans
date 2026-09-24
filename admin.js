@@ -366,6 +366,8 @@ function showTab(name) {
   if (name === 'configuracion') loadSettingsForm();
   if (name === 'usuarios') window.loadUsers?.();
   if (name === 'actividad') window.loadAudit?.();
+  if (name === 'alertas') window.loadAlertas?.();
+  if (name === 'envios') window.loadEnvios?.();
   if (window.matchMedia('(max-width: 700px)').matches) document.querySelector('.admin-side .admin-tab.active')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
 }
 

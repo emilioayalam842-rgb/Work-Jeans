@@ -1956,3 +1956,6 @@ td.admin-order-btns .admin-icon-btn:first-child { margin-left: 0; }
   .admin-side-items { flex-direction: row; flex-wrap: wrap; }
   .admin-side-store { margin-top: 0; border-top: 0; padding-top: 10px; }
 }
+
+/* Fila que pide revisión: un envío que lleva más de una semana sin confirmarse */
+.admin-row-warn > td { background: #fffdf3; }

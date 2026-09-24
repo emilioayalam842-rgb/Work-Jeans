@@ -1468,7 +1468,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260924h';
+const ASSET_V = '20260924i';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3481,6 +3481,49 @@ app.get('/api/admin/orders-summary', requireAdmin, perm('pedidos.ver'), (req, re
     reviewsPending: reviews.filter((r) => r.status === 'pendiente').length,
     newLeads: since ? leads.filter((l) => new Date(l.createdAt) > since).map((l) => ({ id: l.id, company: l.company || l.name, totalPieces: l.totalPieces || 0, createdAt: l.createdAt })) : [],
   });
+});
+
+// Tallas que hay que reponer, ordenadas por urgencia.
+app.get('/api/admin/alertas-stock', requireAdmin, perm('inventario.ver'), (req, res) => {
+  const limite = lowStockThreshold();
+  const filas = [];
+  for (const p of getProducts()) {
+    for (const v of p.sizes || []) {
+      const stock = Number(v.stock) || 0;
+      if (stock <= limite) filas.push({ id: p.id, producto: p.name, categoria: p.category || '', talla: v.size, stock, agotada: stock <= 0 });
+    }
+  }
+  filas.sort((a, b) => a.stock - b.stock || a.producto.localeCompare(b.producto));
+  res.set('Cache-Control', 'no-store');
+  res.json({ limite, agotadas: filas.filter((f) => f.agotada).length, filas });
+});
+
+// Envíos en curso: una guía por pedido, con los días que lleva en camino.
+app.get('/api/admin/envios', requireAdmin, perm('pedidos.ver'), (req, res) => {
+  const ahora = Date.now();
+  const filas = getOrders()
+    .filter((o) => o.tracking?.number || ['enviado', 'entregado'].includes(o.status))
+    .map((o) => {
+      const salida = o.shippedAt || null;
+      const dias = salida ? Math.floor((ahora - new Date(salida).getTime()) / 86400000) : null;
+      return {
+        id: o.id,
+        cliente: o.customerName || '',
+        telefono: o.customerPhone || '',
+        ciudad: [o.shipping?.city, o.shipping?.state].filter(Boolean).join(', '),
+        estado: o.status,
+        paqueteria: o.tracking?.carrier || '',
+        guia: o.tracking?.number || '',
+        url: o.tracking?.url || '',
+        shippedAt: salida,
+        dias,
+        // Una guía que lleva más de una semana en camino y sigue sin entregarse necesita revisión.
+        atrasado: o.status === 'enviado' && dias !== null && dias >= 7,
+      };
+    })
+    .sort((a, b) => String(b.shippedAt || '').localeCompare(String(a.shippedAt || '')));
+  res.set('Cache-Control', 'no-store');
+  res.json({ enCamino: filas.filter((f) => f.estado === 'enviado').length, atrasados: filas.filter((f) => f.atrasado).length, filas });
 });
 
 // Contadores del menú lateral: lo que está esperando a alguien, por sección.
