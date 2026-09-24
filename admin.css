@@ -1978,3 +1978,21 @@ td.admin-order-btns .admin-icon-btn:first-child { margin-left: 0; }
 /* Formulario de link de pago */
 .admin-pago-form { margin-bottom: 18px; }
 .admin-pago-form .btn { margin-top: 12px; }
+
+/* Formulario de correo al segmento: etiqueta arriba y campo de ancho completo */
+#segCorreoForm { display: grid; gap: 6px; }
+#segCorreoForm label { font-size: 0.85rem; font-weight: 500; color: #5c5f66; margin-top: 12px; }
+#segCorreoForm label:first-of-type { margin-top: 0; }
+#segCorreoForm input,
+#segCorreoForm textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 11px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: #fff;
+}
+#segCorreoForm textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
+#segCorreoForm .admin-form-actions { margin-top: 16px; }
+#segChips { margin-bottom: 4px; }

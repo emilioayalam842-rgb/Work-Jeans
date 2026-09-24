@@ -369,6 +369,7 @@ function showTab(name) {
   if (name === 'alertas') window.loadAlertas?.();
   if (name === 'preparar') window.loadPreparar?.();
   if (name === 'pagos') window.loadPagos?.();
+  if (name === 'segmentos') window.loadSegmentos?.();
   if (name === 'envios') window.loadEnvios?.();
   if (window.matchMedia('(max-width: 700px)').matches) document.querySelector('.admin-side .admin-tab.active')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
 }

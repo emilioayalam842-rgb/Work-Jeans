@@ -1468,7 +1468,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260924l';
+const ASSET_V = '20260924n';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -2919,7 +2919,13 @@ app.post('/api/admin/test-email', requireAdmin, perm('configuracion.editar'), as
     res.status(400).json({ error: 'Guarda primero un correo para avisos.' });
     return;
   }
-  const ok = await sendEmail({ subject: 'Prueba de avisos · Works Jeans', html: '<p>Los avisos del panel de Works Jeans están funcionando.</p>' });
+  // Si el panel manda asunto y cuerpo, la prueba usa ese contenido: así se ve el correo real
+  // antes de mandárselo a los clientes desde Segmentos.
+  const asunto = cleanText(req.body?.subject, 120);
+  const cuerpo = String(req.body?.body || '').trim().slice(0, 4000);
+  const ok = asunto && cuerpo
+    ? await sendEmail({ subject: `[Prueba] ${asunto}`, html: emailLayout(asunto, textToHtml(cuerpo)) })
+    : await sendEmail({ subject: 'Prueba de avisos · Works Jeans', html: '<p>Los avisos del panel de Works Jeans están funcionando.</p>' });
   if (!ok) {
     res.status(502).json({ error: 'Resend rechazó el envío. Revisa la llave y que el correo sea el de tu cuenta de Resend (o verifica tu dominio).' });
     return;
@@ -3481,6 +3487,75 @@ app.get('/api/admin/orders-summary', requireAdmin, perm('pedidos.ver'), (req, re
     reviewsPending: reviews.filter((r) => r.status === 'pendiente').length,
     newLeads: since ? leads.filter((l) => new Date(l.createdAt) > since).map((l) => ({ id: l.id, company: l.company || l.name, totalPieces: l.totalPieces || 0, createdAt: l.createdAt })) : [],
   });
+});
+
+// --- Segmentos de clientes y correo al segmento ---------------------------
+// Agrupa por comportamiento de compra, no por datos inventados: lo que se sabe de cada
+// cliente sale de sus propios pedidos.
+const SEGMENTOS = {
+  todos: { nombre: 'Todos los clientes con correo', prueba: () => true },
+  recurrentes: { nombre: 'Compraron más de una vez', prueba: (c) => c.orders >= 2 },
+  unaVez: { nombre: 'Compraron una sola vez', prueba: (c) => c.orders === 1 },
+  mayoreo: { nombre: 'Pedidos de 10 piezas o más', prueba: (c) => c.pieces >= 10 },
+  empresas: { nombre: 'Con empresa o factura', prueba: (c) => Boolean(c.company) || c.facturo },
+  dormidos: { nombre: 'Sin comprar en 90 días', prueba: (c) => c.lastAt && Date.now() - new Date(c.lastAt).getTime() > 90 * 86400000 },
+  reflejante: { nombre: 'Compraron reflejante', prueba: (c) => c.reflejante },
+};
+
+function clientesConCompras() {
+  const mapa = new Map();
+  for (const o of getOrders()) {
+    if (o.status === 'cancelado') continue;
+    const correo = String(o.customerEmail || '').trim().toLowerCase();
+    if (!correo) continue;
+    const c = mapa.get(correo) || { email: correo, name: '', phone: '', company: '', orders: 0, pieces: 0, totalCents: 0, lastAt: '', facturo: false, reflejante: false };
+    if (o.customerName && o.customerName.length > c.name.length) c.name = o.customerName;
+    if (o.customerPhone && !c.phone) c.phone = o.customerPhone;
+    if (o.invoice?.name && !c.company) c.company = o.invoice.name;
+    if (o.invoice?.requested) c.facturo = true;
+    if ((o.items || []).some((i) => /reflejante/i.test(i.name || ''))) c.reflejante = true;
+    c.orders += 1;
+    c.pieces += (o.items || []).reduce((n, i) => n + i.quantity, 0);
+    c.totalCents += o.totalCents || 0;
+    if (!c.lastAt || o.createdAt > c.lastAt) c.lastAt = o.createdAt;
+    mapa.set(correo, c);
+  }
+  return [...mapa.values()].sort((a, b) => b.totalCents - a.totalCents);
+}
+
+app.get('/api/admin/segmentos', requireAdmin, perm('clientes.ver'), (req, res) => {
+  const clientes = clientesConCompras();
+  const clave = String(req.query.segmento || 'todos');
+  const seg = SEGMENTOS[clave] || SEGMENTOS.todos;
+  const dentro = clientes.filter(seg.prueba);
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    segmentos: Object.entries(SEGMENTOS).map(([id, s]) => ({ id, nombre: s.nombre, total: clientes.filter(s.prueba).length })),
+    seleccionado: clave,
+    clientes: dentro.slice(0, 500),
+  });
+});
+
+app.post('/api/admin/segmentos/correo', requireAdmin, perm('configuracion.editar'), requireReauth, async (req, res) => {
+  const clave = String(req.body?.segmento || '');
+  const seg = SEGMENTOS[clave];
+  if (!seg) { res.status(400).json({ error: 'Ese segmento no existe.' }); return; }
+  const asunto = cleanText(req.body?.subject, 120);
+  const cuerpo = String(req.body?.body || '').trim().slice(0, 4000);
+  if (!asunto || cuerpo.length < 20) { res.status(400).json({ error: 'Falta el asunto o el mensaje es muy corto.' }); return; }
+  if (!process.env.RESEND_API_KEY) { res.status(503).json({ error: 'Falta la llave de Resend para poder enviar.' }); return; }
+  const destinatarios = clientesConCompras().filter(seg.prueba);
+  if (!destinatarios.length) { res.status(400).json({ error: 'Ese segmento no tiene a nadie con correo.' }); return; }
+
+  const html = emailLayout(asunto, textToHtml(cuerpo));
+  let enviados = 0; let fallidos = 0;
+  for (const c of destinatarios) {
+    // De uno en uno para que cada quien reciba su propio correo y nadie vea la lista.
+    const r = await sendEmailTo({ to: c.email, subject: asunto, html });
+    if (r.ok) enviados += 1; else fallidos += 1;
+  }
+  auditLog(req, 'marketing.correo', { details: { segmento: clave, enviados, fallidos } });
+  res.json({ enviados, fallidos, total: destinatarios.length });
 });
 
 // --- Links de pago -------------------------------------------------------
