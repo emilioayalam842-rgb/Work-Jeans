@@ -1996,3 +1996,23 @@ td.admin-order-btns .admin-icon-btn:first-child { margin-left: 0; }
 #segCorreoForm textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
 #segCorreoForm .admin-form-actions { margin-top: 16px; }
 #segChips { margin-bottom: 4px; }
+
+/* Formulario de link de pago: etiqueta encima del campo y campos de ancho completo.
+   Sin esto heredaba la maqueta de los formularios modales, donde la etiqueta va en línea. */
+#pagoForm .admin-field-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+#pagoForm .admin-field-grid > div { display: grid; gap: 6px; }
+#pagoForm label { font-size: 0.85rem; font-weight: 500; color: #5c5f66; margin: 0; }
+#pagoForm input {
+  width: 100%;
+  font: inherit;
+  font-size: 0.95rem;
+  min-height: 46px;
+  padding: 11px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: #fff;
+}
+#pagoForm input:focus { outline: none; border-color: var(--ink-deep); box-shadow: 0 0 0 3px rgba(255, 207, 47, 0.45); }
+#pagoForm .btn { margin-top: 18px; min-height: 46px; }
+#pagoError { margin-top: 10px; }
+#pagosEstadoPasarela { margin-bottom: 14px; }
