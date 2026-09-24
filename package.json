@@ -6,11 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node --test test/*.test.js",
-    "higgsfield": "node higgsfield/index.js"
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
-    "@higgsfield/client": "^0.2.6",
     "compression": "^1.7.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
