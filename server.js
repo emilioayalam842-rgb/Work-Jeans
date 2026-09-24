@@ -1468,7 +1468,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260924f';
+const ASSET_V = '20260924g';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -2015,10 +2015,11 @@ const REDES = [
 
 // Teléfono en formato internacional a partir de lo que guarda el panel.
 function telefonoE164(cfg) {
+  // Solo el número de WhatsApp trae la clave del país. Si está mal, se omite el teléfono en los
+  // datos estructurados en vez de inventarle una clave: publicar un número equivocado es peor
+  // que no publicar ninguno, porque Google lo compara con la ficha del negocio.
   const digitos = String(cfg.whatsappNumber || '').replace(/\D/g, '');
-  if (digitos.length >= 10) return `+${digitos}`;
-  const sueltos = String(cfg.phoneDisplay || '').replace(/\D/g, '');
-  return sueltos.length >= 10 ? `+52${sueltos}` : '';
+  return digitos.length >= 10 && digitos.length <= 15 ? `+${digitos}` : '';
 }
 
 function negocioJsonLd(origin) {
@@ -2845,15 +2846,18 @@ app.put('/api/admin/settings', requireAdmin, perm('configuracion.editar'), (req,
   // Nada de lo que guarda el panel debe llevar etiquetas HTML.
   if (req.body && typeof req.body === 'object') {
     limpiarTextos(req.body, { storeName: 80, phoneDisplay: 40, address: 200, hours: 120, googleRating: 10, googleReviewCount: 10, mapsQuery: 200, notifyEmail: 160, ga4Id: 30 });
-    // El número de WhatsApp tiene que ser número. El autocompletado del navegador llegó a
-    // meter aquí el país del formulario de direcciones y dejó los enlaces rotos.
+    // El número de WhatsApp tiene que ser número: el autocompletado del navegador llegó a meter
+    // aquí el país del formulario de direcciones. Si llega algo que no sirve se conserva el valor
+    // anterior y se avisa, en vez de rechazar el guardado completo: bloquear todo impedía
+    // corregir los demás campos, que es justo lo que hay que poder hacer cuando algo se ensucia.
     if ('whatsappNumber' in req.body) {
       const digitos = String(req.body.whatsappNumber || '').replace(/\D/g, '');
-      if (digitos.length < 10 || digitos.length > 15) {
-        res.status(400).json({ error: 'El número de WhatsApp debe traer entre 10 y 15 dígitos, con la clave del país y sin el signo de más.' });
-        return;
+      if (digitos.length >= 10 && digitos.length <= 15) {
+        req.body.whatsappNumber = digitos;
+      } else {
+        delete req.body.whatsappNumber;
+        req.avisoWhatsapp = 'Lo demás se guardó. El número de WhatsApp no cambió porque debe traer entre 10 y 15 dígitos, con la clave del país y sin el signo de más.';
       }
-      req.body.whatsappNumber = digitos;
     }
     for (const lista of ['categories', 'collections', 'warehouses']) {
       if (Array.isArray(req.body[lista])) {
@@ -2883,7 +2887,7 @@ app.put('/api/admin/settings', requireAdmin, perm('configuracion.editar'), (req,
   const { security: _ignored, ...body } = req.body || {};
   const updated = { ...current, ...body, security: current.security };
   saveSettings(updated);
-  res.json(updated);
+  res.json(req.avisoWhatsapp ? { ...updated, aviso: req.avisoWhatsapp } : updated);
 });
 
 app.get('/api/admin/site-texts', requireAdmin, perm('configuracion.ver'), (req, res) => {

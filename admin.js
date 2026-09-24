@@ -2084,7 +2084,9 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
       : 'No se pudo guardar la configuración.');
     return;
   }
-  settingsSuccess.textContent = 'Configuración guardada.';
+  const guardado = await res.json().catch(() => ({}));
+  settingsSuccess.textContent = guardado.aviso ? '' : 'Configuración guardada.';
+  settingsError.textContent = guardado.aviso || '';
   await loadSettingsCache();
   renderProductsTable(productsCache);
 });
