@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260924k">
-  <link rel="stylesheet" href="admin.css?v=20260924k">
+  <link rel="stylesheet" href="styles.css?v=20260924l">
+  <link rel="stylesheet" href="admin.css?v=20260924l">
 </head>
 <body class="admin-body">
 
@@ -95,6 +95,7 @@
             <button class="admin-tab" data-tab="envios" data-perm="pedidos.ver">Rastreo de envíos</button>
             <button class="admin-tab" data-tab="pedidos" data-perm="pedidos.ver">Pedidos<i class="admin-side-count" data-count="pedidos" hidden></i></button>
             <button class="admin-tab" data-tab="cotizaciones" data-perm="pedidos.ver">Cotizaciones<i class="admin-side-count" data-count="cotizaciones" hidden></i></button>
+            <button class="admin-tab" data-tab="pagos" data-perm="pedidos.ver">Links de pago</button>
             <button class="admin-tab" data-tab="resenas" data-perm="pedidos.ver">Reseñas<i class="admin-side-count" data-count="resenas" hidden></i></button>
             <button class="admin-tab" data-tab="devoluciones" data-perm="devoluciones.ver">Devoluciones<i class="admin-side-count" data-count="devoluciones" hidden></i></button>
             <button class="admin-tab" data-tab="clientes" data-perm="clientes.ver">Clientes</button>
@@ -792,6 +793,33 @@
         </div>
         <h3 class="admin-section-spacer">Qué puede hacer cada rol</h3>
         <div class="admin-roles-grid" id="rolesGrid"></div>
+      </div>
+
+      <div id="tabPagos" class="admin-tab-panel" hidden>
+        <div class="admin-toolbar">
+          <h2>Links de pago</h2>
+          <div class="admin-toolbar-actions">
+            <button type="button" class="admin-inline-btn" id="pagosRefrescar">Actualizar</button>
+          </div>
+        </div>
+        <p class="admin-help" id="pagosEstadoPasarela">Cargando…</p>
+        <form class="admin-panel-box admin-pago-form" id="pagoForm" autocomplete="off">
+          <div class="admin-field-grid">
+            <div><label for="pagoImporte">Importe en pesos</label><input autocomplete="off" type="text" id="pagoImporte" inputmode="decimal" placeholder="1250.00" required></div>
+            <div><label for="pagoConcepto">Concepto</label><input autocomplete="off" type="text" id="pagoConcepto" maxlength="120" placeholder="10 pantalones talla 34"></div>
+            <div><label for="pagoNombre">Nombre del cliente</label><input autocomplete="off" type="text" id="pagoNombre" maxlength="120" placeholder="Juan Pérez"></div>
+            <div><label for="pagoCorreo">Correo del cliente</label><input autocomplete="off" type="email" id="pagoCorreo" maxlength="120" placeholder="cliente@correo.com" required></div>
+            <div><label for="pagoTelefono">WhatsApp del cliente (10 dígitos)</label><input autocomplete="off" type="text" id="pagoTelefono" inputmode="numeric" maxlength="14" placeholder="8112345678"></div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="pagoCrear">Generar link de cobro</button>
+          <p class="admin-error" id="pagoError"></p>
+        </form>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="pagosTable">
+            <thead><tr><th>Creado</th><th>Cliente</th><th>Concepto</th><th>Importe</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="pagosBody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div id="tabPreparar" class="admin-tab-panel" hidden>
@@ -1537,21 +1565,22 @@
   </div>
 
   <p class="admin-sr-live" id="stockLive" role="status" aria-live="polite"></p>
-  <script src="admin-reauth.js?v=20260924k"></script>
-  <script src="admin.js?v=20260924k"></script>
-  <script src="admin-catalogo.js?v=20260924k"></script>
-  <script src="admin-compras.js?v=20260924k"></script>
-  <script src="admin-marketing.js?v=20260924k"></script>
-  <script src="admin-reportes.js?v=20260924k"></script>
-  <script src="admin-dashboard.js?v=20260924k"></script>
-  <script src="admin-pedidos.js?v=20260924k"></script>
-  <script src="admin-ui.js?v=20260924k"></script>
-  <script src="admin-mas.js?v=20260924k"></script>
-  <script src="admin-operacion.js?v=20260924k"></script>
-  <script src="admin-seguridad.js?v=20260924k"></script>
-  <script src="admin-leads.js?v=20260924k"></script>
-  <script src="admin-resenas.js?v=20260924k"></script>
-  <script src="admin-contenido.js?v=20260924k"></script>
-  <script src="admin-sistema.js?v=20260924k"></script>
+  <script src="admin-reauth.js?v=20260924l"></script>
+  <script src="admin.js?v=20260924l"></script>
+  <script src="admin-catalogo.js?v=20260924l"></script>
+  <script src="admin-compras.js?v=20260924l"></script>
+  <script src="admin-marketing.js?v=20260924l"></script>
+  <script src="admin-reportes.js?v=20260924l"></script>
+  <script src="admin-dashboard.js?v=20260924l"></script>
+  <script src="admin-pedidos.js?v=20260924l"></script>
+  <script src="admin-ui.js?v=20260924l"></script>
+  <script src="admin-mas.js?v=20260924l"></script>
+  <script src="admin-operacion.js?v=20260924l"></script>
+  <script src="admin-pagos.js?v=20260924l"></script>
+  <script src="admin-seguridad.js?v=20260924l"></script>
+  <script src="admin-leads.js?v=20260924l"></script>
+  <script src="admin-resenas.js?v=20260924l"></script>
+  <script src="admin-contenido.js?v=20260924l"></script>
+  <script src="admin-sistema.js?v=20260924l"></script>
 </body>
 </html>

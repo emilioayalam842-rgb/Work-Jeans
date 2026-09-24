@@ -1468,7 +1468,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260924k';
+const ASSET_V = '20260924l';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3481,6 +3481,88 @@ app.get('/api/admin/orders-summary', requireAdmin, perm('pedidos.ver'), (req, re
     reviewsPending: reviews.filter((r) => r.status === 'pendiente').length,
     newLeads: since ? leads.filter((l) => new Date(l.createdAt) > since).map((l) => ({ id: l.id, company: l.company || l.name, totalPieces: l.totalPieces || 0, createdAt: l.createdAt })) : [],
   });
+});
+
+// --- Links de pago -------------------------------------------------------
+// Cobro a distancia: se genera un enlace de Openpay y se le manda al cliente por WhatsApp.
+// Queda guardado con su estado para saber cuáles ya se pagaron.
+const PAYLINKS_PATH = path.join(DATA_DIR, 'payment-links.json');
+const getPayLinks = () => readJsonList(PAYLINKS_PATH);
+const savePayLinks = (lista) => writeFileSafe(PAYLINKS_PATH, JSON.stringify(lista.slice(-400), null, 2) + '\n');
+
+app.get('/api/admin/links-pago', requireAdmin, perm('pedidos.ver'), (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ activo: Boolean(OPENPAY), sandbox: Boolean(OPENPAY && OPENPAY.sandbox), links: getPayLinks().slice(-60).reverse() });
+});
+
+app.post('/api/admin/links-pago', requireAdmin, perm('pedidos.editar'), async (req, res) => {
+  if (!OPENPAY) { res.status(503).json({ error: 'Falta conectar la pasarela: define las variables de Openpay en el servidor.' }); return; }
+  const b = req.body || {};
+  const pesos = Number(String(b.amount || '').replace(/[^\d.]/g, ''));
+  if (!Number.isFinite(pesos) || pesos < 10 || pesos > 200000) { res.status(400).json({ error: 'El importe debe estar entre 10 y 200,000 pesos.' }); return; }
+  const concepto = cleanText(b.concept, 120) || 'Pedido Works Jeans';
+  const nombre = cleanText(b.customerName, 120) || 'Cliente';
+  const correo = String(b.customerEmail || '').trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) { res.status(400).json({ error: 'Openpay pide un correo válido para generar el cobro.' }); return; }
+  const telefono = String(b.customerPhone || '').replace(/\D/g, '').slice(-10);
+  const [pila, ...resto] = nombre.split(/\s+/);
+  const referencia = `link_${Date.now().toString(36)}_${crypto.randomBytes(3).toString('hex')}`;
+
+  try {
+    const charge = await openpayRequest('POST', '/charges', {
+      amount: Number(pesos.toFixed(2)),
+      currency: 'MXN',
+      description: concepto,
+      order_id: referencia,
+      method: 'card',
+      confirm: 'false',
+      send_email: 'false',
+      use_card_points: 'false',
+      redirect_url: `${publicOrigin(req)}/success.html?openpay=1`,
+      customer: { name: pila, last_name: resto.join(' ') || '.', email: correo, ...(telefono.length === 10 ? { phone_number: telefono } : {}) },
+    });
+    const url = charge.payment_method?.url;
+    if (!url) throw new Error('Openpay no devolvió la página de pago.');
+    const link = {
+      id: referencia,
+      chargeId: charge.id,
+      createdAt: new Date().toISOString(),
+      createdBy: req.session?.user?.username || '',
+      amountCents: Math.round(pesos * 100),
+      concept: concepto,
+      customerName: nombre,
+      customerEmail: correo,
+      customerPhone: telefono,
+      url,
+      status: 'pendiente',
+    };
+    const lista = getPayLinks();
+    lista.push(link);
+    savePayLinks(lista);
+    auditLog(req, 'pagos.link', { details: { referencia, importe: link.amountCents } });
+    res.json(link);
+  } catch (err) {
+    logError('pagos.link', err);
+    res.status(502).json({ error: err.message || 'Openpay no pudo crear el cobro.' });
+  }
+});
+
+// Revisa contra Openpay si ya se pagó.
+app.post('/api/admin/links-pago/:id/revisar', requireAdmin, perm('pedidos.ver'), async (req, res) => {
+  if (!OPENPAY) { res.status(503).json({ error: 'La pasarela no está conectada.' }); return; }
+  const lista = getPayLinks();
+  const link = lista.find((l) => l.id === req.params.id);
+  if (!link) { res.status(404).json({ error: 'Ese cobro no existe.' }); return; }
+  try {
+    const charge = await openpayRequest('GET', `/charges/${String(link.chargeId).replace(/[^\w-]/g, '')}`);
+    link.status = charge.status === 'completed' ? 'pagado' : ['failed', 'cancelled', 'expired'].includes(charge.status) ? 'fallido' : 'pendiente';
+    link.checkedAt = new Date().toISOString();
+    savePayLinks(lista);
+    res.json(link);
+  } catch (err) {
+    logError('pagos.link.revisar', err);
+    res.status(502).json({ error: 'No se pudo consultar el cobro en Openpay.' });
+  }
 });
 
 // Pedidos listos para empacar, con lo que hay que meter en la caja.
