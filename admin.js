@@ -2125,3 +2125,45 @@ async function cargarWhatsapp() {
     caja.innerHTML = `<p class="admin-muted admin-small">${esc(err.message)}</p>`;
   }
 }
+
+
+// --- Menú lateral: grupos que se pliegan y contadores de pendientes ---------
+(function () {
+  const LLAVE = 'wj-menu-cerrado';
+  const cerrados = () => { try { return JSON.parse(localStorage.getItem(LLAVE) || '[]'); } catch { return []; } };
+  const guardar = (lista) => { try { localStorage.setItem(LLAVE, JSON.stringify(lista)); } catch { /* sin almacenamiento */ } };
+
+  document.querySelectorAll('.admin-side-group').forEach((grupo) => {
+    if (cerrados().includes(grupo.dataset.group)) {
+      grupo.classList.add('is-closed');
+      grupo.querySelector('.admin-side-head')?.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  document.querySelector('.admin-side')?.addEventListener('click', (e) => {
+    const head = e.target.closest('.admin-side-head');
+    if (!head) return;
+    const grupo = head.closest('.admin-side-group');
+    const cerrado = grupo.classList.toggle('is-closed');
+    head.setAttribute('aria-expanded', String(!cerrado));
+    const lista = cerrados().filter((g) => g !== grupo.dataset.group);
+    if (cerrado) lista.push(grupo.dataset.group);
+    guardar(lista);
+  });
+
+  async function contadores() {
+    try {
+      const r = await fetch('/api/admin/pendientes');
+      if (!r.ok) return;
+      const d = await r.json();
+      document.querySelectorAll('.admin-side-count').forEach((el) => {
+        const n = d[el.dataset.count] || 0;
+        el.textContent = n > 99 ? '99+' : String(n);
+        el.hidden = !n;
+      });
+    } catch { /* sin conexión: el menú se queda sin números */ }
+  }
+  window.actualizarPendientes = contadores;
+  contadores();
+  setInterval(contadores, 120000);
+})();

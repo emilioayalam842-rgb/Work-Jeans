@@ -1468,7 +1468,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260924g';
+const ASSET_V = '20260924h';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));
@@ -3481,6 +3481,28 @@ app.get('/api/admin/orders-summary', requireAdmin, perm('pedidos.ver'), (req, re
     reviewsPending: reviews.filter((r) => r.status === 'pendiente').length,
     newLeads: since ? leads.filter((l) => new Date(l.createdAt) > since).map((l) => ({ id: l.id, company: l.company || l.name, totalPieces: l.totalPieces || 0, createdAt: l.createdAt })) : [],
   });
+});
+
+// Contadores del menú lateral: lo que está esperando a alguien, por sección.
+app.get('/api/admin/pendientes', requireAdmin, (req, res) => {
+  const cuenta = { pedidos: 0, cobrar: 0, enviar: 0, cotizaciones: 0, resenas: 0, devoluciones: 0, existencias: 0 };
+  try {
+    const orders = getOrders();
+    cuenta.cobrar = orders.filter((o) => o.status === 'pendiente').length;
+    cuenta.enviar = orders.filter((o) => ['pagado', 'preparacion'].includes(o.status)).length;
+    cuenta.pedidos = cuenta.cobrar + cuenta.enviar;
+  } catch { /* sin pedidos */ }
+  try { cuenta.cotizaciones = getLeads().filter((l) => l.status === 'nuevo').length; } catch { /* sin cotizaciones */ }
+  try { cuenta.resenas = getReviews().filter((r) => r.status === 'pendiente').length; } catch { /* sin reseñas */ }
+  try { cuenta.devoluciones = getReturns().filter((d) => !['cerrada', 'rechazada'].includes(d.status)).length; } catch { /* sin devoluciones */ }
+  try {
+    const limite = lowStockThreshold();
+    let bajas = 0;
+    for (const p of getProducts()) for (const v of p.sizes || []) if ((v.stock || 0) <= limite) bajas += 1;
+    cuenta.existencias = bajas;
+  } catch { /* sin inventario */ }
+  res.set('Cache-Control', 'no-store');
+  res.json(cuenta);
 });
 
 // Vista previa de los correos que recibe el cliente, con el pedido más reciente (o uno de muestra).

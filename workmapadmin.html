@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260924g">
-  <link rel="stylesheet" href="admin.css?v=20260924g">
+  <link rel="stylesheet" href="styles.css?v=20260924h">
+  <link rel="stylesheet" href="admin.css?v=20260924h">
 </head>
 <body class="admin-body">
 
@@ -87,41 +87,63 @@
     <main class="admin-main">
       <nav class="admin-side" aria-label="Secciones del panel">
         <button class="admin-tab active" data-tab="dashboard" data-perm="reportes.ver">Dashboard</button>
-        <div class="admin-side-group"><span>Ventas</span>
-          <button class="admin-tab" data-tab="tablero" data-perm="pedidos.ver">Tablero</button>
-          <button class="admin-tab" data-tab="pedidos" data-perm="pedidos.ver">Pedidos</button>
-          <button class="admin-tab" data-tab="cotizaciones" data-perm="pedidos.ver">Cotizaciones</button>
-          <button class="admin-tab" data-tab="resenas" data-perm="pedidos.ver">Reseñas</button>
-          <button class="admin-tab" data-tab="devoluciones" data-perm="devoluciones.ver">Devoluciones</button>
-          <button class="admin-tab" data-tab="clientes" data-perm="clientes.ver">Clientes</button>
+        <div class="admin-side-group" data-group="ventas">
+          <button type="button" class="admin-side-head" aria-expanded="true"><span>Ventas</span><i class="admin-side-count" data-count="pedidos" hidden></i><svg class="admin-side-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="admin-side-items">
+            <button class="admin-tab" data-tab="tablero" data-perm="pedidos.ver">Tablero</button>
+            <button class="admin-tab" data-tab="pedidos" data-perm="pedidos.ver">Pedidos<i class="admin-side-count" data-count="pedidos" hidden></i></button>
+            <button class="admin-tab" data-tab="cotizaciones" data-perm="pedidos.ver">Cotizaciones<i class="admin-side-count" data-count="cotizaciones" hidden></i></button>
+            <button class="admin-tab" data-tab="resenas" data-perm="pedidos.ver">Reseñas<i class="admin-side-count" data-count="resenas" hidden></i></button>
+            <button class="admin-tab" data-tab="devoluciones" data-perm="devoluciones.ver">Devoluciones<i class="admin-side-count" data-count="devoluciones" hidden></i></button>
+            <button class="admin-tab" data-tab="clientes" data-perm="clientes.ver">Clientes</button>
+          </div>
         </div>
-        <div class="admin-side-group"><span>Catálogo</span>
-          <button class="admin-tab" data-tab="productos" data-perm="productos.ver">Productos</button>
-          <button class="admin-tab" data-tab="variantes" data-perm="productos.ver">Variantes</button>
-          <button class="admin-tab" data-tab="categorias" data-perm="productos.ver">Categorías</button>
-          <button class="admin-tab" data-tab="colecciones" data-perm="productos.ver">Colecciones</button>
+        <div class="admin-side-group" data-group="catalogo">
+          <button type="button" class="admin-side-head" aria-expanded="true"><span>Catálogo</span><svg class="admin-side-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="admin-side-items">
+            <button class="admin-tab" data-tab="productos" data-perm="productos.ver">Productos</button>
+            <button class="admin-tab" data-tab="variantes" data-perm="productos.ver">Variantes</button>
+            <button class="admin-tab" data-tab="categorias" data-perm="productos.ver">Categorías</button>
+            <button class="admin-tab" data-tab="colecciones" data-perm="productos.ver">Colecciones</button>
+          </div>
         </div>
-        <div class="admin-side-group"><span>Inventario</span>
-          <button class="admin-tab" data-tab="existencias" data-perm="inventario.ver">Existencias</button>
-          <button class="admin-tab" data-tab="inventario" data-perm="inventario.ver">Movimientos</button>
-          <button class="admin-tab" data-tab="almacenes" data-perm="inventario.ver">Almacenes</button>
+        <div class="admin-side-group" data-group="inventario">
+          <button type="button" class="admin-side-head" aria-expanded="true"><span>Inventario</span><i class="admin-side-count" data-count="existencias" hidden></i><svg class="admin-side-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="admin-side-items">
+            <button class="admin-tab" data-tab="existencias" data-perm="inventario.ver">Existencias<i class="admin-side-count" data-count="existencias" hidden></i></button>
+            <button class="admin-tab" data-tab="inventario" data-perm="inventario.ver">Movimientos</button>
+            <button class="admin-tab" data-tab="almacenes" data-perm="inventario.ver">Almacenes</button>
+          </div>
         </div>
-        <div class="admin-side-group"><span>Compras</span>
-          <button class="admin-tab" data-tab="proveedores" data-perm="compras.ver">Proveedores</button>
-          <button class="admin-tab" data-tab="compras" data-perm="compras.ver">Órdenes de compra</button>
+        <div class="admin-side-group" data-group="compras">
+          <button type="button" class="admin-side-head" aria-expanded="true"><span>Compras</span><svg class="admin-side-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="admin-side-items">
+            <button class="admin-tab" data-tab="proveedores" data-perm="compras.ver">Proveedores</button>
+            <button class="admin-tab" data-tab="compras" data-perm="compras.ver">Órdenes de compra</button>
+          </div>
         </div>
-        <div class="admin-side-group"><span>Marketing</span>
-          <button class="admin-tab" data-tab="promociones" data-perm="promociones.ver">Cupones y promociones</button>
-          <button class="admin-tab" data-tab="articulos" data-perm="contenido.editar">Artículos</button>
+        <div class="admin-side-group" data-group="marketing">
+          <button type="button" class="admin-side-head" aria-expanded="true"><span>Marketing</span><svg class="admin-side-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="admin-side-items">
+            <button class="admin-tab" data-tab="promociones" data-perm="promociones.ver">Cupones y promociones</button>
+            <button class="admin-tab" data-tab="articulos" data-perm="contenido.editar">Artículos</button>
+          </div>
         </div>
-        <div class="admin-side-group"><span>Análisis</span>
-          <button class="admin-tab" data-tab="reportes" data-perm="reportes.ver">Reportes</button>
+        <div class="admin-side-group" data-group="analisis">
+          <button type="button" class="admin-side-head" aria-expanded="true"><span>Análisis</span><svg class="admin-side-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="admin-side-items">
+            <button class="admin-tab" data-tab="reportes" data-perm="reportes.ver">Reportes</button>
+          </div>
         </div>
-        <div class="admin-side-group"><span>Sistema</span>
-          <button class="admin-tab" data-tab="configuracion" data-perm="configuracion.ver">Configuración</button>
-          <button class="admin-tab" data-tab="usuarios" data-perm="usuarios">Usuarios y roles</button>
-          <button class="admin-tab" data-tab="actividad" data-perm="auditoria">Actividad</button>
+        <div class="admin-side-group" data-group="sistema">
+          <button type="button" class="admin-side-head" aria-expanded="true"><span>Sistema</span><svg class="admin-side-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="admin-side-items">
+            <button class="admin-tab" data-tab="configuracion" data-perm="configuracion.ver">Configuración</button>
+            <button class="admin-tab" data-tab="usuarios" data-perm="usuarios">Usuarios y roles</button>
+            <button class="admin-tab" data-tab="actividad" data-perm="auditoria">Actividad</button>
+          </div>
         </div>
+        <a class="admin-side-store" href="/" target="_blank" rel="noopener">Ver tienda</a>
       </nav>
       <div class="admin-content">
       <div class="admin-security-banner" id="securityBanner" hidden></div>
@@ -1456,20 +1478,20 @@
   </div>
 
   <p class="admin-sr-live" id="stockLive" role="status" aria-live="polite"></p>
-  <script src="admin-reauth.js?v=20260924g"></script>
-  <script src="admin.js?v=20260924g"></script>
-  <script src="admin-catalogo.js?v=20260924g"></script>
-  <script src="admin-compras.js?v=20260924g"></script>
-  <script src="admin-marketing.js?v=20260924g"></script>
-  <script src="admin-reportes.js?v=20260924g"></script>
-  <script src="admin-dashboard.js?v=20260924g"></script>
-  <script src="admin-pedidos.js?v=20260924g"></script>
-  <script src="admin-ui.js?v=20260924g"></script>
-  <script src="admin-mas.js?v=20260924g"></script>
-  <script src="admin-seguridad.js?v=20260924g"></script>
-  <script src="admin-leads.js?v=20260924g"></script>
-  <script src="admin-resenas.js?v=20260924g"></script>
-  <script src="admin-contenido.js?v=20260924g"></script>
-  <script src="admin-sistema.js?v=20260924g"></script>
+  <script src="admin-reauth.js?v=20260924h"></script>
+  <script src="admin.js?v=20260924h"></script>
+  <script src="admin-catalogo.js?v=20260924h"></script>
+  <script src="admin-compras.js?v=20260924h"></script>
+  <script src="admin-marketing.js?v=20260924h"></script>
+  <script src="admin-reportes.js?v=20260924h"></script>
+  <script src="admin-dashboard.js?v=20260924h"></script>
+  <script src="admin-pedidos.js?v=20260924h"></script>
+  <script src="admin-ui.js?v=20260924h"></script>
+  <script src="admin-mas.js?v=20260924h"></script>
+  <script src="admin-seguridad.js?v=20260924h"></script>
+  <script src="admin-leads.js?v=20260924h"></script>
+  <script src="admin-resenas.js?v=20260924h"></script>
+  <script src="admin-contenido.js?v=20260924h"></script>
+  <script src="admin-sistema.js?v=20260924h"></script>
 </body>
 </html>

@@ -1854,3 +1854,105 @@ td.admin-order-btns .admin-icon-btn:first-child { margin-left: 0; }
 .admin-wa-box ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; font-size: 0.88rem; }
 .admin-wa-box li { padding-bottom: 8px; border-bottom: 1px solid #f0f1f3; }
 .admin-wa-box li small { color: #83868d; margin-right: 6px; }
+
+/* ============================================================
+   Menú lateral: más aire, grupos que se pliegan y contadores de lo que espera.
+   Antes era una lista apretada donde todo pesaba igual. Ahora cada grupo se puede cerrar,
+   el estado se recuerda, y un número avisa cuántos pedidos faltan por cobrar o enviar,
+   cuántas cotizaciones esperan respuesta y cuántas tallas andan bajas.
+   ============================================================ */
+.admin-side {
+  gap: 2px;
+  padding: 14px 12px 12px;
+  border-radius: 16px;
+}
+.admin-side > .admin-tab { margin-bottom: 6px; }
+
+.admin-side-group {
+  border-top: 1px solid #f0f1f3;
+  padding-top: 10px;
+  margin-top: 8px;
+  gap: 0;
+}
+.admin-side-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a8d94;
+  border-radius: 10px;
+}
+.admin-side-head:hover { background: #f5f6f7; color: #5c5f66; }
+.admin-side-head > span { flex: 1; text-align: left; }
+.admin-side-caret { transition: transform 0.18s; opacity: 0.6; }
+.admin-side-group.is-closed .admin-side-caret { transform: rotate(-90deg); }
+.admin-side-group.is-closed .admin-side-items { display: none; }
+.admin-side-items { display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
+
+/* Cada entrada respira: 40 px de alto en vez de ir pegadas */
+.admin-side .admin-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+/* Contador de pendientes */
+.admin-side-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: #fff3cd;
+  color: #8a6d00;
+  font-style: normal;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.admin-tab.active .admin-side-count { background: rgba(0, 0, 0, 0.14); color: var(--ink-deep); }
+
+.admin-side-store {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-top: 1px solid #f0f1f3;
+  padding-top: 14px;
+  color: #6f727a;
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+.admin-side-store:hover { color: var(--black); }
+
+@media (max-width: 1024px) {
+  .admin-side-head { padding: 6px 10px; }
+  .admin-side .admin-tab { min-height: 38px; }
+}
+
+/* En pantalla chica el menú vuelve a ser una tira horizontal: los encabezados de grupo
+   estorban ahí, así que se ocultan y las entradas se muestran siempre. */
+@media (max-width: 960px) {
+  .admin-side-head { display: none; }
+  .admin-side-group.is-closed .admin-side-items { display: flex; }
+  .admin-side-items { flex-direction: row; flex-wrap: wrap; }
+  .admin-side-store { margin-top: 0; border-top: 0; padding-top: 10px; }
+}
