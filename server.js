@@ -1290,6 +1290,8 @@ function productJsonLd(product, origin, url) {
           url,
           price: (product.priceCents / 100).toFixed(2),
           priceCurrency: 'MXN',
+          // Google pide saber hasta cuándo vale el precio; sin esto marca aviso en Merchant Center.
+          priceValidUntil: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
           availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
           itemCondition: 'https://schema.org/NewCondition',
           seller: { '@id': `${origin}/#negocio` },
@@ -1468,7 +1470,7 @@ function fileDate(file) {
   try { return fs.statSync(file).mtime.toISOString().slice(0, 10); } catch { return null; }
 }
 
-const ASSET_V = '20260924r';
+const ASSET_V = '20260926a';
 
 function fill(template, map) {
   return template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in map ? map[k] : m));

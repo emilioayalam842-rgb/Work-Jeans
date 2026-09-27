@@ -1,0 +1,34 @@
+# Works Jeans
+
+> Fabricante de ropa de trabajo de mezclilla en Monterrey, Nuevo León, México.
+> Pantalones y camisas de trabajo de mezclilla 100% algodón, con versión reflejante.
+> Venta desde una pieza y por mayoreo para empresas, con envío a toda la República.
+
+## Qué vendemos
+- Pantalón de trabajo de mezclilla, tallas 28 a 50
+- Camisa o camisola de trabajo de mezclilla, tallas XCH a 5XG
+- Versiones con cinta reflejante en verde y naranja
+- Personalización con bordado o DTF para pedidos de empresa
+
+## Datos del negocio
+- Domicilio: Calle Emiliano Zapata 3737, Col. Venustiano Carranza, C.P. 64560, Monterrey, Nuevo León
+- Horario: lunes a viernes de 9:00 a 18:00
+- Razón social: Works Jeans México S.A. de C.V.
+- Precios en pesos mexicanos con IVA incluido
+- Cambios de talla dentro de 15 días
+
+## Páginas principales
+- [Inicio y catálogo](https://www.workjeans.mx/): todos los modelos con precio y tallas
+- [Pantalones de trabajo](https://www.workjeans.mx/pantalones-de-trabajo)
+- [Camisas de trabajo](https://www.workjeans.mx/camisas-de-trabajo)
+- [Camisola de mezclilla](https://www.workjeans.mx/camisola-de-mezclilla)
+- [Ropa de trabajo reflejante](https://www.workjeans.mx/ropa-de-trabajo-reflejante)
+- [Cotizador para empresas](https://www.workjeans.mx/empresas): corridas de tallas y precio de distribuidor
+- [Guía de tallas](https://www.workjeans.mx/guia-de-tallas): medidas en pulgadas y cómo tomarlas
+- [Onzas de la mezclilla](https://www.workjeans.mx/onzas-de-mezclilla-para-ropa-de-trabajo): qué significa el peso de la tela
+- [Envíos y devoluciones](https://www.workjeans.mx/envios-y-devoluciones)
+- [Contacto](https://www.workjeans.mx/contacto)
+
+## Notas
+- El catálogo en vivo, con precios y existencias por talla, está en https://www.workjeans.mx/products.json
+- El sitemap completo está en https://www.workjeans.mx/sitemap.xml
